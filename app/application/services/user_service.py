@@ -1,6 +1,5 @@
 from app.domain.entities.user import User
 from app.domain.repositories.user_repository import UserRepository
-# import bcrypt
 
 from app.presentation.schemas.user import UserCreate
 

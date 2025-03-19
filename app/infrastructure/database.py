@@ -4,9 +4,11 @@ from fastapi import Depends
 from sqlmodel import SQLModel, Session, create_engine
 import os
 
-DATABASE_URI = os.getenv(
-    "DATABASE_URI", "postgresql+asyncpg://user:password@localhost:5432/mydb"
-)
+# postgresql+asyncpg://user:password@localhost:5432/mydb
+DATABASE_URI = os.getenv("DATABASE_URI", "")
+
+if DATABASE_URI == "":
+    raise Exception("There is not database configuration")
 
 engine = create_engine(DATABASE_URI, echo=True)
 
