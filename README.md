@@ -13,3 +13,6 @@
 ```bash
 deactivate
 ```
+
+upload files
+https://fastapi.tiangolo.com/tutorial/request-files/
