@@ -1,5 +1,5 @@
 # Implement the repository interface using SQLModel
-from typing import List, Optional
+from typing import Optional
 from sqlmodel import Session, select
 from app.domain.entities.user import User
 from app.domain.repositories.user_repository import UserRepository
@@ -21,8 +21,8 @@ class UserRepositoryImpl(UserRepository):
         return result.first()
 
     def get_all_users(self):
-        result = self.db.exec(select(User))
-        return result.all()
+        result = list(self.db.exec(select(User)))
+        return result
 
     def get_user_by_email(self, email: str) -> Optional[User]:
         result = self.db.exec(select(User).where(User.email == email))

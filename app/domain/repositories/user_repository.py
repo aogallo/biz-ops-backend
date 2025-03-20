@@ -1,6 +1,6 @@
 # Repository interface: Defines data access operations but has no DB dependencies
 from abc import ABC, abstractmethod
-from typing import Optional, Sequence
+from typing import List, Optional
 
 from app.domain.entities.user import User
 
@@ -15,7 +15,7 @@ class UserRepository(ABC):
         pass
 
     @abstractmethod
-    def get_all_users(self) -> Sequence[User]:
+    def get_all_users(self) -> List[User]:
         pass
 
     @abstractmethod
