@@ -6,7 +6,7 @@ import os
 oauth2_scheme = HTTPBearer()
 
 
-async def get_credentials(
+def get_credentials(
     credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
 ):
     try:
@@ -29,11 +29,7 @@ def verify_token(token: str = Depends(get_credentials)):
 
         jwks_client = jwt.PyJWKClient(jwks_url)
 
-        print("jwks_client", jwks_client)
-
         signing_key = jwks_client.get_signing_key_from_jwt(token).key
-
-        print("signing_key", signing_key)
 
         payload = jwt.decode(
             jwt=token,

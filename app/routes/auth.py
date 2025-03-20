@@ -1,6 +1,6 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends
-from app.application.services.auth_service import AuthService
+from app.services.auth_service import AuthService
 
 from app.dependencies import oauth2_scheme
 
