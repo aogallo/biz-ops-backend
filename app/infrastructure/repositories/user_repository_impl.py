@@ -13,7 +13,6 @@ class UserRepositoryImpl(UserRepository):
         self.db.add(user)
         self.db.commit()
         self.db.refresh(user)
-        self.db.close()
         return user
 
     def get_user_by_id(self, auth_id: str):
