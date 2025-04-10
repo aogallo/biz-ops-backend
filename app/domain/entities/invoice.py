@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import Optional
 from sqlmodel import Field, Relationship, SQLModel
 
+from app.domain.entities.customer import Customer
+
 
 class Invoice(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
