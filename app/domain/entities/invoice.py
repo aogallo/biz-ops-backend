@@ -1,8 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.domain.entities.customer import Customer
+from app.domain.entities.journal_entry import JournalEntry
 
 
 class Invoice(SQLModel, table=True):
@@ -37,9 +38,15 @@ class Invoice(SQLModel, table=True):
     tarifa_portuaria: Optional[float] = 0.0  # Port tariff
 
     # Relationships
-    emisor: "Customer" = Relationship(
-        sa_relationship_kwargs={"foreign_keys": "[Invoice.emisor_id]"}
+    company: Customer = Relationship(
+        sa_relationship_kwargs={"foreign_keys": "[Invoice.company_id]"}
     )
-    receptor: "Customer" = Relationship(
-        sa_relationship_kwargs={"foreign_keys": "[Invoice.receptor_id]"}
+    customer: Customer = Relationship(
+        sa_relationship_kwargs={"foreign_keys": "[Invoice.customer_id]"}
     )
+    journal_entries: list[JournalEntry] = Relationship(back_populates="journal_entry")
+
+    created_by: str = Field(index=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_by: Optional[str] = Field(default=None, index=True)
+    udpated_at: Optional[datetime] = Field(default=None)
