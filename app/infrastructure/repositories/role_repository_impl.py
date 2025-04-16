@@ -4,6 +4,7 @@ from app.domain.entities.role import Role
 from app.domain.entities.user import User
 from app.domain.repositories.role_repository import RoleRepository
 
+
 class RoleRepositoryImpl(RoleRepository):
     def __init__(self, db: Session) -> None:
         self.db = db
@@ -26,10 +27,10 @@ class RoleRepositoryImpl(RoleRepository):
         result = list(self.db.exec(select(Role)))
         return result
 
-    def update_role(self, role_id: int, role: Role) -> Role:
+    def update_role(self, role_id: int, role: Role) -> Optional[Role]:
         db_role = self.get_role_by_id(role_id)
         if db_role:
-            for key, value in role.dict(exclude_unset=True).items():
+            for key, value in role.model_dump(exclude_unset=True).items():
                 setattr(db_role, key, value)
             self.db.commit()
             self.db.refresh(db_role)
@@ -59,4 +60,5 @@ class RoleRepositoryImpl(RoleRepository):
             user.roles.remove(role)
             self.db.commit()
             return True
-        return False 
+        return False
+

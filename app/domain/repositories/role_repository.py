@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 from app.domain.entities.role import Role
 
+
 class RoleRepository(ABC):
     @abstractmethod
     def create_role(self, role: Role) -> Role:
@@ -20,7 +21,7 @@ class RoleRepository(ABC):
         pass
 
     @abstractmethod
-    def update_role(self, role_id: int, role: Role) -> Role:
+    def update_role(self, role_id: int, role: Role) -> Optional[Role]:
         pass
 
     @abstractmethod
@@ -33,4 +34,5 @@ class RoleRepository(ABC):
 
     @abstractmethod
     def remove_role_from_user(self, role_id: int, user_auth_id: str) -> bool:
-        pass 
+        pass
+

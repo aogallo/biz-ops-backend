@@ -4,6 +4,7 @@ from app.domain.entities.permission import Permission
 from app.domain.entities.role import Role
 from app.domain.repositories.permission_repository import PermissionRepository
 
+
 class PermissionRepositoryImpl(PermissionRepository):
     def __init__(self, db: Session) -> None:
         self.db = db
@@ -26,10 +27,12 @@ class PermissionRepositoryImpl(PermissionRepository):
         result = list(self.db.exec(select(Permission)))
         return result
 
-    def update_permission(self, permission_id: int, permission: Permission) -> Permission:
+    def update_permission(
+        self, permission_id: int, permission: Permission
+    ) -> Optional[Permission]:
         db_permission = self.get_permission_by_id(permission_id)
         if db_permission:
-            for key, value in permission.dict(exclude_unset=True).items():
+            for key, value in permission.model_dump(exclude_unset=True).items():
                 setattr(db_permission, key, value)
             self.db.commit()
             self.db.refresh(db_permission)
@@ -59,4 +62,5 @@ class PermissionRepositoryImpl(PermissionRepository):
             role.permissions.remove(permission)
             self.db.commit()
             return True
-        return False 
+        return False
+
