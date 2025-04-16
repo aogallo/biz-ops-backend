@@ -1,7 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
-import os
 import logging
 from app.services.rbac_service import RBACService
 from app.infrastructure.repositories.role_repository_impl import RoleRepositoryImpl
@@ -9,6 +8,7 @@ from app.infrastructure.repositories.permission_repository_impl import (
     PermissionRepositoryImpl,
 )
 from app.infrastructure.database import SessionDep
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 oauth2_scheme = HTTPBearer()
@@ -35,19 +35,7 @@ def get_credentials(
 
 def verify_token(token: str = Depends(get_credentials)):
     try:
-        AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
-        AUTH0_AUDIENCE = os.getenv("AUTH0_AUDIENCE")
-        AUTH0_ISSUER = os.getenv("AUTH0_ISSUER")
-        ALGORITHMS = os.getenv("ALGORITHMS", "RS256")
-
-        if not all([AUTH0_DOMAIN, AUTH0_AUDIENCE, AUTH0_ISSUER]):
-            logger.error("Missing Auth0 configuration")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Auth0 configuration is incomplete",
-            )
-
-        jwks_url = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json"
+        jwks_url = f"https://{settings.AUTH0_DOMAIN}/.well-known/jwks.json"
         jwks_client = jwt.PyJWKClient(jwks_url)
 
         try:
@@ -63,9 +51,9 @@ def verify_token(token: str = Depends(get_credentials)):
             payload = jwt.decode(
                 jwt=token,
                 key=signing_key,
-                algorithms=ALGORITHMS,
-                audience=AUTH0_AUDIENCE,
-                issuer=AUTH0_ISSUER,
+                algorithms=settings.ALGORITHMS,
+                audience=settings.AUTH0_AUDIENCE,
+                issuer=settings.AUTH0_ISSUER,
             )
             print(f"payload :{payload}")
             return payload

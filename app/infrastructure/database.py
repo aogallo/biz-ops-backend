@@ -2,26 +2,16 @@
 from fastapi import Depends
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.exc import SQLAlchemyError
-from typing import Annotated
-import os
+from typing import TYPE_CHECKING, Annotated
 import logging
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# postgresql+asyncpg://user:password@localhost:5432/mydb
-DATABASE_URI = os.getenv(
-    "DATABASE_URI", "postgresql+asyncpg://user:password@localhost:5432/mydb"
-)
-
-if DATABASE_URI == "":
-    raise Exception(
-        "Database configuration is missing. Please set DATABASE_URI environment variable."
-    )
-
 try:
     engine = create_engine(
-        DATABASE_URI,
-        echo=True,
+        settings.DATABASE_URI,
+        echo=settings.DEBUG,
         pool_pre_ping=True,  # Enable connection health checks
         pool_size=5,  # Limit connection pool size
         max_overflow=10,  # Allow some overflow for peak loads

@@ -1,18 +1,14 @@
 from fastapi import FastAPI
-from app.core.config import settings
 from app.infrastructure.database import create_db_and_tables
 from app.routes import user_routes
 
-app = FastAPI(
-    title=settings.API_TITLE,
-    version=settings.API_VERSION,
-    debug=settings.DEBUG
-)
+
+app = FastAPI(title="API")
 
 
 @app.get("/")
 async def health_check():
-    return {"message": "It's fine", "version": settings.API_VERSION}
+    return {"message": "It's fine"}
 
 
 @app.on_event("startup")
@@ -20,4 +16,7 @@ def on_startup():
     create_db_and_tables()
 
 
+# @app.get("/items/")
+# async def read_items(token: Annotated[str, Depends(verify_token)]):
+#     return {"token": token}
 app.include_router(router=user_routes.router)

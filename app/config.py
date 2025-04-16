@@ -13,7 +13,6 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     auth0_domain: str = os.getenv("AUTH0_DOMAIN", "")
     auth0_audience: str = os.getenv("AUTH0_AUDIENCE", "")
-    auth0_audience: str = os.getenv("AUTH0_AUDIENCE", "")
     auth0_issuer: str = os.getenv("AUTH0_ISSUER", "")
     algorithms: str = os.getenv("ALGORITHMS", "")
 
