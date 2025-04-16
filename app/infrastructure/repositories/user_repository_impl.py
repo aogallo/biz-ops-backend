@@ -6,13 +6,10 @@ from app.domain.repositories.user_repository import UserRepository
 
 
 class UserRepositoryImpl(UserRepository):
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, current_user: User) -> None:
         self.db = db
 
     def create_user(self, user: User):
-        self.db.add(user)
-        self.db.commit()
-        self.db.refresh(user)
         return user
 
     def get_user_by_id(self, auth_id: str):

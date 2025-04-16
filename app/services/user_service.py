@@ -5,7 +5,7 @@ from app.infrastructure.repositories.user_repository_impl import UserRepositoryI
 
 class UserService:
     """
-    Application Layer - User Bussines logic (Use Case)
+    User Service
     """
 
     def __init__(self, user_repo: UserRepositoryImpl):

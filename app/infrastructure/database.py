@@ -2,16 +2,21 @@
 from fastapi import Depends
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.exc import SQLAlchemyError
+from typing import Annotated
 import os
 import logging
 
 logger = logging.getLogger(__name__)
 
 # postgresql+asyncpg://user:password@localhost:5432/mydb
-DATABASE_URI = os.getenv("DATABASE_URI", "")
+DATABASE_URI = os.getenv(
+    "DATABASE_URI", "postgresql+asyncpg://user:password@localhost:5432/mydb"
+)
 
 if DATABASE_URI == "":
-    raise Exception("Database configuration is missing. Please set DATABASE_URI environment variable.")
+    raise Exception(
+        "Database configuration is missing. Please set DATABASE_URI environment variable."
+    )
 
 try:
     engine = create_engine(
@@ -19,11 +24,12 @@ try:
         echo=True,
         pool_pre_ping=True,  # Enable connection health checks
         pool_size=5,  # Limit connection pool size
-        max_overflow=10  # Allow some overflow for peak loads
+        max_overflow=10,  # Allow some overflow for peak loads
     )
 except Exception as e:
     logger.error(f"Failed to create database engine: {str(e)}")
     raise
+
 
 def create_db_and_tables():
     try:
@@ -31,6 +37,7 @@ def create_db_and_tables():
     except SQLAlchemyError as e:
         logger.error(f"Failed to create database tables: {str(e)}")
         raise
+
 
 def get_session():
     try:
@@ -40,4 +47,5 @@ def get_session():
         logger.error(f"Database session error: {str(e)}")
         raise
 
-SessionDep: Session = Depends(get_session)
+
+SessionDep = Annotated[Session, Depends(get_session)]

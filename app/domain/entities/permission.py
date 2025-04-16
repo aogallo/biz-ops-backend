@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
-from app.domain.entities.role import Role
+
+if TYPE_CHECKING:
+    from app.domain.entities.role import Role
 
 
 class Permission(SQLModel, table=True):

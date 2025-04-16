@@ -9,16 +9,15 @@ from app.infrastructure.repositories.user_repository_impl import UserRepositoryI
 router = APIRouter(
     prefix="/users",
     tags=["users"],
-    dependencies=[
-        Depends(verify_token),
-    ],
+    dependencies=[],
 )
 
 
 @router.get("/")
 def read_users(
+    current_user=Depends(verify_token()),
     session=SessionDep,
 ):
-    user_repo = UserRepositoryImpl(session)
+    user_repo = UserRepositoryImpl(session, current_user)
     user_service = UserService(user_repo)
     return user_service.list_users()

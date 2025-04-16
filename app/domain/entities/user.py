@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from pydantic import EmailStr
 from sqlmodel import Field, SQLModel, Relationship
-from app.domain.entities.role import Role
+
+if TYPE_CHECKING:
+    from app.domain.entities.role import Role
 
 
 class User(SQLModel, table=True):
