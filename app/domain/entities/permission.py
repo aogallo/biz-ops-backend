@@ -18,7 +18,7 @@ class PermissionCreate(PermissionBase):
     pass
 
 
-class Permission(SQLModel, table=True):
+class Permission(PermissionBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
 
     created_by: str = Field(index=True)
