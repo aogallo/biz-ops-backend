@@ -8,10 +8,8 @@ from app.infrastructure.database import get_session
 class VendorRepositoryImpl(VendorRepository):
     def __init__(self, db: Session = Depends(get_session)) -> None:
         self.db = db
-        # self.current_user = current_user
 
     def create(self, vendor: VendorCreate) -> Vendor:
-        # print("current_user", self.current_user)
         new_vendor = Vendor(
             name=vendor.name,
             nit=vendor.nit,
@@ -21,4 +19,8 @@ class VendorRepositoryImpl(VendorRepository):
             email=vendor.email,
         )
         self.db.add(new_vendor)
+        self.db.commit()
+
+        print(new_vendor)
+
         return new_vendor

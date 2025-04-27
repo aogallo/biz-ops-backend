@@ -6,5 +6,5 @@ class VendorService:
     def __init__(self) -> None:
         self.repo = VendorRepositoryImpl()
 
-    def create_vendor(self, vendor_data: VendorCreate) -> Vendor:
+    def create_vendor(self, vendor_data: VendorCreate):
         return self.repo.create(vendor=vendor_data)
