@@ -3,8 +3,8 @@ from app.infrastructure.repositories.vendor_respository_impl import VendorReposi
 
 
 class VendorService:
-    def __init__(self, vendor_repo: VendorRepositoryImpl) -> None:
-        self.repo = vendor_repo
+    def __init__(self) -> None:
+        self.repo = VendorRepositoryImpl()
 
     def create_vendor(self, vendor_data: VendorCreate) -> Vendor:
         return self.repo.create(vendor=vendor_data)

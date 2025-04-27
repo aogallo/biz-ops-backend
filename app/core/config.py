@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 import os
-from pydantic import BaseSettings, Field, validator
-from typing import Optional
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Load environment variables at module import
 load_dotenv()
@@ -11,33 +11,31 @@ class Settings(BaseSettings):
     # API Configuration
     API_TITLE: str = "API"
     API_VERSION: str = "1.0.0"
-    
+
     # Auth0 Configuration
-    AUTH0_DOMAIN: str = Field(..., env="AUTH0_DOMAIN")
-    AUTH0_AUDIENCE: str = Field(..., env="AUTH0_AUDIENCE")
-    AUTH0_ISSUER: str = Field(..., env="AUTH0_ISSUER")
-    ALGORITHMS: str = Field(default="RS256", env="ALGORITHMS")
-    
+    AUTH0_DOMAIN: str = ""
+    AUTH0_AUDIENCE: str = ""
+    AUTH0_ISSUER: str = ""
+    ALGORITHMS: str = "RS256"
+
     # Database Configuration
-    DATABASE_URI: str = Field(
-        default="postgresql+asyncpg://user:password@localhost:5432/mydb",
-        env="DATABASE_URI"
-    )
-    
+    DATABASE_URI: str = "postgresql+asyncpg://user:password@localhost:5432/mydb"
+
     # Optional configurations
-    DEBUG: bool = Field(default=False, env="DEBUG")
-    LOG_LEVEL: str = Field(default="INFO", env="LOG_LEVEL")
-    
-    @validator("AUTH0_ISSUER")
+    DEBUG: bool = False
+    LOG_LEVEL: str = "INFO"
+
+    @field_validator("AUTH0_ISSUER")
     def validate_auth0_issuer(cls, v):
         if not v.endswith("/"):
             return f"{v}/"
         return v
-    
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+    )
 
 
 # Create a global settings instance
@@ -58,4 +56,6 @@ LOG_LEVEL = settings.LOG_LEVEL
 required_env_vars = ["AUTH0_DOMAIN", "AUTH0_AUDIENCE", "AUTH0_ISSUER"]
 missing_vars = [var for var in required_env_vars if not os.getenv(var)]
 if missing_vars:
-    raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}") 
+    raise ValueError(
+        f"Missing required environment variables: {', '.join(missing_vars)}"
+    )

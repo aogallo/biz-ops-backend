@@ -1,15 +1,14 @@
 # Implement the repository interface using SQLModel
 from typing import Optional
-from sqlmodel import Session, select
+from sqlmodel import select
 from app.domain.entities.user import User
 from app.domain.repositories.user_repository import UserRepository
 
 
 class UserRepositoryImpl(UserRepository):
-    def __init__(self, db: Session, current_user: User) -> None:
-        self.db = db
-
     def create_user(self, user: User):
+        self.db.add(user)
+        self.db.commit()
         return user
 
     def get_user_by_id(self, auth_id: str):

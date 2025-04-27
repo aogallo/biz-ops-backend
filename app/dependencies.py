@@ -9,6 +9,8 @@ from app.infrastructure.repositories.permission_repository_impl import (
 )
 from app.infrastructure.database import SessionDep
 from app.core.config import settings
+from app.domain.entities.user import User
+from app.infrastructure.repositories.user_repository_impl import UserRepositoryImpl
 
 logger = logging.getLogger(__name__)
 oauth2_scheme = HTTPBearer()
@@ -24,7 +26,12 @@ def get_credentials(
     credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
 ):
     try:
-        return credentials.credentials
+        logger.info(f"Getting credentials: {credentials}")
+        token = credentials.credentials
+        logger.info(
+            f"Extracted token: {token[:10]}..."
+        )  # Only log the first 10 chars for security
+        return token
     except Exception as e:
         logger.error(f"Authentication error: {str(e)}")
         raise HTTPException(
@@ -34,11 +41,26 @@ def get_credentials(
 
 
 def verify_token(token: str = Depends(get_credentials)):
+    logger.info("Starting token verification")
+    # logger.info(f"Token type: {type(token)}, Value: {token[:10]}...")  # Only log the first 10 chars
+
     try:
         jwks_url = f"https://{settings.AUTH0_DOMAIN}/.well-known/jwks.json"
-        jwks_client = jwt.PyJWKClient(jwks_url)
 
         try:
+            jwks_client = jwt.PyJWKClient(jwks_url)
+        except Exception as e:
+            logger.error(f"Failed to get the client: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid url signature",
+            )
+
+        try:
+            # Convert token to bytes if needed
+            # token_bytes = token.encode('utf-8') if isinstance(token, str) else token
+            # print("client", dir(jwks_client))
+            print("token", token)
             signing_key = jwks_client.get_signing_key_from_jwt(token).key
         except Exception as e:
             logger.error(f"Failed to get signing key: {str(e)}")
@@ -85,6 +107,44 @@ def verify_token(token: str = Depends(get_credentials)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error during authentication",
         )
+
+
+def get_current_user(
+    token_payload: dict = Depends(verify_token),
+) -> User:
+    """
+    Get the current user from the token payload.
+    If the user doesn't exist in the database, create it.
+    """
+    auth_id = token_payload.get("sub")
+    if not auth_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload"
+        )
+
+    # Create a temporary user repository to find or create the user
+    user_repo = UserRepositoryImpl()
+
+    # Try to find the user by auth_id
+    user = user_repo.get_user_by_id(auth_id)
+
+    # if not user:
+    #     # If user doesn't exist, create a new one
+    #     email = token_payload.get("email", "")
+    #     picture = token_payload.get("picture", "")
+    #
+    #     new_user = User(
+    #         auth_id=auth_id, email=email, picture=picture, created_by="system"
+    #     )
+    #
+    #     user = user_repo.create_user(new_user)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid User"
+        )
+
+    return user
 
 
 def check_permission(resource: str, action: str):

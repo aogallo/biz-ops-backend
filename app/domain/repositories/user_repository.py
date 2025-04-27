@@ -3,9 +3,10 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 from app.domain.entities.user import User
+from app.infrastructure.repositories.base_repository import BaseRepository
 
 
-class UserRepository(ABC):
+class UserRepository(ABC, BaseRepository):
     @abstractmethod
     def create_user(self, user: User) -> User:
         pass

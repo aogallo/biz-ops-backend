@@ -19,7 +19,7 @@ class Vendor(SQLModel, table=True):
     udpated_at: Optional[datetime] = Field(default=None)
 
 
-class VendorCreate(SQLModel, table=True):
+class VendorCreate:
     name: str = Field(unique=True, index=True)
     nit: str = Field(unique=True, index=True)
     date_birth: str

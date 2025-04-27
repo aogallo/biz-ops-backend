@@ -2,7 +2,7 @@
 from fastapi import Depends
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.exc import SQLAlchemyError
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 import logging
 from app.core.config import settings
 
@@ -30,12 +30,8 @@ def create_db_and_tables():
 
 
 def get_session():
-    try:
-        with Session(engine) as session:
-            yield session
-    except SQLAlchemyError as e:
-        logger.error(f"Database session error: {str(e)}")
-        raise
+    with Session(engine) as session:
+        yield session
 
 
 SessionDep = Annotated[Session, Depends(get_session)]
