@@ -6,8 +6,7 @@ from app.domain.entities.customer import Customer
 from app.domain.entities.journal_entry import JournalEntry
 
 
-class Invoice(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+class InvoiceBase(SQLModel):
     date: datetime
     authorization_number: str
     dte_type: str
@@ -45,6 +44,14 @@ class Invoice(SQLModel, table=True):
         sa_relationship_kwargs={"foreign_keys": "[Invoice.customer_id]"}
     )
     journal_entries: list[JournalEntry] = Relationship(back_populates="journal_entry")
+
+
+class InvoiceCreate(InvoiceBase):
+    pass
+
+
+class Invoice(InvoiceBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
 
     created_by: str = Field(index=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

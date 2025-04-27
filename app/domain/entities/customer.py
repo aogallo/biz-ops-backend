@@ -4,14 +4,21 @@ from pydantic import EmailStr
 from sqlmodel import Field, SQLModel
 
 
-class Customer(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+class CustomerBase(SQLModel):
     name: str = Field(unique=True, index=True)
     nit: str = Field(unique=True, index=True)
     date_birth: str
     comercial_activity: str
     email: EmailStr
     address: str
+
+
+class CustomerCreate(CustomerBase):
+    pass
+
+
+class Customer(CustomerBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
 
     created_by: str = Field(index=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

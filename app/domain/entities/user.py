@@ -1,17 +1,13 @@
 from datetime import datetime, timezone
-from typing import Optional, List, TYPE_CHECKING
+from typing import Optional
 from pydantic import EmailStr
-from sqlmodel import Field, SQLModel, Relationship
-
-if TYPE_CHECKING:
-    from app.domain.entities.role import Role
+from sqlmodel import Field, SQLModel
 
 
-class User(SQLModel, table=True):
+class UserBase(SQLModel):
     auth_id: str = Field(primary_key=True)
     email: EmailStr
     picture: Optional[str] = Field(default=None)
-    roles: List["Role"] = Relationship(back_populates="users")
 
     created_by: str = Field(index=True, default="test")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -19,10 +15,9 @@ class User(SQLModel, table=True):
     updated_at: Optional[datetime] = Field(default=None)
 
 
-class UserCreate(SQLModel):
-    auth_id: str = Field(primary_key=True)
-    email: EmailStr
-    picture: Optional[str] = Field(default=None)
+class User(UserBase, table=True):
+    pass
 
-    created_by: str = Field(index=True, default="test")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class UserCreate(UserBase):
+    pass
