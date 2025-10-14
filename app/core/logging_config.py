@@ -1,7 +1,7 @@
 """Logging configuration for the application."""
+
 import logging
 import sys
-from typing import Any
 
 from app.core.config import settings
 
@@ -21,7 +21,10 @@ class ColoredFormatter(logging.Formatter):
         logging.INFO: blue + "%(levelname)s" + reset + " - %(message)s",
         logging.WARNING: yellow + "%(levelname)s" + reset + " - %(message)s",
         logging.ERROR: red + "%(levelname)s" + reset + " - %(message)s",
-        logging.CRITICAL: bold_red + "%(levelname)s" + reset + " - %(message)s",
+        logging.CRITICAL: bold_red
+        + "%(levelname)s"
+        + reset
+        + " - %(message)s",
     }
 
     def format(self, record: logging.LogRecord) -> str:
@@ -64,14 +67,11 @@ def setup_logging() -> None:
 
 def get_logger(name: str) -> logging.Logger:
     """Get a logger instance for a module.
-    
+
     Args:
         name: The name of the module (usually __name__)
-        
+
     Returns:
         A configured logger instance
     """
     return logging.getLogger(name)
-
-
-

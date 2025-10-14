@@ -1,5 +1,6 @@
 """Custom exception classes for the application."""
-from typing import Any, Optional
+
+from typing import Any
 
 
 class AppException(Exception):
@@ -8,11 +9,11 @@ class AppException(Exception):
     def __init__(
         self,
         message: str,
-        error_code: Optional[str] = None,
-        details: Optional[dict[str, Any]] = None,
+        error_code: str | None = None,
+        details: dict[str, Any] | None = None,
     ):
         """Initialize the exception.
-        
+
         Args:
             message: Human-readable error message
             error_code: Machine-readable error code
@@ -27,9 +28,9 @@ class AppException(Exception):
 class ValidationError(AppException):
     """Raised when data validation fails."""
 
-    def __init__(self, message: str, field: Optional[str] = None, **kwargs):
+    def __init__(self, message: str, field: str | None = None, **kwargs):
         """Initialize validation error.
-        
+
         Args:
             message: Error message
             field: Field that failed validation
@@ -47,7 +48,7 @@ class NotFoundError(AppException):
 
     def __init__(self, resource: str, identifier: Any):
         """Initialize not found error.
-        
+
         Args:
             resource: Type of resource (e.g., "User", "Vendor")
             identifier: Identifier that was not found
@@ -64,7 +65,7 @@ class AuthenticationError(AppException):
 
     def __init__(self, message: str = "Authentication failed"):
         """Initialize authentication error.
-        
+
         Args:
             message: Error message
         """
@@ -74,9 +75,13 @@ class AuthenticationError(AppException):
 class AuthorizationError(AppException):
     """Raised when authorization fails."""
 
-    def __init__(self, message: str = "Insufficient permissions", resource: Optional[str] = None):
+    def __init__(
+        self,
+        message: str = "Insufficient permissions",
+        resource: str | None = None,
+    ):
         """Initialize authorization error.
-        
+
         Args:
             message: Error message
             resource: Resource that was denied
@@ -91,9 +96,9 @@ class AuthorizationError(AppException):
 class DatabaseError(AppException):
     """Raised when a database operation fails."""
 
-    def __init__(self, message: str, operation: Optional[str] = None):
+    def __init__(self, message: str, operation: str | None = None):
         """Initialize database error.
-        
+
         Args:
             message: Error message
             operation: Database operation that failed
@@ -110,7 +115,7 @@ class DuplicateError(AppException):
 
     def __init__(self, resource: str, field: str, value: Any):
         """Initialize duplicate error.
-        
+
         Args:
             resource: Type of resource
             field: Field that has duplicate value
@@ -121,6 +126,3 @@ class DuplicateError(AppException):
             error_code="DUPLICATE_ERROR",
             details={"resource": resource, "field": field, "value": value},
         )
-
-
-
