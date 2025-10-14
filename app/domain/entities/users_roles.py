@@ -1,11 +1,10 @@
-from typing import Optional, Dict, Any, ClassVar
 from sqlmodel import Field, SQLModel
 
 
 class UsersRoles(SQLModel, table=True):
-    role_id: Optional[int] = Field(
+    role_id: int | None = Field(
         default=None, foreign_key="role.id", primary_key=True
     )
-    user_auth_id: Optional[str] = Field(
+    user_auth_id: str | None = Field(
         default=None, foreign_key="user.auth_id", primary_key=True
     )

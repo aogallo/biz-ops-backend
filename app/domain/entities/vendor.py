@@ -1,5 +1,5 @@
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
+
 from pydantic import EmailStr
 from sqlmodel import Field, SQLModel
 
@@ -17,9 +17,9 @@ class Vendor(VendorBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
 
     created_by: str = Field(index=True, default="test")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_by: Optional[str] = Field(default=None, index=True)
-    updated_at: Optional[datetime] = Field(default=None)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_by: str | None = Field(default=None, index=True)
+    updated_at: datetime | None = Field(default=None)
 
 
 class VendorCreate(VendorBase):

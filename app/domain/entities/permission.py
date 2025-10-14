@@ -1,6 +1,7 @@
-from datetime import datetime, timezone
-from typing import Optional, TYPE_CHECKING
-from sqlmodel import SQLModel, Field, Relationship
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
+
+from sqlmodel import Field, Relationship, SQLModel
 
 from app.domain.entities.roles_permission import RolesPermissions
 
@@ -10,7 +11,7 @@ if TYPE_CHECKING:
 
 class PermissionBase(SQLModel):
     name: str = Field(unique=True)
-    description: Optional[str] = None
+    description: str | None = None
     resource: str  # e.g., "users", "orders", etc.
     action: str  # e.g., "create", "read", "update", "delete"
 
@@ -20,13 +21,13 @@ class PermissionCreate(PermissionBase):
 
 
 class Permission(PermissionBase, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
 
     roles: list["Role"] = Relationship(
         back_populates="permissions", link_model=RolesPermissions
     )
 
     created_by: str = Field(index=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_by: Optional[str] = Field(default=None, index=True)
-    updated_at: Optional[datetime] = Field(default=None)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_by: str | None = Field(default=None, index=True)
+    updated_at: datetime | None = Field(default=None)
