@@ -59,8 +59,7 @@ def verify_token(token: str = Depends(get_credentials)):
         try:
             # Convert token to bytes if needed
             # token_bytes = token.encode('utf-8') if isinstance(token, str) else token
-            # print("client", dir(jwks_client))
-            print("token", token)
+            logger.debug("Extracting signing key from JWT token")
             signing_key = jwks_client.get_signing_key_from_jwt(token).key
         except Exception as e:
             logger.error(f"Failed to get signing key: {str(e)}")
@@ -77,7 +76,7 @@ def verify_token(token: str = Depends(get_credentials)):
                 audience=settings.AUTH0_AUDIENCE,
                 issuer=settings.AUTH0_ISSUER,
             )
-            print(f"payload :{payload}")
+            logger.debug(f"Successfully decoded JWT payload for user: {payload.get('sub')}")
             return payload
         except jwt.ExpiredSignatureError:
             logger.error("Token has expired")

@@ -1,17 +1,16 @@
 from datetime import datetime, timezone
-from typing import List, Optional, TYPE_CHECKING
+from typing import Any, ClassVar, Dict, Optional, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
+
+from app.domain.entities.roles_permission import RolesPermissions
 
 if TYPE_CHECKING:
     from app.domain.entities.permission import Permission
-    from app.domain.entities.user import User
 
 
 class RoleBase(SQLModel):
     name: str = Field(unique=True)
     description: Optional[str] = None
-    permissions: List["Permission"] = Relationship(back_populates="roles")
-    users: List["User"] = Relationship(back_populates="users")
 
 
 class RoleCreate(RoleBase):
@@ -20,6 +19,10 @@ class RoleCreate(RoleBase):
 
 class Role(RoleBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+
+    permissions: list["Permission"] = Relationship(
+        back_populates="roles", link_model=RolesPermissions
+    )
 
     created_by: str = Field(index=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

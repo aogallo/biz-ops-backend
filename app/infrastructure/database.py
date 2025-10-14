@@ -1,10 +1,12 @@
 # DB Connection: Uses SQLAlchemy async engine
+from contextvars import ContextVar
 from fastapi import Depends
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.exc import SQLAlchemyError
-from typing import Annotated
+from typing import Annotated, Optional
 import logging
 from app.core.config import settings
+from app.domain.entities.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +31,49 @@ def create_db_and_tables():
         raise
 
 
+# Create context variables to store the current session and user
+db_context: ContextVar[Session] = ContextVar("db_context", default=None)
+user_context: ContextVar[Optional[User]] = ContextVar("user_context", default=None)
+
+
+class RequestContext:
+    @property
+    def current_user(self) -> User:
+        user = user_context.get()
+        if user is None:
+            raise RuntimeError("No authenticated user found in context")
+        return user
+
+    @property
+    def db(self) -> Session:
+        session = db_context.get()
+        if session is None:
+            raise RuntimeError("No database session found in context")
+        return session
+
+
+# Create a global context instance
+context = RequestContext()
+
+
 def get_session():
-    with Session(engine) as session:
-        yield session
+    try:
+        with Session(engine) as session:
+            # Set the session in the context
+            db_token = db_context.set(session)
+            try:
+                yield session
+            finally:
+                # Reset the context
+                db_context.reset(db_token)
+    except SQLAlchemyError as e:
+        logger.error(f"Database session error: {str(e)}")
+        raise
 
 
-SessionDep = Annotated[Session, Depends(get_session)]
+# Dependency to get the current session from context
+def get_current_session() -> Session:
+    return context.db
+
+
+SessionDep = Annotated[Session, Depends(get_current_session)]

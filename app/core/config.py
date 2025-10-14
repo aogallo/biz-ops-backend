@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     ALGORITHMS: str = "RS256"
 
     # Database Configuration
-    DATABASE_URI: str = "postgresql+asyncpg://user:password@localhost:5432/mydb"
+    DATABASE_URI: str = "postgresql+psycopg2://user:password@localhost:5432/mydb"
 
     # Optional configurations
     DEBUG: bool = False
