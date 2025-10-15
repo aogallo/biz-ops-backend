@@ -1,11 +1,9 @@
-from typing import Any
 from fastapi import APIRouter, Depends
 
 from app.dependencies import verify_token
-from app.domain.entities.vendor import Vendor, VendorCreate
+from app.domain.entities.vendor import VendorCreate
 from app.infrastructure.database import get_session
 from app.services.vendor_service import VendorService
-
 
 router = APIRouter(
     prefix="/vendor",

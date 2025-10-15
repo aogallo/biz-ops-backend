@@ -1,10 +1,12 @@
 # DB Connection: Uses SQLAlchemy async engine
-from contextvars import ContextVar
-from fastapi import Depends
-from sqlmodel import SQLModel, Session, create_engine
-from sqlalchemy.exc import SQLAlchemyError
-from typing import Annotated, Optional
 import logging
+from contextvars import ContextVar
+from typing import Annotated
+
+from fastapi import Depends
+from sqlalchemy.exc import SQLAlchemyError
+from sqlmodel import Session, SQLModel, create_engine
+
 from app.core.config import settings
 from app.domain.entities.user import User
 
@@ -32,8 +34,10 @@ def create_db_and_tables():
 
 
 # Create context variables to store the current session and user
-db_context: ContextVar[Session] = ContextVar("db_context", default=None)
-user_context: ContextVar[Optional[User]] = ContextVar("user_context", default=None)
+db_context: ContextVar[Session | None] = ContextVar("db_context", default=None)
+user_context: ContextVar[User | None] = ContextVar(
+    "user_context", default=None
+)
 
 
 class RequestContext:

@@ -1,5 +1,8 @@
-from app.domain.entities.vendor import Vendor, VendorCreate
-from app.infrastructure.repositories.vendor_respository_impl import VendorRepositoryImpl
+from app.infrastructure.repositories.vendor_respository_impl import (
+    VendorRepositoryImpl,
+)
+
+from app.domain.entities.vendor import VendorCreate
 
 
 class VendorService:

@@ -1,6 +1,7 @@
 from app.domain.entities.user import User, UserCreate
-
-from app.infrastructure.repositories.user_repository_impl import UserRepositoryImpl
+from app.infrastructure.repositories.user_repository_impl import (
+    UserRepositoryImpl,
+)
 
 
 class UserService:
@@ -17,7 +18,9 @@ class UserService:
         # ).decode()
 
         new_user = User(
-            auth_id=user_data.auth_id, email=user_data.email, picture=user_data.picture
+            auth_id=user_data.auth_id,
+            email=user_data.email,
+            picture=user_data.picture,
         )
 
         return self.user_repo.create_user(new_user)

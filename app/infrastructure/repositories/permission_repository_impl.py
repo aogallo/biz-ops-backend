@@ -1,5 +1,5 @@
-from typing import List, Optional
 from sqlmodel import Session, select
+
 from app.domain.entities.permission import Permission
 from app.domain.entities.role import Role
 from app.domain.repositories.permission_repository import PermissionRepository
@@ -15,24 +15,30 @@ class PermissionRepositoryImpl(PermissionRepository):
         self.db.refresh(permission)
         return permission
 
-    def get_permission_by_id(self, permission_id: int) -> Optional[Permission]:
-        result = self.db.exec(select(Permission).where(Permission.id == permission_id))
+    def get_permission_by_id(self, permission_id: int) -> Permission | None:
+        result = self.db.exec(
+            select(Permission).where(Permission.id == permission_id)
+        )
         return result.first()
 
-    def get_permission_by_name(self, name: str) -> Optional[Permission]:
-        result = self.db.exec(select(Permission).where(Permission.name == name))
+    def get_permission_by_name(self, name: str) -> Permission | None:
+        result = self.db.exec(
+            select(Permission).where(Permission.name == name)
+        )
         return result.first()
 
-    def get_all_permissions(self) -> List[Permission]:
+    def get_all_permissions(self) -> list[Permission]:
         result = list(self.db.exec(select(Permission)))
         return result
 
     def update_permission(
         self, permission_id: int, permission: Permission
-    ) -> Optional[Permission]:
+    ) -> Permission | None:
         db_permission = self.get_permission_by_id(permission_id)
         if db_permission:
-            for key, value in permission.model_dump(exclude_unset=True).items():
+            for key, value in permission.model_dump(
+                exclude_unset=True
+            ).items():
                 setattr(db_permission, key, value)
             self.db.commit()
             self.db.refresh(db_permission)
@@ -46,7 +52,9 @@ class PermissionRepositoryImpl(PermissionRepository):
             return True
         return False
 
-    def assign_permission_to_role(self, permission_id: int, role_id: int) -> bool:
+    def assign_permission_to_role(
+        self, permission_id: int, role_id: int
+    ) -> bool:
         permission = self.get_permission_by_id(permission_id)
         role = self.db.exec(select(Role).where(Role.id == role_id)).first()
         if permission and role:
@@ -55,7 +63,9 @@ class PermissionRepositoryImpl(PermissionRepository):
             return True
         return False
 
-    def remove_permission_from_role(self, permission_id: int, role_id: int) -> bool:
+    def remove_permission_from_role(
+        self, permission_id: int, role_id: int
+    ) -> bool:
         permission = self.get_permission_by_id(permission_id)
         role = self.db.exec(select(Role).where(Role.id == role_id)).first()
         if permission and role:
@@ -63,4 +73,3 @@ class PermissionRepositoryImpl(PermissionRepository):
             self.db.commit()
             return True
         return False
-

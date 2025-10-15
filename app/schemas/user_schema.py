@@ -1,6 +1,6 @@
 """User API schemas for requests and responses."""
+
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -9,7 +9,7 @@ class UserBase(BaseModel):
     """Base user schema with common fields."""
 
     email: EmailStr
-    picture: Optional[str] = None
+    picture: str | None = None
 
 
 class UserCreate(UserBase):
@@ -21,8 +21,8 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     """Schema for updating a user."""
 
-    email: Optional[EmailStr] = None
-    picture: Optional[str] = None
+    email: EmailStr | None = None
+    picture: str | None = None
 
 
 class UserResponse(UserBase):
@@ -31,8 +31,8 @@ class UserResponse(UserBase):
     auth_id: str
     created_by: str
     created_at: datetime
-    updated_by: Optional[str] = None
-    updated_at: Optional[datetime] = None
+    updated_by: str | None = None
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -42,6 +42,3 @@ class UserListResponse(BaseModel):
 
     users: list[UserResponse]
     total: int = Field(description="Total number of users")
-
-
-

@@ -1,5 +1,6 @@
 """Common schemas used across the API."""
-from typing import Any, Optional
+
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -8,8 +9,10 @@ class ErrorResponse(BaseModel):
     """Standard error response schema."""
 
     detail: str = Field(..., description="Error message")
-    error_code: Optional[str] = Field(None, description="Error code for client handling")
-    field: Optional[str] = Field(None, description="Field that caused the error")
+    error_code: str | None = Field(
+        None, description="Error code for client handling"
+    )
+    field: str | None = Field(None, description="Field that caused the error")
 
 
 class HealthResponse(BaseModel):
@@ -24,7 +27,4 @@ class MessageResponse(BaseModel):
     """Generic message response."""
 
     message: str
-    data: Optional[Any] = None
-
-
-
+    data: Any | None = None
