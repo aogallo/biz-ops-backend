@@ -1,9 +1,10 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.config import settings
@@ -15,8 +16,8 @@ from app.core.exceptions import (
 )
 from app.core.logging_config import setup_logging
 from app.infrastructure.database import create_db_and_tables, engine
-from app.routes import user_routes, vendor_routes
-from app.schemas.common import ErrorResponse, HealthResponse
+from app.routes import user_routes
+from app.schemas.common import HealthResponse
 
 # Setup logging
 setup_logging()
@@ -31,12 +32,12 @@ async def lifespan(app: FastAPI):
     try:
         create_db_and_tables()
         logger.info("Database tables created successfully")
-    except Exception as e:
-        logger.error(f"Failed to initialize database: {e}")
+    except SQLAlchemyError as e:
+        logger.error("Failed to initialize database: %s", e)
         raise
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down Business Operations API...")
     engine.dispose()
@@ -56,19 +57,25 @@ app = FastAPI(
 
 # Exception handlers
 @app.exception_handler(AppException)
-async def app_exception_handler(request: Request, exc: AppException):
+async def app_exception_handler(_request: Request, exc: AppException):
     """Handle custom application exceptions."""
-    logger.error(f"Application error: {exc.message}", extra={"details": exc.details})
+    logger.error(
+        "Application error: %s", exc.message, extra={"details": exc.details}
+    )
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
-        content={"detail": exc.message, "error_code": exc.error_code, **exc.details},
+        content={
+            "detail": exc.message,
+            "error_code": exc.error_code,
+            **exc.details,
+        },
     )
 
 
 @app.exception_handler(NotFoundError)
-async def not_found_exception_handler(request: Request, exc: NotFoundError):
+async def not_found_exception_handler(_request: Request, exc: NotFoundError):
     """Handle not found exceptions."""
-    logger.warning(f"Resource not found: {exc.message}")
+    logger.warning("Resource not found: %s", exc.message)
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
         content={"detail": exc.message, "error_code": exc.error_code},
@@ -76,9 +83,11 @@ async def not_found_exception_handler(request: Request, exc: NotFoundError):
 
 
 @app.exception_handler(AuthenticationError)
-async def authentication_exception_handler(request: Request, exc: AuthenticationError):
+async def authentication_exception_handler(
+    _request: Request, exc: AuthenticationError
+):
     """Handle authentication exceptions."""
-    logger.warning(f"Authentication failed: {exc.message}")
+    logger.warning("Authentication failed: %s", exc.message)
     return JSONResponse(
         status_code=status.HTTP_401_UNAUTHORIZED,
         content={"detail": exc.message, "error_code": exc.error_code},
@@ -86,9 +95,11 @@ async def authentication_exception_handler(request: Request, exc: Authentication
 
 
 @app.exception_handler(AuthorizationError)
-async def authorization_exception_handler(request: Request, exc: AuthorizationError):
+async def authorization_exception_handler(
+    _request: Request, exc: AuthorizationError
+):
     """Handle authorization exceptions."""
-    logger.warning(f"Authorization failed: {exc.message}")
+    logger.warning("Authorization failed: %s", exc.message)
     return JSONResponse(
         status_code=status.HTTP_403_FORBIDDEN,
         content={"detail": exc.message, "error_code": exc.error_code},
@@ -96,9 +107,11 @@ async def authorization_exception_handler(request: Request, exc: AuthorizationEr
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
+async def validation_exception_handler(
+    _request: Request, exc: RequestValidationError
+):
     """Handle request validation errors."""
-    logger.warning(f"Validation error: {exc.errors()}")
+    logger.warning("Validation error: %s", exc.errors())
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={"detail": exc.errors(), "error_code": "VALIDATION_ERROR"},
@@ -106,12 +119,17 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 @app.exception_handler(SQLAlchemyError)
-async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
+async def sqlalchemy_exception_handler(
+    _request: Request, exc: SQLAlchemyError
+):
     """Handle database errors."""
-    logger.error(f"Database error: {str(exc)}")
+    logger.error("Database error: %s", str(exc))
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": "Database error occurred", "error_code": "DATABASE_ERROR"},
+        content={
+            "detail": "Database error occurred",
+            "error_code": "DATABASE_ERROR",
+        },
     )
 
 
@@ -119,19 +137,19 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
 async def health_check():
     """
     Health check endpoint.
-    
+
     Returns the API status, version, and database connection status.
     """
     # Check database connection
     try:
-        from sqlalchemy import text
+
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         db_status = "healthy"
-    except Exception as e:
-        logger.error(f"Database health check failed: {e}")
+    except SQLAlchemyError as e:
+        logger.error("Database health check failed: %s", e)
         db_status = "unhealthy"
-    
+
     return {
         "status": "healthy" if db_status == "healthy" else "degraded",
         "version": settings.API_VERSION,
@@ -143,15 +161,15 @@ async def health_check():
 async def detailed_health_check():
     """
     Detailed health check endpoint.
-    
-    Returns comprehensive health information about the API and its dependencies.
+
+    Returns comprehensive health information about the API and its
+    dependencies.
     """
     return await health_check()
 
 
 # Include routers
 app.include_router(router=user_routes.router)
-app.include_router(router=vendor_routes.router)
 
 
 # Log registered routes on startup
@@ -161,6 +179,10 @@ async def log_routes():
     logger.info("Registered routes:")
     for route in app.routes:
         if hasattr(route, "methods"):
-            logger.info(f"  {', '.join(route.methods)} {route.path}")
-    logger.info(f"API Documentation available at: /docs")
-    logger.info(f"ReDoc Documentation available at: /redoc")
+            logger.info(
+                "  %s %s",
+                ", ".join(route.methods),
+                route,
+            )
+    logger.info("API Documentation available at: /docs")
+    logger.info("ReDoc Documentation available at: /redoc")
