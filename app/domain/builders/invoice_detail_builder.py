@@ -14,9 +14,13 @@ class InvoiceDetailBuilder:
         Args:
             invoice_id: Optional invoice ID (can be set later)
         """
-        self._detail = InvoiceDetail()
-        if invoice_id:
-            self._detail.invoice_id = invoice_id
+        self._detail = InvoiceDetail(
+            invoice_id=invoice_id or 0,
+            product_name="",
+            quantity=0.0,
+            unit_price=0.0,
+            created_by="",
+        )
 
         # Set defaults
         self._detail.iva = 0.0
@@ -36,7 +40,10 @@ class InvoiceDetailBuilder:
         self._detail.total = 0.0
 
     def with_product(
-        self, name: str, code: str | None = None, description: str | None = None
+        self,
+        name: str,
+        code: str | None = None,
+        description: str | None = None,
     ) -> "InvoiceDetailBuilder":
         """Set product information.
 
@@ -74,7 +81,9 @@ class InvoiceDetailBuilder:
         self._detail.unit_price = unit_price
         return self
 
-    def with_price(self, quantity: float, unit_price: float) -> "InvoiceDetailBuilder":
+    def with_price(
+        self, quantity: float, unit_price: float
+    ) -> "InvoiceDetailBuilder":
         """Set both quantity and unit price in one call.
 
         Args:
@@ -119,7 +128,9 @@ class InvoiceDetailBuilder:
         self._detail.tasa_municipal = amount
         return self
 
-    def with_bebidas_alcoholicas(self, amount: float) -> "InvoiceDetailBuilder":
+    def with_bebidas_alcoholicas(
+        self, amount: float
+    ) -> "InvoiceDetailBuilder":
         """Set alcoholic beverages tax amount."""
         self._detail.bebidas_alcoholicas = amount
         return self
@@ -134,7 +145,9 @@ class InvoiceDetailBuilder:
         self._detail.cemento = amount
         return self
 
-    def with_bebidas_no_alcoholicas(self, amount: float) -> "InvoiceDetailBuilder":
+    def with_bebidas_no_alcoholicas(
+        self, amount: float
+    ) -> "InvoiceDetailBuilder":
         """Set non-alcoholic beverages tax amount."""
         self._detail.bebidas_no_alcoholicas = amount
         return self
@@ -210,9 +223,12 @@ class InvoiceDetailBuilder:
         Returns:
             Configured InvoiceDetail instance
         """
-        builder = cls().with_product(product_name, code=product_code).with_price(
-            quantity, unit_price
-        ).with_created_by(created_by)
+        builder = (
+            cls()
+            .with_product(product_name, code=product_code)
+            .with_price(quantity, unit_price)
+            .with_created_by(created_by)
+        )
 
         if iva > 0:
             builder = builder.with_iva(iva)

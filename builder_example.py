@@ -46,7 +46,7 @@ class ConcreteBuilder1(Builder):
         self._product = Product1()
 
     @property
-    def product(self) -> Product1:
+    def product(self) -> None:
         """
         Concrete Builders are supposed to provide their own methods for
         retrieving results. That's because various types of builders may create

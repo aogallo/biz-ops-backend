@@ -1,7 +1,8 @@
 """Pytest configuration and shared fixtures."""
+
 import os
-from typing import Generator
-from unittest.mock import Mock, patch
+from collections.abc import Generator
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -87,6 +88,3 @@ def set_test_env():
     os.environ.setdefault("AUTH0_AUDIENCE", "https://test-api")
     os.environ.setdefault("AUTH0_ISSUER", "https://test.auth0.com/")
     os.environ.setdefault("DATABASE_URI", "sqlite:///:memory:")
-
-
-

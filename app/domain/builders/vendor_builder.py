@@ -8,9 +8,23 @@ from app.domain.entities.vendor import Vendor
 class VendorBuilder:
     """Builder pattern for creating Vendor entities"""
 
-    def __init__(self, name: str, nit: str, email: str):
-        self._vendor = Vendor(name=name, nit=nit, email=email)
+    def __init__(self):
+        self._vendor = Vendor(
+            name="",
+            nit="",
+            email="",
+        )
         self._vendor.created_at = datetime.now(UTC)
+
+    def with_name(self, name: str) -> "VendorBuilder":
+        """Set vendor name"""
+        self._vendor.name = name
+        return self
+
+    def with_nit(self, nit: str) -> "VendorBuilder":
+        """Set vendor NIT"""
+        self._vendor.nit = nit
+        return self
 
     def with_date_birth(self, date_birth: str) -> "VendorBuilder":
         """Set vendor birth date"""
