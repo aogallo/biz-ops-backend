@@ -2,10 +2,10 @@
 from abc import ABC, abstractmethod
 
 from app.domain.entities.user import User
-from app.infrastructure.repositories.base_repository import BaseRepository
+from app.domain.repositories.base_repository import BaseRepository
 
 
-class UserRepository(ABC, BaseRepository):
+class UserRepository(BaseRepository[User], ABC):
     @abstractmethod
     def create_user(self, user: User) -> User:
         pass

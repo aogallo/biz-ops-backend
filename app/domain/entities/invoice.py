@@ -1,9 +1,13 @@
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.domain.entities.customer import Customer
 from app.domain.entities.journal_entry import JournalEntry
+
+if TYPE_CHECKING:
+    from app.domain.entities.invoice_detail import InvoiceDetail
 
 
 class InvoiceBase(SQLModel):
@@ -17,24 +21,15 @@ class InvoiceBase(SQLModel):
     customer_id: int = Field(foreign_key="customer.id")
 
     currency: str = "GTQ"
-    amount: float
+
+    # Summary amounts (calculated from details)
+    subtotal: float = Field(default=0.0)
+    total_taxes: float = Field(default=0.0)
+    total_amount: float = Field(default=0.0)
 
     state: str
     is_cancelled: bool | None = False
     cancelled_date: datetime | None = None
-
-    iva: float | None = 0.0  # VAT amount
-    petroleo: float | None = 0.0  # Petroleum tax
-    turismo_hospedaje: float | None = 0.0  # Tourism lodging tax
-    turismo_pasajes: float | None = 0.0  # Tourism transport tax
-    timbre_prensa: float | None = 0.0  # Newspaper stamp tax
-    bomberos: float | None = 0.0  # Firefighters tax
-    tasa_municipal: float | None = 0.0  # Municipal rate
-    bebidas_alcoholicas: float | None = 0.0  # Alcoholic beverages tax
-    tabaco: float | None = 0.0  # Tobacco tax
-    cemento: float | None = 0.0  # Cement tax
-    bebidas_no_alcoholicas: float | None = 0.0  # Non-alcoholic beverages tax
-    tarifa_portuaria: float | None = 0.0  # Port tariff
 
     # Relationships
     company: Customer = Relationship(
@@ -52,6 +47,20 @@ class InvoiceCreate(InvoiceBase):
     pass
 
 
+class InvoiceUpdate(SQLModel):
+    date: datetime | None = None
+    authorization_number: str | None = None
+    dte_type: str | None = None
+    serie: str | None = None
+    dte_number: str | None = None
+    company_id: int | None = None
+    customer_id: int | None = None
+    currency: str | None = None
+    state: str | None = None
+    is_cancelled: bool | None = None
+    cancelled_date: datetime | None = None
+
+
 class Invoice(InvoiceBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
 
@@ -59,3 +68,18 @@ class Invoice(InvoiceBase, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_by: str | None = Field(default=None, index=True)
     updated_at: datetime | None = Field(default=None)
+
+    # Relationship with invoice details
+    details: list["InvoiceDetail"] = Relationship(back_populates="invoice")
+
+    def calculate_totals(self):
+        """Calculate invoice totals from details"""
+        if not self.details:
+            self.subtotal = 0.0
+            self.total_taxes = 0.0
+            self.total_amount = 0.0
+            return
+
+        self.subtotal = sum(detail.subtotal for detail in self.details)
+        self.total_taxes = sum(detail.total_taxes for detail in self.details)
+        self.total_amount = self.subtotal + self.total_taxes
