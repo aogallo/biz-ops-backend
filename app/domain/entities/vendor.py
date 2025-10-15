@@ -7,10 +7,10 @@ from sqlmodel import Field, SQLModel
 class VendorBase(SQLModel):
     name: str = Field(unique=True, index=True)
     nit: str = Field(unique=True, index=True)
-    date_birth: str
-    comercial_activity: str
+    date_birth: str | None = Field(default=None)
+    comercial_activity: str | None = Field(default=None)
     email: EmailStr
-    address: str
+    address: str | None = Field(default=None)
 
 
 class Vendor(VendorBase, table=True):
