@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.routing import APIRoute
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -24,14 +25,30 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 
+# Log registered routes on startup
+async def log_routes():
+    """Log all registered routes."""
+    logger.info("Registered routes:")
+    for route in app.routes:
+        if isinstance(route, APIRoute):
+            logger.info(
+                "  %s %s",
+                ", ".join(route.methods),
+                route.path,
+            )
+    logger.info("API Documentation available at: /docs")
+    logger.info("ReDoc Documentation available at: /redoc")
+
+
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI | None):
     """Handle application startup and shutdown events."""
     # Startup
     logger.info("Starting up Business Operations API...")
     try:
         create_db_and_tables()
         logger.info("Database tables created successfully")
+        await log_routes()
     except SQLAlchemyError as e:
         logger.error("Failed to initialize database: %s", e)
         raise
@@ -57,7 +74,7 @@ app = FastAPI(
 
 # Exception handlers
 @app.exception_handler(AppException)
-async def app_exception_handler(_request: Request, exc: AppException):
+async def app_exception_handler(_: Request, exc: AppException):
     """Handle custom application exceptions."""
     logger.error(
         "Application error: %s", exc.message, extra={"details": exc.details}
@@ -73,7 +90,7 @@ async def app_exception_handler(_request: Request, exc: AppException):
 
 
 @app.exception_handler(NotFoundError)
-async def not_found_exception_handler(_request: Request, exc: NotFoundError):
+async def not_found_exception_handler(_: Request, exc: NotFoundError):
     """Handle not found exceptions."""
     logger.warning("Resource not found: %s", exc.message)
     return JSONResponse(
@@ -84,7 +101,7 @@ async def not_found_exception_handler(_request: Request, exc: NotFoundError):
 
 @app.exception_handler(AuthenticationError)
 async def authentication_exception_handler(
-    _request: Request, exc: AuthenticationError
+    _: Request, exc: AuthenticationError
 ):
     """Handle authentication exceptions."""
     logger.warning("Authentication failed: %s", exc.message)
@@ -95,9 +112,7 @@ async def authentication_exception_handler(
 
 
 @app.exception_handler(AuthorizationError)
-async def authorization_exception_handler(
-    _request: Request, exc: AuthorizationError
-):
+async def authorization_exception_handler(_: Request, exc: AuthorizationError):
     """Handle authorization exceptions."""
     logger.warning("Authorization failed: %s", exc.message)
     return JSONResponse(
@@ -108,7 +123,7 @@ async def authorization_exception_handler(
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(
-    _request: Request, exc: RequestValidationError
+    _: Request, exc: RequestValidationError
 ):
     """Handle request validation errors."""
     logger.warning("Validation error: %s", exc.errors())
@@ -119,9 +134,7 @@ async def validation_exception_handler(
 
 
 @app.exception_handler(SQLAlchemyError)
-async def sqlalchemy_exception_handler(
-    _request: Request, exc: SQLAlchemyError
-):
+async def sqlalchemy_exception_handler(_: Request, exc: SQLAlchemyError):
     """Handle database errors."""
     logger.error("Database error: %s", str(exc))
     return JSONResponse(
@@ -170,19 +183,3 @@ async def detailed_health_check():
 
 # Include routers
 app.include_router(router=user_routes.router)
-
-
-# Log registered routes on startup
-@app.on_event("startup")
-async def log_routes():
-    """Log all registered routes."""
-    logger.info("Registered routes:")
-    for route in app.routes:
-        if hasattr(route, "methods"):
-            logger.info(
-                "  %s %s",
-                ", ".join(route.methods),
-                route,
-            )
-    logger.info("API Documentation available at: /docs")
-    logger.info("ReDoc Documentation available at: /redoc")

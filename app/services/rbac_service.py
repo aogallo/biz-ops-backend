@@ -74,4 +74,3 @@ class RBACService:
         if not user:
             return []
         return user.roles
-

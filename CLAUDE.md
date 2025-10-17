@@ -114,3 +114,7 @@ This is a FastAPI backend using **Domain-Driven Design (DDD)** with clear separa
 ### Type Annotation Standards
 IMPORTANT: Use Modern Type Syntax
 NEVER use Optional[T] - always use X | None instead
+
+# Workflow
+- Be sure to typecheck when you’re done making a series of code changes
+- Prefer running single tests, and not the whole test suite, for performance
