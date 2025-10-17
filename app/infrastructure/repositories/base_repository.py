@@ -9,5 +9,7 @@ class BaseRepository:
         self.db = db if db is not None else get_current_session()
 
 
-def get_base_repository(db: Session = Depends(get_current_session)) -> BaseRepository:
+def get_base_repository(
+    db: Session = Depends(get_current_session),
+) -> BaseRepository:
     return BaseRepository(db=db)

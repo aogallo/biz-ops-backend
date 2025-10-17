@@ -9,14 +9,14 @@ if TYPE_CHECKING:
 
 class InvoiceDetailBase(SQLModel):
     invoice_id: int = Field(foreign_key="invoice.id")
-    
+
     # Product/Service information
     product_code: str | None = None
     product_name: str
     description: str | None = None
     quantity: float
     unit_price: float
-    
+
     # Tax details
     iva: float | None = 0.0  # VAT amount
     petroleo: float | None = 0.0  # Petroleum tax
@@ -30,7 +30,7 @@ class InvoiceDetailBase(SQLModel):
     cemento: float | None = 0.0  # Cement tax
     bebidas_no_alcoholicas: float | None = 0.0  # Non-alcoholic beverages tax
     tarifa_portuaria: float | None = 0.0  # Port tariff
-    
+
     # Calculated fields
     subtotal: float = Field(default=0.0)  # quantity * unit_price
     total_taxes: float = Field(default=0.0)  # sum of all taxes
@@ -63,22 +63,30 @@ class InvoiceDetailUpdate(SQLModel):
 
 class InvoiceDetail(InvoiceDetailBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    
+
     created_by: str = Field(index=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_by: str | None = Field(default=None, index=True)
     updated_at: datetime | None = Field(default=None)
-    
+
     # Relationships
     invoice: "Invoice" = Relationship(back_populates="details")
-    
+
     def calculate_totals(self):
         """Calculate subtotal, total taxes, and total"""
         self.subtotal = self.quantity * self.unit_price
         self.total_taxes = (
-            (self.iva or 0) + (self.petroleo or 0) + (self.turismo_hospedaje or 0) +
-            (self.turismo_pasajes or 0) + (self.timbre_prensa or 0) + (self.bomberos or 0) +
-            (self.tasa_municipal or 0) + (self.bebidas_alcoholicas or 0) + (self.tabaco or 0) +
-            (self.cemento or 0) + (self.bebidas_no_alcoholicas or 0) + (self.tarifa_portuaria or 0)
+            (self.iva or 0)
+            + (self.petroleo or 0)
+            + (self.turismo_hospedaje or 0)
+            + (self.turismo_pasajes or 0)
+            + (self.timbre_prensa or 0)
+            + (self.bomberos or 0)
+            + (self.tasa_municipal or 0)
+            + (self.bebidas_alcoholicas or 0)
+            + (self.tabaco or 0)
+            + (self.cemento or 0)
+            + (self.bebidas_no_alcoholicas or 0)
+            + (self.tarifa_portuaria or 0)
         )
         self.total = self.subtotal + self.total_taxes

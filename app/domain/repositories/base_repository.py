@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar, Generic, Optional, List
+from typing import Generic, TypeVar
 
 T = TypeVar("T")
 
@@ -11,12 +11,12 @@ class BaseRepository(Generic[T], ABC):
         pass
 
     @abstractmethod
-    def get_by_id(self, id: int) -> Optional[T]:
+    def get_by_id(self, id: int) -> T | None:
         """Get entity by ID"""
         pass
 
     @abstractmethod
-    def get_all(self, skip: int = 0, limit: int = 100) -> List[T]:
+    def get_all(self, skip: int = 0, limit: int = 100) -> list[T]:
         """Get all entities with pagination"""
         pass
 
