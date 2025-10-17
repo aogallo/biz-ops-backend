@@ -43,7 +43,7 @@ def get_credentials(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
-        )
+        ) from e
 
 
 def verify_token(token: str = Depends(get_credentials)):
@@ -60,7 +60,7 @@ def verify_token(token: str = Depends(get_credentials)):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid url signature",
-            )
+            ) from e
 
         try:
             # Convert token to bytes if needed
@@ -72,7 +72,7 @@ def verify_token(token: str = Depends(get_credentials)):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token signature",
-            )
+            ) from e
 
         try:
             payload = jwt.decode(
@@ -91,25 +91,25 @@ def verify_token(token: str = Depends(get_credentials)):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token has expired",
-            )
+            ) from None
         except jwt.InvalidAudienceError:
             logger.error("Invalid audience")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid audience",
-            )
+            ) from None
         except jwt.InvalidIssuerError:
             logger.error("Invalid issuer")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid issuer",
-            )
+            ) from None
         except jwt.InvalidTokenError as e:
             logger.error(f"Invalid token: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token",
-            )
+            ) from e
     except HTTPException:
         raise
     except Exception as e:
@@ -117,7 +117,7 @@ def verify_token(token: str = Depends(get_credentials)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error during authentication",
-        )
+        ) from e
 
 
 def get_current_user(
