@@ -1,4 +1,3 @@
-from typing import Optional, List
 from sqlmodel import select
 
 from app.domain.entities.vendor import Vendor, VendorCreate
@@ -13,11 +12,11 @@ class VendorRepositoryImpl(VendorRepository):
         self.db.refresh(model)
         return model
 
-    def get_by_id(self, id: int) -> Optional[Vendor]:
+    def get_by_id(self, id: int) -> Vendor | None:
         """Get vendor by ID"""
         return self.db.get(Vendor, id)
 
-    def get_all(self, skip: int = 0, limit: int = 100) -> List[Vendor]:
+    def get_all(self, skip: int = 0, limit: int = 100) -> list[Vendor]:
         """Get all vendors with pagination"""
         statement = select(Vendor).offset(skip).limit(limit)
         result = self.db.exec(statement)
@@ -82,8 +81,8 @@ class VendorRepositoryImpl(VendorRepository):
     def search_vendors(self, search_term: str) -> list[Vendor]:
         """Search vendors by name or NIT"""
         statement = select(Vendor).where(
-            (Vendor.name.ilike(f"%{search_term}%")) |
-            (Vendor.nit.ilike(f"%{search_term}%"))
+            (Vendor.name.ilike(f"%{search_term}%"))
+            | (Vendor.nit.ilike(f"%{search_term}%"))
         )
         result = self.db.exec(statement)
         return list(result)

@@ -136,7 +136,7 @@ def get_current_user(
         )
 
     # Create a user repository with the session
-    user_repo = UserRepositoryImpl(session)
+    user_repo = UserRepositoryImpl()
 
     # Try to find the user by auth_id
     user = user_repo.get_user_by_id(auth_id)
