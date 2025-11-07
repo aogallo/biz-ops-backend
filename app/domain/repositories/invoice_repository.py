@@ -2,10 +2,9 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 
 from app.domain.entities.invoice import Invoice, InvoiceCreate
-from app.domain.repositories.base_repository import BaseRepository
 
 
-class InvoiceRepository(BaseRepository[Invoice], ABC):
+class InvoiceRepository(ABC):
     """Invoice repository interface extending BaseRepository"""
 
     @abstractmethod

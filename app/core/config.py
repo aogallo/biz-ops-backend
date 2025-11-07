@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
 
     @field_validator("AUTH0_ISSUER")
-    def validate_auth0_issuer(cls, v):  # noqa: N805
+    def validate_auth0_issuer(self, v: str) -> str:  # noqa: N805
         """Ensure AUTH0_ISSUER ends with a trailing slash."""
         if not v.endswith("/"):
             return f"{v}/"

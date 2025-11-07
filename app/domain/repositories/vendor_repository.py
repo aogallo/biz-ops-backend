@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
 
 from app.domain.entities.vendor import Vendor, VendorCreate
-from app.domain.repositories.base_repository import BaseRepository
 
 
-class VendorRepository(BaseRepository[Vendor], ABC):
+class VendorRepository(ABC):
     @abstractmethod
     def create_vendor(self, vendor: VendorCreate) -> Vendor:
         pass

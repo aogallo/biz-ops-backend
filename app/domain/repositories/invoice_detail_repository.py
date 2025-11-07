@@ -4,10 +4,9 @@ from app.domain.entities.invoice_detail import (
     InvoiceDetail,
     InvoiceDetailCreate,
 )
-from app.domain.repositories.base_repository import BaseRepository
 
 
-class InvoiceDetailRepository(BaseRepository[InvoiceDetail], ABC):
+class InvoiceDetailRepository(ABC):
     """Invoice detail repository interface extending BaseRepository"""
 
     @abstractmethod
