@@ -14,4 +14,4 @@ async def login(
 ):
     print(f"Token from hte route: {token}")
     auth_service = AuthService()
-    data = auth_service.login(token)
+    auth_service.login(token)
