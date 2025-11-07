@@ -1,4 +1,5 @@
 """Unit tests for UserService."""
+
 from unittest.mock import Mock
 
 import pytest
@@ -78,8 +79,16 @@ class TestUserService:
         # Arrange
         mock_repo = Mock()
         mock_users = [
-            User(auth_id="auth0|1", email="user1@example.com", created_by="system"),
-            User(auth_id="auth0|2", email="user2@example.com", created_by="system"),
+            User(
+                auth_id="auth0|1",
+                email="user1@example.com",
+                created_by="system",
+            ),
+            User(
+                auth_id="auth0|2",
+                email="user2@example.com",
+                created_by="system",
+            ),
         ]
         mock_repo.get_all_users.return_value = mock_users
 
@@ -93,6 +102,3 @@ class TestUserService:
         assert result[0].auth_id == "auth0|1"
         assert result[1].auth_id == "auth0|2"
         mock_repo.get_all_users.assert_called_once()
-
-
-

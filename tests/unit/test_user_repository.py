@@ -1,9 +1,12 @@
 """Unit tests for UserRepository."""
+
 import pytest
 from sqlmodel import Session
 
 from app.domain.entities.user import User
-from app.infrastructure.repositories.user_repository_impl import UserRepositoryImpl
+from app.infrastructure.repositories.user_repository_impl import (
+    UserRepositoryImpl,
+)
 
 
 class TestUserRepository:
@@ -71,6 +74,3 @@ class TestUserRepository:
         auth_ids = [u.auth_id for u in users]
         assert test_user.auth_id in auth_ids
         assert another_user.auth_id in auth_ids
-
-
-

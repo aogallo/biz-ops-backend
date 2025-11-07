@@ -1,4 +1,5 @@
 """Integration tests for user routes."""
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -16,7 +17,11 @@ class TestUserRoutes:
         assert response.status_code == 403
 
     def test_read_users_success(
-        self, client: TestClient, test_user: User, mock_verify_token, mock_get_current_user
+        self,
+        client: TestClient,
+        test_user: User,
+        mock_verify_token,
+        mock_get_current_user,
     ):
         """Test reading users with valid authentication."""
         response = client.get("/users/")
@@ -25,7 +30,7 @@ class TestUserRoutes:
         users = response.json()
         assert isinstance(users, list)
         assert len(users) >= 1
-        
+
         # Verify user structure
         first_user = users[0]
         assert "auth_id" in first_user
@@ -40,6 +45,3 @@ class TestUserRoutes:
         data = response.json()
         assert "message" in data
         assert "version" in data
-
-
-

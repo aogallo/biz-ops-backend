@@ -69,7 +69,9 @@ class TestInvoiceDetailBuilder:
     def test_detail_missing_required_fields(self):
         """Test that missing required fields raise ValueError."""
         with pytest.raises(ValueError, match="Product name is required"):
-            InvoiceDetailBuilder().with_price(1, 100.0).with_created_by("test").build()
+            InvoiceDetailBuilder().with_price(1, 100.0).with_created_by(
+                "test"
+            ).build()
 
         with pytest.raises(ValueError, match="Quantity is required"):
             (
@@ -90,7 +92,9 @@ class TestInvoiceDetailBuilder:
 
     def test_detail_invalid_quantity(self):
         """Test that invalid quantity raises ValueError."""
-        with pytest.raises(ValueError, match="Quantity must be greater than 0"):
+        with pytest.raises(
+            ValueError, match="Quantity must be greater than 0"
+        ):
             (
                 InvoiceDetailBuilder()
                 .with_product("Product")
@@ -234,9 +238,15 @@ class TestInvoiceBuilder:
     def test_add_multiple_lines_at_once(self):
         """Test adding multiple line items at once."""
         details = [
-            InvoiceDetailBuilder.create_line("Product A", 2, 100.0, "test_user"),
-            InvoiceDetailBuilder.create_line("Product B", 1, 200.0, "test_user"),
-            InvoiceDetailBuilder.create_line("Product C", 5, 50.0, "test_user"),
+            InvoiceDetailBuilder.create_line(
+                "Product A", 2, 100.0, "test_user"
+            ),
+            InvoiceDetailBuilder.create_line(
+                "Product B", 1, 200.0, "test_user"
+            ),
+            InvoiceDetailBuilder.create_line(
+                "Product C", 5, 50.0, "test_user"
+            ),
         ]
 
         invoice = (
@@ -264,7 +274,9 @@ class TestInvoiceBuilder:
         with pytest.raises(ValueError, match="Invoice date is required"):
             InvoiceBuilder().build()
 
-        with pytest.raises(ValueError, match="Authorization number is required"):
+        with pytest.raises(
+            ValueError, match="Authorization number is required"
+        ):
             InvoiceBuilder().with_date(datetime.now()).build()
 
     def test_invoice_with_cancelled_status(self):
@@ -336,4 +348,3 @@ class TestInvoiceBuilder:
 
         assert invoice.updated_by == "admin_user"
         assert invoice.updated_at is not None
-

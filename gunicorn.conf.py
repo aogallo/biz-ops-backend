@@ -1,4 +1,5 @@
 """Gunicorn configuration file for production deployment."""
+
 import multiprocessing
 import os
 
@@ -7,7 +8,9 @@ bind = f"0.0.0.0:{os.getenv('PORT', '8000')}"
 backlog = 2048
 
 # Worker processes
-workers = int(os.getenv("GUNICORN_WORKERS", multiprocessing.cpu_count() * 2 + 1))
+workers = int(
+    os.getenv("GUNICORN_WORKERS", multiprocessing.cpu_count() * 2 + 1)
+)
 worker_class = "uvicorn.workers.UvicornWorker"
 worker_connections = 1000
 max_requests = 1000
@@ -20,7 +23,9 @@ keepalive = 5
 accesslog = "-"
 errorlog = "-"
 loglevel = os.getenv("LOG_LEVEL", "info").lower()
-access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(D)s'
+access_log_format = (
+    '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(D)s'
+)
 
 # Process naming
 proc_name = "bizops-api"
@@ -56,6 +61,3 @@ def worker_int(worker):
 def worker_abort(worker):
     """Called when a worker receives the SIGABRT signal."""
     print(f"Worker {worker.pid} received SIGABRT")
-
-
-

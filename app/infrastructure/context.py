@@ -11,4 +11,3 @@ def set_user_context(current_user: User = Depends(get_current_user)):
         yield current_user
     finally:
         user_context.reset(token)
-
