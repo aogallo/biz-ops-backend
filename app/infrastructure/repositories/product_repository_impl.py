@@ -8,7 +8,7 @@ from app.infrastructure.database import get_current_session
 
 
 class ProductRepositoryImpl(ProductRepository):
-    """Implementation of ProductRepository interface."""
+    """Implementation of Product Repository Interface."""
 
     def __init__(self, session: Session | None = None) -> None:
         # Use provided session or get from context
@@ -29,7 +29,6 @@ class ProductRepositoryImpl(ProductRepository):
 
     @override
     def get_by_id(self, product_id: int) -> Product | None:
-
         return self.db.get(Product, product_id)
 
     @override

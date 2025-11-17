@@ -5,7 +5,7 @@ from app.domain.entities.invoice import Invoice, InvoiceCreate
 
 
 class InvoiceRepository(ABC):
-    """Invoice repository interface extending BaseRepository"""
+    """Invoice repository interface"""
 
     @abstractmethod
     def create_invoice(self, invoice: InvoiceCreate) -> Invoice:

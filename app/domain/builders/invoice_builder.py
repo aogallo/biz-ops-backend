@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 
 from app.domain.builders.invoice_detail_builder import InvoiceDetailBuilder
-from app.domain.entities.invoice import Invoice
+from app.domain.entities.invoice import Invoice, InvoiceState
 from app.domain.entities.invoice_detail import InvoiceDetail
 
 
@@ -43,9 +43,26 @@ class InvoiceBuilder:
         )
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        date: datetime,
+        authorization_number: str,
+        dte_type: str,
+        serie: str,
+        dte_number: str,
+        company_id: int,
+        customer_id: int,
+    ):
         """Initialize the invoice builder."""
-        self._invoice = Invoice()
+        self._invoice = Invoice(
+            date=date,
+            authorization_number=authorization_number,
+            dte_type=dte_type,
+            serie=serie,
+            dte_number=dte_number,
+            company_id=company_id,
+            customer_id=customer_id,
+        )
         self._invoice.created_at = datetime.now(UTC)
         self._invoice.currency = "GTQ"
         self._invoice.subtotal = 0.0
@@ -64,7 +81,7 @@ class InvoiceBuilder:
         dte_number: str,
         company_id: int,
         customer_id: int,
-        state: str,
+        state: InvoiceState,
         created_by: str,
         currency: str = "GTQ",
     ) -> "InvoiceBuilder":
@@ -193,7 +210,7 @@ class InvoiceBuilder:
         self._invoice.currency = currency
         return self
 
-    def with_state(self, state: str) -> "InvoiceBuilder":
+    def with_state(self, state: InvoiceState) -> "InvoiceBuilder":
         """Set invoice state.
 
         Args:

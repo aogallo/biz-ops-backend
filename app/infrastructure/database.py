@@ -1,5 +1,6 @@
 # DB Connection: Uses SQLAlchemy async engine
 import logging
+from collections.abc import Generator
 from contextvars import ContextVar
 from typing import Annotated
 
@@ -60,10 +61,10 @@ class RequestContext:
 context = RequestContext()
 
 
-def get_session():
+def get_session() -> Generator[Session, None, None]:
     """
     FastAPI dependency to provide database session.
-    
+
     Creates a new session for each request and ensures it's properly closed.
     """
     try:
@@ -77,7 +78,7 @@ def get_session():
 def get_current_session() -> Session:
     """
     Get a database session outside of FastAPI dependency injection.
-    
+
     Use this when you need a session in repository __init__ methods.
     Note: Sessions created this way should be managed manually.
     """

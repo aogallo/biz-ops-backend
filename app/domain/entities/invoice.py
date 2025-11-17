@@ -1,8 +1,9 @@
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from sqlmodel import Field, Relationship, SQLModel
 
+from app.domain.entities.company import Company
 from app.domain.entities.customer import Customer
 from app.domain.entities.journal_entry import JournalEntry
 
@@ -10,15 +11,18 @@ if TYPE_CHECKING:
     from app.domain.entities.invoice_detail import InvoiceDetail
 
 
+InvoiceState = Literal["draft", "open", "paid", "void"]
+
+
 class InvoiceBase(SQLModel):
     date: datetime
     authorization_number: str
     dte_type: str
-    serie: str
+    serie: str = Field(index=True)
     dte_number: str
 
-    company_id: int = Field(foreign_key="customer.id")
-    customer_id: int = Field(foreign_key="customer.id")
+    company_id: int = Field(foreign_key="customer.id", index=True)
+    customer_id: int = Field(foreign_key="customer.id", index=True)
 
     currency: str = "GTQ"
 
@@ -27,12 +31,17 @@ class InvoiceBase(SQLModel):
     total_taxes: float = Field(default=0.0)
     total_amount: float = Field(default=0.0)
 
-    state: str
+    # Draft: The invoice is still being created and has not yet been sent to the customer.
+    # Open / Due: The invoice has been finalized and sent, but payment has not yet been received.
+    # Paid: The invoice has been paid in full.
+    # Void / Cancelled: The invoice was created by mistake and has been canceled.
+
+    state: InvoiceState = "draft"
     is_cancelled: bool | None = False
     cancelled_date: datetime | None = None
 
     # Relationships
-    company: Customer = Relationship(
+    company: Company = Relationship(
         sa_relationship_kwargs={"foreign_keys": "[Invoice.company_id]"}
     )
     customer: Customer = Relationship(
@@ -64,7 +73,7 @@ class InvoiceUpdate(SQLModel):
 class Invoice(InvoiceBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
 
-    created_by: str = Field(index=True)
+    created_by: str = Field(index=True, default=None)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_by: str | None = Field(default=None, index=True)
     updated_at: datetime | None = Field(default=None)

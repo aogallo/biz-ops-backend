@@ -4,8 +4,6 @@ Examples of how to use the abstract BaseRepository pattern and Builder patterns
 
 from datetime import UTC, datetime
 
-from pydantic import EmailStr
-
 from app.domain.builders import (
     InvoiceBuilder,
     InvoiceDetailBuilder,
@@ -21,7 +19,7 @@ def vendor_examples():
     vendor = (
         vendor_builder.with_name("Acme Corporation")
         .with_nit("12345678-9")
-        .with_email(EmailStr("contact@acme.com"))
+        .with_email("contact@acme.com")
         .with_commercial_activity("Software Development")
         .with_address("123 Main St, Guatemala City")
         .with_date_birth("1990-01-01")
@@ -35,7 +33,7 @@ def vendor_examples():
     vendor2 = VendorBuilder.create_vendor(
         name="Tech Solutions Ltd",
         nit="98765432-1",
-        email=EmailStr("info@techsolutions.com"),
+        email="info@techsolutions.com",
         created_by="system",
         commercial_activity="IT Services",
         address="456 Business Ave",
@@ -60,7 +58,6 @@ def invoice_examples():
         .with_company_id(1)
         .with_customer_id(2)
         .with_currency("GTQ")
-        .with_state("ACTIVE")
         .with_created_by("admin")
         .build()
     )

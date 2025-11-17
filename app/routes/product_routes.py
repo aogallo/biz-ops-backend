@@ -1,13 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.dependencies import verify_token
 from app.domain.entities.product import Product, ProductCreate
 from app.infrastructure.database import get_session
 from app.services.product_service import ProductService
 
 router = APIRouter(
     prefix="/products",
-    tags=["products"],
-    dependencies=[Depends(get_session)],  # Populates context
+    tags=["Products"],
+    dependencies=[
+        Depends(verify_token),
+        Depends(get_session),
+    ],  # Populates context
 )
 
 
@@ -37,4 +41,3 @@ def list_products():
     """
     service = ProductService()
     return service.list_all_products()
-

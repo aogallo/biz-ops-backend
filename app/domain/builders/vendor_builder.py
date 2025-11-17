@@ -2,14 +2,14 @@ from datetime import UTC, datetime
 
 from pydantic import EmailStr
 
-from app.domain.entities.vendor import Vendor
+from app.domain.entities.vendor import Company
 
 
 class VendorBuilder:
     """Builder pattern for creating Vendor entities"""
 
     def __init__(self):
-        self._vendor = Vendor(
+        self._vendor = Company(
             name="",
             nit="",
             email="",
@@ -57,7 +57,7 @@ class VendorBuilder:
         self._vendor.updated_at = datetime.now(UTC)
         return self
 
-    def build(self) -> Vendor:
+    def build(self) -> Company:
         """Build and return the vendor instance"""
         # Validate required fields
         if not self._vendor.name:
@@ -81,7 +81,7 @@ class VendorBuilder:
         date_birth: str | None = None,
         commercial_activity: str | None = None,
         address: str | None = None,
-    ) -> Vendor:
+    ) -> Company:
         """Convenience method to create a vendor with required fields"""
         builder = cls()
         builder.with_name(name).with_nit(nit).with_email(

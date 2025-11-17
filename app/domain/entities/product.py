@@ -14,12 +14,14 @@ class ProductBase(SQLModel):
     stock: int = 0
 
 
-class ProductCreate(SQLModel):
+class ProductCreate(ProductBase):
     pass
 
 
 class Product(ProductBase, table=True):
+    __tablename__ = "products"
     id: int | None = Field(default=None, primary_key=True)
+
     created_by: str = Field(index=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_by: str | None = Field(default=None, index=True)

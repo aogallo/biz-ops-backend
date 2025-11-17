@@ -6,7 +6,7 @@ from app.infrastructure.database import get_current_session
 
 
 class UserRepositoryImpl(UserRepository):
-    """Implementation of UserRepository interface."""
+    """Implementation of User Repository Interface."""
 
     def __init__(self, session: Session | None = None) -> None:
         # Use provided session or get from context

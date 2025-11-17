@@ -7,7 +7,7 @@ from app.services.user_service import UserService
 
 router = APIRouter(
     prefix="/users",
-    tags=["users"],
+    tags=["Users"],
     dependencies=[
         Depends(verify_token),
         Depends(

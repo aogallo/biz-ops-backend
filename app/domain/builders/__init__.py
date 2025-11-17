@@ -23,5 +23,6 @@ Example usage:
 
 from app.domain.builders.invoice_builder import InvoiceBuilder
 from app.domain.builders.invoice_detail_builder import InvoiceDetailBuilder
+from app.domain.builders.vendor_builder import VendorBuilder
 
-__all__ = ["InvoiceBuilder", "InvoiceDetailBuilder"]
+__all__ = ["InvoiceBuilder", "InvoiceDetailBuilder", "VendorBuilder"]

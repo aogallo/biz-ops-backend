@@ -4,7 +4,7 @@ from pydantic import EmailStr
 from sqlmodel import Field, SQLModel
 
 
-class VendorBase(SQLModel):
+class CompanyBase(SQLModel):
     name: str = Field(unique=True, index=True)
     nit: str = Field(unique=True, index=True)
     date_birth: str | None = Field(default=None)
@@ -13,7 +13,7 @@ class VendorBase(SQLModel):
     address: str | None = Field(default=None)
 
 
-class Vendor(VendorBase, table=True):
+class Company(CompanyBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
 
     created_by: str = Field(index=True, default="test")
@@ -22,5 +22,12 @@ class Vendor(VendorBase, table=True):
     updated_at: datetime | None = Field(default=None)
 
 
-class VendorCreate(VendorBase):
+class CompanyCreate(CompanyBase):
     pass
+
+
+class CompanyResponse(CompanyBase):
+    id: int
+
+    created_at: datetime
+    updated_at: datetime | None
