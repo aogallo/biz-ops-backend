@@ -7,25 +7,12 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.core.config import settings
 from app.domain.entities.user import User
 from app.infrastructure.database import SessionDep
-from app.infrastructure.repositories.permission_repository_impl import (
-    PermissionRepositoryImpl,
-)
-from app.infrastructure.repositories.role_repository_impl import (
-    RoleRepositoryImpl,
-)
 from app.infrastructure.repositories.user_repository_impl import (
     UserRepositoryImpl,
 )
-from app.services.rbac_service import RBACService
 
 logger = logging.getLogger(__name__)
 oauth2_scheme = HTTPBearer()
-
-
-def get_rbac_service(session: SessionDep) -> RBACService:
-    role_repo = RoleRepositoryImpl(session)
-    permission_repo = PermissionRepositoryImpl(session)
-    return RBACService(role_repo, permission_repo)
 
 
 def get_credentials(
@@ -83,7 +70,7 @@ def verify_token(token: str = Depends(get_credentials)):
                 issuer=settings.AUTH0_ISSUER,
             )
             logger.debug(
-                f"Successfully decoded JWT payload for user: {payload.get('sub')}"
+                f"Successfully decoded JWT payload for user: {payload}"
             )
             return payload
         except jwt.ExpiredSignatureError:
@@ -136,7 +123,7 @@ def get_current_user(
         )
 
     # Create a user repository with the session
-    user_repo = UserRepositoryImpl()
+    user_repo = UserRepositoryImpl(session)
 
     # Try to find the user by auth_id
     user = user_repo.get_user_by_id(auth_id)
@@ -160,33 +147,33 @@ def get_current_user(
     return user
 
 
-class PermissionChecker:
-    def __init__(self, resource: str, action: str):
-        self.resource = resource
-        self.action = action
-
-    def __call__(
-        self,
-        token_payload: dict = Depends(verify_token),
-        rbac_service: RBACService = Depends(get_rbac_service),
-    ):
-        user_auth_id = token_payload.get("sub")
-        if not user_auth_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token payload",
-            )
-
-        has_permission = rbac_service.check_permission(
-            user_auth_id, self.resource, self.action
-        )
-        if not has_permission:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Permission denied: {self.action} on {self.resource}",
-            )
-        return token_payload
-
-
-def check_permission(resource: str, action: str):
-    return PermissionChecker(resource, action)
+# class PermissionChecker:
+#     def __init__(self, resource: str, action: str):
+#         self.resource = resource
+#         self.action = action
+#
+#     def __call__(
+#         self,
+#         token_payload: dict = Depends(verify_token),
+#         rbac_service: RBACService = Depends(get_rbac_service),
+#     ):
+#         user_auth_id = token_payload.get("sub")
+#         if not user_auth_id:
+#             raise HTTPException(
+#                 status_code=status.HTTP_401_UNAUTHORIZED,
+#                 detail="Invalid token payload",
+#             )
+#
+#         has_permission = rbac_service.check_permission(
+#             user_auth_id, self.resource, self.action
+#         )
+#         if not has_permission:
+#             raise HTTPException(
+#                 status_code=status.HTTP_403_FORBIDDEN,
+#                 detail=f"Permission denied: {self.action} on {self.resource}",
+#             )
+#         return token_payload
+#
+#
+# def check_permission(resource: str, action: str):
+#     return PermissionChecker(resource, action)

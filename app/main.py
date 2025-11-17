@@ -17,7 +17,7 @@ from app.core.exceptions import (
 )
 from app.core.logging_config import setup_logging
 from app.infrastructure.database import create_db_and_tables, engine
-from app.routes import user_routes
+from app.routes import product_routes, user_routes
 from app.schemas.common import HealthResponse
 
 # Setup logging
@@ -183,3 +183,4 @@ async def detailed_health_check():
 
 # Include routers
 app.include_router(router=user_routes.router)
+app.include_router(router=product_routes.router)

@@ -1,4 +1,4 @@
-from sqlmodel import select
+from sqlmodel import Session, select
 
 from app.domain.entities.user import User
 from app.domain.repositories.user_repository import UserRepository
@@ -8,8 +8,9 @@ from app.infrastructure.database import get_current_session
 class UserRepositoryImpl(UserRepository):
     """Implementation of UserRepository interface."""
 
-    def __init__(self) -> None:
-        self.db = get_current_session()
+    def __init__(self, session: Session | None = None) -> None:
+        # Use provided session or get from context
+        self.db = session or get_current_session()
 
     def create_user(self, user: User) -> User:
         self.db.add(user)

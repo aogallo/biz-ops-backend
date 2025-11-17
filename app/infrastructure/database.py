@@ -21,7 +21,7 @@ try:
         max_overflow=10,  # Allow some overflow for peak loads
     )
 except Exception as e:
-    logger.error(f"Failed to create database engine: {str(e)}")
+    logger.error("Failed to create database engine: %s", str(e))
     raise
 
 
@@ -29,7 +29,7 @@ def create_db_and_tables():
     try:
         SQLModel.metadata.create_all(engine)
     except SQLAlchemyError as e:
-        logger.error(f"Failed to create database tables: {str(e)}")
+        logger.error("Failed to create database tables: %s", str(e))
         raise
 
 
@@ -61,23 +61,27 @@ context = RequestContext()
 
 
 def get_session():
+    """
+    FastAPI dependency to provide database session.
+    
+    Creates a new session for each request and ensures it's properly closed.
+    """
     try:
         with Session(engine) as session:
-            # Set the session in the context
-            db_token = db_context.set(session)
-            try:
-                yield session
-            finally:
-                # Reset the context
-                db_context.reset(db_token)
+            yield session
     except SQLAlchemyError as e:
-        logger.error(f"Database session error: {str(e)}")
+        logger.error("Database session error: %s", str(e))
         raise
 
 
-# Dependency to get the current session from context
 def get_current_session() -> Session:
-    return context.db
+    """
+    Get a database session outside of FastAPI dependency injection.
+    
+    Use this when you need a session in repository __init__ methods.
+    Note: Sessions created this way should be managed manually.
+    """
+    return Session(engine)
 
 
 SessionDep = Annotated[Session, Depends(get_current_session)]

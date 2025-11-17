@@ -1,7 +1,6 @@
 import os
 
 from dotenv import load_dotenv
-from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Load environment variables at module import
@@ -24,20 +23,11 @@ class Settings(BaseSettings):
     ALGORITHMS: str = "RS256"
 
     # Database Configuration
-    DATABASE_URI: str = (
-        "postgresql+psycopg2://user:password@localhost:5432/mydb"
-    )
+    DATABASE_URI: str = "sqlite:///./bizops_dev.db"
 
     # Optional configurations
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
-
-    @field_validator("AUTH0_ISSUER")
-    def validate_auth0_issuer(self, v: str) -> str:  # noqa: N805
-        """Ensure AUTH0_ISSUER ends with a trailing slash."""
-        if not v.endswith("/"):
-            return f"{v}/"
-        return v
 
     model_config = SettingsConfigDict(
         env_file=".env",
