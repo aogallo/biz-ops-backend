@@ -1,3 +1,5 @@
+from fastapi import HTTPException, status
+
 from app.domain.entities.product import Product, ProductCreate
 from app.infrastructure.repositories.product_repository_impl import (
     ProductRepositoryImpl,
@@ -13,11 +15,16 @@ class ProductService:
     def create_product(self, product_request: ProductCreate) -> Product:
         """Create a new product. Raises error if product with same name exists."""
         # Check if product with same name already exists
-        existing_product = self.repository.get_by_name(name=product_request.name)
-        
+        existing_product = self.repository.get_by_name(
+            name=product_request.name
+        )
+
         if existing_product is not None:
-            raise ValueError(f"Product with name '{product_request.name}' already exists")
-        
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="The prodcut already exists",
+            )
+
         # Create the new product
         return self.repository.create(product=product_request)
 

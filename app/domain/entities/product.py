@@ -19,7 +19,6 @@ class ProductCreate(ProductBase):
 
 
 class Product(ProductBase, table=True):
-    __tablename__ = "products"
     id: int | None = Field(default=None, primary_key=True)
 
     created_by: str = Field(index=True)

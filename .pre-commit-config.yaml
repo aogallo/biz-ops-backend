@@ -18,10 +18,11 @@ repos:
         language_version: python3.12
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.8
+    rev: v0.14.5
     hooks:
-      - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
+      # Run the formatter.
+      - id: ruff-check
+        args: ["app/", "--output-format=github"]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.7.1
@@ -31,7 +32,4 @@ repos:
           - pydantic>=2.0
           - sqlalchemy>=2.0
           - types-PyYAML
-        args: [--ignore-missing-imports, --explicit-package-bases]
-
-
-
+        args: [--ignore-missing-imports ]
