@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  test-db:
+    image: postgres:15-alpine
+    container_name: bizops-test-db
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: test_db
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bizops-test
+    environment:
+      - DATABASE_URI=postgresql+psycopg2://test_user:test_password@test-db:5432/test_db
+      - AUTH0_DOMAIN=test.auth0.com
+      - AUTH0_AUDIENCE=https://test-api
+      - AUTH0_ISSUER=https://test.auth0.com/
+    depends_on:
+      test-db:
+        condition: service_healthy
+    command: pytest tests/ -v --cov=app --cov-report=term-missing
+
+
+
