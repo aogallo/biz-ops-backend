@@ -3,6 +3,7 @@ from typing import override
 from fastapi import Depends
 from sqlmodel import Session
 
+from app.domain.builders.invoice_builder import InvoiceBuilder
 from app.domain.entities.invoice import Invoice, InvoiceCreate
 from app.domain.repositories.invoice_repository import InvoiceRepository
 from app.infrastructure.database import get_current_session
@@ -17,6 +18,7 @@ class InvoiceRepositoryImpl(InvoiceRepository):
         self.db = session
 
     @override
-    def create_invoice(self, invoice: InvoiceCreate) -> Invoice:
+    def create_invoice(self, invoice_create: InvoiceCreate) -> Invoice:
         """Create a new invoice"""
-        pass
+        invoice = InvoiceBuilder.model_validate(invoice_create)
+        return invoice

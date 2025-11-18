@@ -2,46 +2,15 @@
 
 from datetime import UTC, datetime
 
+from sqlmodel import SQLModel
+
 from app.domain.builders.invoice_detail_builder import InvoiceDetailBuilder
 from app.domain.entities.invoice import Invoice, InvoiceState
 from app.domain.entities.invoice_detail import InvoiceDetail
 
 
-class InvoiceBuilder:
-    """Builder pattern for creating Invoice entities with line items.
-
-    Example usage:
-        invoice = (
-            InvoiceBuilder()
-            .with_header(
-                date=datetime.now(),
-                authorization_number="AUTH123",
-                dte_type="FACTURA",
-                serie="A",
-                dte_number="001",
-                company_id=1,
-                customer_id=2,
-                state="DRAFT",
-                created_by="user@example.com"
-            )
-            .add_line(
-                InvoiceDetailBuilder()
-                .with_product("Product A", code="PRD001")
-                .with_price(quantity=2, unit_price=100.0)
-                .with_iva(24.0)
-                .with_created_by("user@example.com")
-                .build()
-            )
-            .add_line(
-                InvoiceDetailBuilder()
-                .with_product("Product B")
-                .with_price(quantity=1, unit_price=200.0)
-                .with_created_by("user@example.com")
-                .build()
-            )
-            .build()
-        )
-    """
+class InvoiceBuilder(SQLModel):
+    """Builder pattern for creating Invoice entities with line items."""
 
     def __init__(
         self,
