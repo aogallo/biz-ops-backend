@@ -120,10 +120,14 @@ vim .env  # or use your preferred editor
 Required environment variables:
 
 ```bash
-# Auth0 Configuration (Required)
+# Auth0 Configuration (Required for production, optional for dev with mock auth)
 AUTH0_DOMAIN=your-tenant.auth0.com
 AUTH0_AUDIENCE=https://your-api-audience
 AUTH0_ISSUER=https://your-tenant.auth0.com/
+
+# Development Mode - Mock Authentication (Optional, for local testing)
+# Set to true to bypass Auth0 and use /api/dev/token endpoint
+USE_MOCK_AUTH=true
 
 # Database Configuration
 DATABASE_URI=postgresql+psycopg2://user:password@localhost:5432/bizops_dev
@@ -133,6 +137,8 @@ API_TITLE=Business Operations API
 DEBUG=true
 LOG_LEVEL=DEBUG
 ```
+
+**Quick Tip for Development:** Set `USE_MOCK_AUTH=true` to skip Auth0 setup during local development. You can use the `/api/dev/token` endpoint to get test tokens instantly. See [Development Authentication](#development-authentication-mock-mode) for details.
 
 See [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md) for detailed environment configuration guide.
 
@@ -317,6 +323,67 @@ All protected endpoints require a valid Auth0 JWT token in the Authorization hea
 curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:8000/users/
 ```
 
+#### Development Authentication (Mock Mode)
+
+For local development and testing, you can use mock authentication to bypass Auth0 token validation. This eliminates the need to manually extract tokens from Auth0.
+
+**Enable Mock Mode:**
+
+Add to your `.env` file:
+
+```bash
+USE_MOCK_AUTH=true
+```
+
+**Get a Development Token:**
+
+```bash
+# Get a mock JWT token
+curl -X POST http://localhost:8000/api/dev/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "auth_id": "dev_user",
+    "email": "dev@example.com"
+  }'
+```
+
+Response:
+
+```json
+{
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+  "token_type": "Bearer",
+  "user": {
+    "auth_id": "dev_user",
+    "email": "dev@example.com",
+    "picture": "https://via.placeholder.com/150"
+  }
+}
+```
+
+**Use the Token in Postman:**
+
+1. Copy the `access_token` value
+2. In Postman, go to the Authorization tab
+3. Select "Bearer Token" type
+4. Paste the token
+5. Make requests to any protected endpoint
+
+**Verify Authentication:**
+
+```bash
+curl -X GET http://localhost:8000/api/dev/whoami \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Important Notes:**
+
+- `/api/dev/*` endpoints are **only available** when `USE_MOCK_AUTH=true`
+- Mock tokens bypass Auth0 validation completely
+- **Never use mock mode in production** - the endpoints return 404 when disabled
+- The dev user is automatically created in the database on first token request
+- Mock tokens are valid for 7 days by default
+
 ### Interactive Documentation
 
 Visit these URLs when the server is running:
@@ -439,17 +506,20 @@ Follow conventional commits:
 
 ## 📝 Environment Variables Reference
 
-| Variable           | Required | Default | Description                  |
-| ------------------ | -------- | ------- | ---------------------------- |
-| `AUTH0_DOMAIN`   | ✅       | -       | Auth0 tenant domain          |
-| `AUTH0_AUDIENCE` | ✅       | -       | Auth0 API identifier         |
-| `AUTH0_ISSUER`   | ✅       | -       | Auth0 issuer URL             |
-| `DATABASE_URI`   | ✅       | -       | PostgreSQL connection string |
-| `API_TITLE`      | ❌       | "API"   | API title in docs            |
-| `API_VERSION`    | ❌       | "1.0.0" | API version                  |
-| `DEBUG`          | ❌       | false   | Enable debug mode            |
-| `LOG_LEVEL`      | ❌       | "INFO"  | Logging level                |
-| `ALGORITHMS`     | ❌       | "RS256" | JWT algorithm                |
+| Variable           | Required | Default | Description                                    |
+| ------------------ | -------- | ------- | ---------------------------------------------- |
+| `AUTH0_DOMAIN`   | ✅*      | -       | Auth0 tenant domain                            |
+| `AUTH0_AUDIENCE` | ✅*      | -       | Auth0 API identifier                           |
+| `AUTH0_ISSUER`   | ✅*      | -       | Auth0 issuer URL                               |
+| `USE_MOCK_AUTH`  | ❌       | false   | Enable mock auth (dev only, bypasses Auth0)    |
+| `DATABASE_URI`   | ✅       | -       | PostgreSQL connection string                   |
+| `API_TITLE`      | ❌       | "API"   | API title in docs                              |
+| `API_VERSION`    | ❌       | "1.0.0" | API version                                    |
+| `DEBUG`          | ❌       | false   | Enable debug mode                              |
+| `LOG_LEVEL`      | ❌       | "INFO"  | Logging level                                  |
+| `ALGORITHMS`     | ❌       | "RS256" | JWT algorithm                                  |
+
+\* Required only when `USE_MOCK_AUTH=false` (production mode)
 
 ## 🐛 Troubleshooting
 

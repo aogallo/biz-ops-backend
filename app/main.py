@@ -184,3 +184,10 @@ async def detailed_health_check():
 app.include_router(router=user_routes.router)
 app.include_router(router=product_routes.router)
 app.include_router(router=company_routes.router)
+
+# Include dev routes only in mock auth mode
+if settings.USE_MOCK_AUTH:
+    from app.routes import dev_auth_routes
+
+    app.include_router(router=dev_auth_routes.router, prefix="/api")
+    logger.info("Development authentication endpoints enabled at /api/dev/*")

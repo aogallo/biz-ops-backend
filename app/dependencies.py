@@ -94,9 +94,39 @@ def get_credentials(
 def verify_token(token: str = Depends(get_credentials)):
     """
     Verify the token.
+    In mock mode (USE_MOCK_AUTH=True), skip Auth0 validation
+    and decode without verification for development.
     """
     logger.info("Starting token verification")
 
+    # Mock authentication mode - skip Auth0 validation
+    if settings.USE_MOCK_AUTH:
+        logger.info(
+            "Using mock authentication mode - skipping Auth0 validation"
+        )
+        try:
+            # Decode without verification for development
+            payload = jwt.decode(
+                jwt=token,
+                options={
+                    "verify_signature": False,
+                    "verify_aud": False,
+                    "verify_iss": False,
+                },
+            )
+            logger.debug(
+                "Successfully decoded mock JWT payload for user: %s",
+                payload.get("sub"),
+            )
+            return payload
+        except Exception as e:
+            logger.error("Failed to decode mock token: %s", str(e))
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid mock token format",
+            ) from e
+
+    # Production Auth0 validation
     try:
         # Get the singleton JWKS client with caching
         jwks_client = get_jwks_client()
