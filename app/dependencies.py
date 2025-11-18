@@ -15,18 +15,76 @@ logger = logging.getLogger(__name__)
 oauth2_scheme = HTTPBearer()
 
 
+class JWKSClientManager:
+    """Singleton manager for JWKS client to reuse across requests."""
+
+    def __init__(self):
+        self._client = None
+
+    def get_client(self):
+        """
+        Get or create a singleton JWKS client with caching enabled.
+        This reduces requests to Auth0 and prevents rate limiting.
+        """
+        if self._client is None:
+            jwks_url = f"https://{settings.AUTH0_DOMAIN}/.well-known/jwks.json"
+
+            # Custom headers to avoid 403 Forbidden from Auth0
+            headers = {
+                "User-Agent": "Mozilla/5.0 (compatible; Python-JWT/2.0)",
+                "Accept": "application/json",
+            }
+
+            logger.info("Initializing JWKS client for URL: %s", jwks_url)
+
+            try:
+                self._client = jwt.PyJWKClient(
+                    jwks_url,
+                    headers=headers,
+                    cache_keys=True,  # Enable key caching
+                    max_cached_keys=16,  # Cache up to 16 keys
+                    cache_jwk_set=True,  # Cache the entire JWKS
+                    lifespan=3600,  # Cache for 1 hour (3600 seconds)
+                )
+                logger.info(
+                    "JWKS client initialized successfully with caching enabled"
+                )
+            except Exception as e:
+                logger.error("Failed to initialize JWKS client: %s", e)
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=(
+                        f"Failed to initialize authentication client: {str(e)}"
+                    ),
+                ) from e
+
+        return self._client
+
+
+# Module-level singleton instance
+_jwks_manager = JWKSClientManager()
+
+
+def get_jwks_client():
+    """Get the JWKS client from the singleton manager."""
+    return _jwks_manager.get_client()
+
+
 def get_credentials(
     credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
 ):
+    """
+    Get the credentials from the authorization header.
+    """
     try:
-        logger.info(f"Getting credentials: {credentials}")
+        logger.info("Getting credentials: %s", credentials)
         token = credentials.credentials
         logger.info(
-            f"Extracted token: {token[:10]}..."
+            "Extracted token: %s...", token[:10]
         )  # Only log the first 10 chars for security
         return token
     except Exception as e:
-        logger.error(f"Authentication error: {str(e)}")
+        logger.error("Authentication error: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
@@ -34,31 +92,25 @@ def get_credentials(
 
 
 def verify_token(token: str = Depends(get_credentials)):
+    """
+    Verify the token.
+    """
     logger.info("Starting token verification")
-    # logger.info(f"Token type: {type(token)}, Value: {token[:10]}...")  # Only log the first 10 chars
 
     try:
-        jwks_url = f"https://{settings.AUTH0_DOMAIN}/.well-known/jwks.json"
+        # Get the singleton JWKS client with caching
+        jwks_client = get_jwks_client()
 
         try:
-            jwks_client = jwt.PyJWKClient(jwks_url)
-        except Exception as e:
-            logger.error(f"Failed to get the client: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid url signature",
-            ) from e
-
-        try:
-            # Convert token to bytes if needed
-            # token_bytes = token.encode('utf-8') if isinstance(token, str) else token
             logger.debug("Extracting signing key from JWT token")
-            signing_key = jwks_client.get_signing_key_from_jwt(token).key
+            token_data = jwks_client.get_signing_key_from_jwt(token)
+            print("token data", token_data)
+            signing_key = token_data.key
         except Exception as e:
-            logger.error(f"Failed to get signing key: {str(e)}")
+            logger.error("Failed to get signing key: %s", str(e))
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token signature",
+                detail=f'Fail to fetch data from the url, err: "{str(e)}"',
             ) from e
 
         try:
@@ -70,7 +122,7 @@ def verify_token(token: str = Depends(get_credentials)):
                 issuer=settings.AUTH0_ISSUER,
             )
             logger.debug(
-                f"Successfully decoded JWT payload for user: {payload}"
+                "Successfully decoded JWT payload for user: %s", payload
             )
             return payload
         except jwt.ExpiredSignatureError:
@@ -92,7 +144,7 @@ def verify_token(token: str = Depends(get_credentials)):
                 detail="Invalid issuer",
             ) from None
         except jwt.InvalidTokenError as e:
-            logger.error(f"Invalid token: {str(e)}")
+            logger.error("Invalid token: %s", str(e))
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token",
@@ -100,7 +152,7 @@ def verify_token(token: str = Depends(get_credentials)):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Unexpected error during token verification: {str(e)}")
+        logger.error("Unexpected error during token verification: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error during authentication",
@@ -134,7 +186,10 @@ def get_current_user(
     #     picture = token_payload.get("picture", "")
     #
     #     new_user = User(
-    #         auth_id=auth_id, email=email, picture=picture, created_by="system"
+    #         auth_id=auth_id,
+    #         email=email,
+    #         picture=picture,
+    #         created_by="system"
     #     )
     #
     #     user = user_repo.create_user(new_user)
@@ -170,7 +225,10 @@ def get_current_user(
 #         if not has_permission:
 #             raise HTTPException(
 #                 status_code=status.HTTP_403_FORBIDDEN,
-#                 detail=f"Permission denied: {self.action} on {self.resource}",
+#                 detail=(
+#                     f"Permission denied: {self.action} "
+#                     f"on {self.resource}"
+#                 ),
 #             )
 #         return token_payload
 #

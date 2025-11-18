@@ -9,7 +9,7 @@ from app.infrastructure.database import get_current_session
 
 
 class InvoiceRepositoryImpl(InvoiceRepository):
-    """Implementation of Invoice Repository Interface."""
+    """Implementation of Invoice Repository"""
 
     def __init__(
         self, session: Session | None = Depends(get_current_session)
@@ -18,4 +18,5 @@ class InvoiceRepositoryImpl(InvoiceRepository):
 
     @override
     def create_invoice(self, invoice: InvoiceCreate) -> Invoice:
+        """Create a new invoice"""
         pass

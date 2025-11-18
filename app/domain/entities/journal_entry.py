@@ -7,6 +7,10 @@ from app.domain.entities.invoice import Invoice
 
 
 class JournalEntryBase(SQLModel):
+    """
+    Base journal entry
+    """
+
     company_id: int = Field(foreign_key="customer.id")
     invoice_id: int = Field(foreign_key="invoice.id")
     debit: float = Field(default=0)
@@ -17,10 +21,18 @@ class JournalEntryBase(SQLModel):
 
 
 class JournalEntryCreate(JournalEntryBase):
+    """
+    Create journal entry
+    """
+
     pass
 
 
 class JournalEntry(JournalEntryBase, table=True):
+    """
+    Journal entry entity
+    """
+
     id: int | None = Field(default=None, primary_key=True)
 
     created_by: str = Field(index=True)

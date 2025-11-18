@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.11', '3.12']
+        python-version: ['3.12']
 
     services:
       postgres:
@@ -136,6 +136,3 @@ jobs:
       - name: Run Bandit (security linter)
         run: bandit -r app/ -f json || true
         continue-on-error: true
-
-
-

@@ -5,12 +5,20 @@ from sqlmodel import Field, SQLModel
 
 
 class UserBase(SQLModel):
+    """
+    Base user
+    """
+
     auth_id: str = Field(primary_key=True)
     email: EmailStr
     picture: str | None = Field(default=None)
 
 
 class User(UserBase, table=True):
+    """
+    User entity
+    """
+
     created_by: str = Field(index=True, default="test")
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_by: str | None = Field(default=None, index=True)
@@ -18,4 +26,8 @@ class User(UserBase, table=True):
 
 
 class UserCreate(UserBase):
+    """
+    Create user
+    """
+
     pass

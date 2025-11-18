@@ -27,6 +27,7 @@ except Exception as e:
 
 
 def create_db_and_tables():
+    """Create the database tables"""
     try:
         SQLModel.metadata.create_all(engine)
     except SQLAlchemyError as e:
@@ -42,8 +43,11 @@ user_context: ContextVar[User | None] = ContextVar(
 
 
 class RequestContext:
+    """Request context"""
+
     @property
     def current_user(self) -> User:
+        """Get the current user"""
         user = user_context.get()
         if user is None:
             raise RuntimeError("No authenticated user found in context")
@@ -51,6 +55,7 @@ class RequestContext:
 
     @property
     def db(self) -> Session:
+        """Get the database session"""
         session = db_context.get()
         if session is None:
             raise RuntimeError("No database session found in context")

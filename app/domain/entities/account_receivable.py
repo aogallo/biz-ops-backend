@@ -6,6 +6,10 @@ from app.domain.entities.customer import Customer
 
 
 class AccountReceivableBase(SQLModel):
+    """
+    Base account receivable
+    """
+
     company_id: int = Field(foreign_key="customer.id")
     amount: float
 
@@ -13,11 +17,19 @@ class AccountReceivableBase(SQLModel):
 
 
 class AccountReceivableCreate(AccountReceivableBase):
+    """
+    Create account receivable
+    """
+
     pass
 
 
 # cuentas por cobrar
 class AccountReceivable(AccountReceivableBase, table=True):
+    """
+    Account receivable
+    """
+
     id: int | None = Field(default=None, primary_key=True)
 
     created_by: str = Field(index=True)

@@ -61,8 +61,8 @@ def setup_logging() -> None:
 
     # Log startup message
     logger = logging.getLogger(__name__)
-    logger.info(f"Logging configured with level: {settings.LOG_LEVEL}")
-    logger.info(f"Debug mode: {settings.DEBUG}")
+    logger.info("Logging configured with level: %s", settings.LOG_LEVEL)
+    logger.info("Debug mode: %s", settings.DEBUG)
 
 
 def get_logger(name: str) -> logging.Logger:

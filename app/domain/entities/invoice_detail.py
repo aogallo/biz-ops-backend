@@ -8,6 +8,10 @@ if TYPE_CHECKING:
 
 
 class InvoiceDetailBase(SQLModel):
+    """
+    Base invoice detail
+    """
+
     invoice_id: int = Field(foreign_key="invoice.id")
 
     # Product/Service information
@@ -38,10 +42,18 @@ class InvoiceDetailBase(SQLModel):
 
 
 class InvoiceDetailCreate(InvoiceDetailBase):
+    """
+    Create invoice detail
+    """
+
     pass
 
 
 class InvoiceDetailUpdate(SQLModel):
+    """
+    Update invoice detail
+    """
+
     product_code: str | None = None
     product_name: str | None = None
     description: str | None = None
@@ -62,6 +74,10 @@ class InvoiceDetailUpdate(SQLModel):
 
 
 class InvoiceDetail(InvoiceDetailBase, table=True):
+    """
+    Invoice detail entity
+    """
+
     id: int | None = Field(default=None, primary_key=True)
 
     created_by: str = Field(index=True)

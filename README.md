@@ -1,5 +1,12 @@
 # Business Operations Backend API
 
+[![CI/CD](https://github.com/aogallo/biz-ops-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/aogallo/biz-ops-backend/actions)
+[![Python Version](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Linting: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A modern, production-ready FastAPI application for business operations management with PostgreSQL database, Auth0 authentication, and comprehensive RBAC (Role-Based Access Control).
 
 ## 🚀 Features

@@ -4,27 +4,29 @@ from app.domain.entities.product import Product, ProductCreate
 
 
 class ProductRepository(ABC):
+    """Product repository interface"""
+
     @abstractmethod
     def create(self, product: ProductCreate) -> Product:
-        """Create a new product using Product Create schema"""
+        """Create a new product"""
         pass
 
     @abstractmethod
     def get_by_name(self, name: str) -> Product | None:
-        """Get a product using name"""
+        """Get a product by name"""
         pass
 
     @abstractmethod
     def get_by_id(self, product_id: int) -> Product | None:
-        """Get a product using id"""
+        """Get a product by id"""
         pass
 
     @abstractmethod
     def delete(self, product_id: int) -> bool:
-        """Delete a product using id"""
+        """Delete a product by id"""
         pass
 
     @abstractmethod
     def get_all(self) -> list[Product]:
-        """Get a list of products"""
+        """Get all products"""
         pass

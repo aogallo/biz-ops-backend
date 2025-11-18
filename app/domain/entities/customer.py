@@ -5,6 +5,10 @@ from sqlmodel import Field, SQLModel
 
 
 class CustomerBase(SQLModel):
+    """
+    Base customer
+    """
+
     name: str = Field(unique=True, index=True)
     nit: str = Field(unique=True, index=True)
     date_birth: str
@@ -14,10 +18,18 @@ class CustomerBase(SQLModel):
 
 
 class CustomerCreate(CustomerBase):
+    """
+    Create customer
+    """
+
     pass
 
 
 class Customer(CustomerBase, table=True):
+    """
+    Customer
+    """
+
     id: int | None = Field(default=None, primary_key=True)
 
     created_by: str = Field(index=True)

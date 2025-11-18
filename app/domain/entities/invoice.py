@@ -15,6 +15,10 @@ InvoiceState = Literal["draft", "open", "paid", "void"]
 
 
 class InvoiceBase(SQLModel):
+    """
+    Base invoice
+    """
+
     date: datetime
     authorization_number: str
     dte_type: str
@@ -31,10 +35,13 @@ class InvoiceBase(SQLModel):
     total_taxes: float = Field(default=0.0)
     total_amount: float = Field(default=0.0)
 
-    # Draft: The invoice is still being created and has not yet been sent to the customer.
-    # Open / Due: The invoice has been finalized and sent, but payment has not yet been received.
-    # Paid: The invoice has been paid in full.
-    # Void / Cancelled: The invoice was created by mistake and has been canceled.
+    # Draft: The invoice is still being created and has not yet been sent
+    # to the customer
+    # Open / Due: The invoice has been finalized and sent,
+    # but payment has not yet been received
+    # Paid: The invoice has been paid in full
+    # Void / Cancelled: The invoice was created by mistake and has been
+    # cancelled
 
     state: InvoiceState = "draft"
     is_cancelled: bool | None = False
@@ -53,10 +60,18 @@ class InvoiceBase(SQLModel):
 
 
 class InvoiceCreate(InvoiceBase):
+    """
+    Create invoice
+    """
+
     pass
 
 
 class InvoiceUpdate(SQLModel):
+    """
+    Update invoice
+    """
+
     date: datetime | None = None
     authorization_number: str | None = None
     dte_type: str | None = None
@@ -71,6 +86,10 @@ class InvoiceUpdate(SQLModel):
 
 
 class Invoice(InvoiceBase, table=True):
+    """
+    Invoice entity
+    """
+
     id: int | None = Field(default=None, primary_key=True)
 
     created_by: str = Field(index=True, default=None)

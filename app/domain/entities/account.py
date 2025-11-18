@@ -4,16 +4,28 @@ from sqlmodel import Field, SQLModel
 
 
 class AccountBase(SQLModel):
+    """
+    Base account
+    """
+
     account_number: str = Field(unique=True)
     name: str
     type: str
 
 
 class AccountCreate(AccountBase):
+    """
+    Create account
+    """
+
     pass
 
 
 class Account(AccountBase, table=True):
+    """
+    Account
+    """
+
     id: int | None = Field(default=None, primary_key=True)
 
     created_by: str = Field(index=True)

@@ -22,3 +22,8 @@ class CompanyService:
             )
 
         return self.repository.create(company=company)
+
+    def list_all_companies(self):
+        count = self.repository.get_count()
+        companies = self.repository.get_all()
+        return {"count": count, "data": companies}

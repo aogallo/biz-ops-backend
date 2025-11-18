@@ -15,10 +15,18 @@ class ProductBase(SQLModel):
 
 
 class ProductCreate(ProductBase):
+    """
+    Create product
+    """
+
     pass
 
 
 class Product(ProductBase, table=True):
+    """
+    Product entity
+    """
+
     id: int | None = Field(default=None, primary_key=True)
 
     created_by: str = Field(index=True)
