@@ -6,10 +6,6 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.config import settings
 from app.domain.entities.user import User
-from app.infrastructure.database import SessionDep
-from app.infrastructure.repositories.user_repository_impl import (
-    UserRepositoryImpl,
-)
 
 logger = logging.getLogger(__name__)
 oauth2_scheme = HTTPBearer()
@@ -104,7 +100,6 @@ def verify_token(token: str = Depends(get_credentials)):
         try:
             logger.debug("Extracting signing key from JWT token")
             token_data = jwks_client.get_signing_key_from_jwt(token)
-            print("token data", token_data)
             signing_key = token_data.key
         except Exception as e:
             logger.error("Failed to get signing key: %s", str(e))
@@ -159,79 +154,15 @@ def verify_token(token: str = Depends(get_credentials)):
         ) from e
 
 
-def get_current_user(
-    token_payload: dict = Depends(verify_token),
-    session: SessionDep = Depends(),
-) -> User:
+def get_current_user(token: str = Depends(get_credentials)) -> User:
     """
     Get the current user from the token payload.
-    If the user doesn't exist in the database, create it.
     """
-    auth_id = token_payload.get("sub")
-    if not auth_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token payload",
-        )
+    token_payload = verify_token(token)
+    permissions = token_payload.get("permissions")
+    if permissions is not None:
+        permissions = [str(item) for item in permissions]
+    else:
+        permissions = []
 
-    # Create a user repository with the session
-    user_repo = UserRepositoryImpl(session)
-
-    # Try to find the user by auth_id
-    user = user_repo.get_user_by_id(auth_id)
-
-    # if not user:
-    #     # If user doesn't exist, create a new one
-    #     email = token_payload.get("email", "")
-    #     picture = token_payload.get("picture", "")
-    #
-    #     new_user = User(
-    #         auth_id=auth_id,
-    #         email=email,
-    #         picture=picture,
-    #         created_by="system"
-    #     )
-    #
-    #     user = user_repo.create_user(new_user)
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid User"
-        )
-
-    return user
-
-
-# class PermissionChecker:
-#     def __init__(self, resource: str, action: str):
-#         self.resource = resource
-#         self.action = action
-#
-#     def __call__(
-#         self,
-#         token_payload: dict = Depends(verify_token),
-#         rbac_service: RBACService = Depends(get_rbac_service),
-#     ):
-#         user_auth_id = token_payload.get("sub")
-#         if not user_auth_id:
-#             raise HTTPException(
-#                 status_code=status.HTTP_401_UNAUTHORIZED,
-#                 detail="Invalid token payload",
-#             )
-#
-#         has_permission = rbac_service.check_permission(
-#             user_auth_id, self.resource, self.action
-#         )
-#         if not has_permission:
-#             raise HTTPException(
-#                 status_code=status.HTTP_403_FORBIDDEN,
-#                 detail=(
-#                     f"Permission denied: {self.action} "
-#                     f"on {self.resource}"
-#                 ),
-#             )
-#         return token_payload
-#
-#
-# def check_permission(resource: str, action: str):
-#     return PermissionChecker(resource, action)
+    return User(auth_id=str(token_payload.get("sub")), permissions=permissions)

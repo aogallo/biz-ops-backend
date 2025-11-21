@@ -29,11 +29,26 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
 
+    # CORS Configuration
+    # Comma-separated list of allowed origins
+    CORS_ORIGINS: str = (
+        "http://localhost:5173,http://localhost:3000,http://localhost:8080"
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=True,
     )
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """Parse CORS_ORIGINS string into a list."""
+        return [
+            origin.strip()
+            for origin in self.CORS_ORIGINS.split(",")
+            if origin.strip()
+        ]
 
 
 # Create a global settings instance

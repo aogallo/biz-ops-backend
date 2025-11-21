@@ -8,7 +8,7 @@ class CompanyBase(SQLModel):
     name: str = Field(unique=True, index=True)
     nit: str = Field(unique=True, index=True)
     date_birth: str | None = Field(default=None)
-    comercial_activity: str | None = Field(default=None)
+    commercial_activity: str | None = Field(default=None)
     email: EmailStr
     address: str | None = Field(default=None)
 

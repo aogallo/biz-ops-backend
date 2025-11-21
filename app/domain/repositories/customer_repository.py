@@ -28,3 +28,10 @@ class CustomerRepository(ABC):
         Get all customers
         """
         pass
+
+    @abstractmethod
+    def get_by_email(self, email: str) -> Customer | None:
+        """
+        Get all customers
+        """
+        pass

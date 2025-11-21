@@ -90,4 +90,4 @@ def get_current_session() -> Session:
     return Session(engine)
 
 
-SessionDep = Annotated[Session, Depends(get_current_session)]
+SessionDep = Annotated[Session, Depends(get_session)]
