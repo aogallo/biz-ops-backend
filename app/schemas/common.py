@@ -2,10 +2,12 @@
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from app.schemas.base import CamelCaseSchema
 
 
-class ErrorResponse(BaseModel):
+class ErrorResponse(CamelCaseSchema):
     """Standard error response schema."""
 
     detail: str = Field(..., description="Error message")
@@ -15,7 +17,7 @@ class ErrorResponse(BaseModel):
     field: str | None = Field(None, description="Field that caused the error")
 
 
-class HealthResponse(BaseModel):
+class HealthResponse(CamelCaseSchema):
     """Health check response schema."""
 
     status: str = Field(..., description="Service status")
@@ -23,7 +25,7 @@ class HealthResponse(BaseModel):
     database: str = Field(..., description="Database connection status")
 
 
-class MessageResponse(BaseModel):
+class MessageResponse(CamelCaseSchema):
     """Generic message response."""
 
     message: str

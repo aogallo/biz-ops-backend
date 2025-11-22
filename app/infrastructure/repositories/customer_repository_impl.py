@@ -1,4 +1,4 @@
-from sqlmodel import Session, select
+from sqlmodel import select
 
 from app.domain.entities.customer import Customer, CustomerCreate
 from app.domain.entities.user import User
@@ -7,10 +7,8 @@ from app.infrastructure.database import get_current_session
 
 
 class CustomerRepositoryImpl(CustomerRepository):
-    def __init__(
-        self, current_user: User, session: Session | None = None
-    ) -> None:
-        self.db = session or get_current_session()
+    def __init__(self, current_user: User) -> None:
+        self.db = get_current_session()
         self.current_user = current_user
 
     def create(self, customer_create: CustomerCreate) -> Customer:

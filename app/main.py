@@ -18,7 +18,12 @@ from app.core.exceptions import (
 )
 from app.core.logging_config import setup_logging
 from app.infrastructure.database import create_db_and_tables, engine
-from app.routes import company_routes, customer_routes, product_routes
+from app.routes import (
+    company_routes,
+    customer_routes,
+    invoice_routes,
+    product_routes,
+)
 from app.schemas.common import HealthResponse
 
 # Setup logging
@@ -203,6 +208,7 @@ API_V1_PREFIX = "/api/v1"
 app.include_router(router=product_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=company_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=customer_routes.router, prefix=API_V1_PREFIX)
+app.include_router(router=invoice_routes.router, prefix=API_V1_PREFIX)
 
 # Future v2 routers can be added like this:
 # API_V2_PREFIX = "/api/v2"

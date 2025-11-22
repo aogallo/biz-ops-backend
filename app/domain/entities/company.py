@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from pydantic import BaseModel, EmailStr
+from pydantic import EmailStr
 from sqlmodel import Field, SQLModel
 
 
@@ -24,15 +24,3 @@ class Company(CompanyBase, table=True):
 
 class CompanyCreate(CompanyBase):
     pass
-
-
-class CompanyResponse(CompanyBase):
-    id: int
-
-    created_at: datetime
-    updated_at: datetime | None
-
-
-class CompaniesResponse(BaseModel):
-    count: int
-    data: list[CompanyResponse]
