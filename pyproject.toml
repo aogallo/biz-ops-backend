@@ -7,6 +7,10 @@ name = "biz-ops-backend"
 version = "1.0.0"
 description = "Business Operations Backend API"
 requires-python = ">=3.12"
+dependencies = [
+    "pandas>=2.3.3",
+    "xlrd>=2.0.2",
+]
 
 # ==============================================================================
 # BLACK - CODE FORMATTER
