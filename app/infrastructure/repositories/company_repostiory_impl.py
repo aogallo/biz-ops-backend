@@ -1,8 +1,10 @@
+from collections.abc import Sequence
 from typing import Any
 
-from sqlmodel import Session, func, or_, select
+from sqlmodel import func, or_, select
 
 from app.domain.entities.company import Company, CompanyCreate
+from app.domain.entities.user import User
 from app.domain.repositories.company_repository import CompanyRepository
 from app.infrastructure.database import get_current_session
 
@@ -10,8 +12,9 @@ from app.infrastructure.database import get_current_session
 class CompanyRepositoryImpl(CompanyRepository):
     """Implementation of Company Repository"""
 
-    def __init__(self, session: Session | None = None) -> None:
-        self.db = session or get_current_session()
+    def __init__(self, current_user: User) -> None:
+        self.db = get_current_session()
+        self.current_user = current_user
 
     def create(self, company: CompanyCreate) -> Company:
         """Create a new company"""
@@ -99,3 +102,13 @@ class CompanyRepositoryImpl(CompanyRepository):
         statement = select(Company).where(Company.name == name)
         result: Company | None = self.db.exec(statement).one_or_none()
         return result
+
+    def get_companies_nits(self) -> Sequence[str]:
+        """Get existing company NITs"""
+        statement = select(Company.nit)
+        return self.db.exec(statement).all()
+
+    def add_bulk(self, companies: list[Company]):
+        self.db.add_all(companies)
+        self.db.commit()
+        self.db.refresh(companies)

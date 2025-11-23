@@ -1,12 +1,20 @@
+import logging
 from io import BytesIO
 
 import pandas as pd
 
+from app.domain.entities.company import Company
+from app.domain.entities.customer import Customer
 from app.domain.entities.user import User
+from app.infrastructure.repositories.company_repostiory_impl import (
+    CompanyRepositoryImpl,
+)
 from app.infrastructure.repositories.customer_repository_impl import (
     CustomerRepositoryImpl,
 )
 from app.schemas.invoice_schema import InvoiceRowSchema
+
+logger = logging.getLogger(__name__)
 
 
 class InvoiceService:
@@ -14,15 +22,53 @@ class InvoiceService:
 
     def __init__(self, current_user: User) -> None:
         self.customer_repo = CustomerRepositoryImpl(current_user)
+        self.company_repo = CompanyRepositoryImpl(current_user)
         self.invoice_repo = CustomerRepositoryImpl(current_user)
         self.errors: list[dict] = []
+        self.current_user = current_user
 
     def list_all_invoices(self):
         return self.customer_repo.get_all_customers()
 
     def process_file(self, file_bytes: bytes):
         df = pd.read_excel(BytesIO(file_bytes))
-        df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+        df.rename(
+            columns={
+                "Fecha de emisión": "date",
+                "Número de Autorización": "authorization_number",
+                "Tipo de DTE (nombre)": "dte_type",
+                "Serie": "serie",
+                "Número del DTE": "dte_number",
+                "Clasificación emisor": "clasificacion_emisor",
+                "Exportación": "exportation",
+                "NIT del emisor": "company_nit",
+                "Nombre completo del emisor": "company_name",
+                "Código de establecimiento": "company_code",
+                "Nombre del establecimiento": "company_description",
+                "ID del receptor": "customer_nit",
+                "Nombre completo del receptor": "customer_name",
+                "NIT del Certificador": "certificator_nit",
+                "Nombre completo del Certificador": "certificator_name",
+                "Estado": "state",
+                "Moneda": "money",
+                "Gran Total (Moneda Original)": "total",
+                "IVA (monto de este impuesto)": "iva",
+                "Marca de anulado": "is_voided",
+                "Fecha de anulación": "voided_date",
+                "Petróleo (monto de este impuesto)": "petroleum",
+                "Turismo Hospedaje (monto de este impuesto)": "hotel",
+                "Turismo Pasajes (monto de este impuesto)": "tickets",
+                "Timbre de Prensa (monto de este impuesto)": "press_stamp",
+                "Bomberos (monto de este impuesto)": "firefigthers",
+                "Tasa Municipal (monto de este impuesto)": "municipal_tax",
+                "Bebidas alcohólicas (monto de este impuesto)": "alcoholic_tax",
+                "Tabaco (monto de este impuesto)": "tobacco_tax",
+                "Cemento (monto de este impuesto)": "cement_tax",
+                "Bebidas no Alcohólicas (monto de este impuesto)": "no_alcoholic_tax",
+                "Tarifa Portuaria (monto de este impuesto)": "port_tariff_tax",
+            },
+            inplace=True,
+        )
 
         CHUNK_SIZE = 1000  # Process rows in batches
 
@@ -36,14 +82,18 @@ class InvoiceService:
 
     def _validate_chunk(self, chunk: pd.DataFrame, offset: int):
         """Validate rows using Pydantic, collect errors."""
-        validated = []
+        validated: list[InvoiceRowSchema] = []
 
         for idx, row in chunk.iterrows():
-            row_num = offset + idx + 2  # +2 for Excel row (1-indexed + header)
+            row_num = (
+                offset + int(idx) + 2
+            )  # +2 for Excel row (1-indexed + header)
+
             try:
-                # validated_row = InvoiceRowSchema(**row.to_dict())
-                validated.append(row.to_dict())
+                validated_row = InvoiceRowSchema.model_validate(row.to_dict())
+                validated.append(validated_row)
             except Exception as e:
+                raise Exception(str(e))
                 self.errors.append(
                     {
                         "row": row_num,
@@ -54,87 +104,87 @@ class InvoiceService:
 
         return validated
 
-    def _process_validated_rows(self, rows: list[InvoiceRowSchema]) -> None:
-        """Process validated rows: users, invoices, details."""
+    def _get_unique_companies(
+        self, invoices: list[InvoiceRowSchema]
+    ) -> list[dict]:
+        """Extract unique companies from invoice rows"""
+        companies = {}
 
-        # 1. Batch get/create users
-        emails = list({r.user_email for r in rows})
-        user_map = self._get_or_create_users(rows, emails)
+        for invoice in invoices:
+            if invoice.company_nit not in companies:
+                companies[invoice.company_nit] = {
+                    "nit": invoice.company_nit,
+                    "name": invoice.company_name,
+                }
 
-        # 2. Group rows by invoice
-        # invoices_grouped = defaultdict(list)
-        # for row in rows:
-        #     key = (row.user_email, row.invoice_number)
-        #     invoices_grouped[key].append(row)
+        return list(companies.values())
 
-        # 3. Check existing invoices (for duplicate handling)
-        # invoice_numbers = [r.invoice_number for r in rows]
-        # existing_invoices = {
-        #     inv.invoice_number: inv
-        #     for inv in self.db.query(Invoice)
-        #     .filter(Invoice.invoice_number.in_(invoice_numbers))
-        #     .all()
-        # }
-
-        # 4. Create invoices and details
-        # for (email, inv_number), detail_rows in invoices_grouped.items():
-        #     if inv_number in existing_invoices:
-        #         self.stats["invoices_skipped"] += 1
-        #         continue
-        #
-        #     user = user_map[email]
-        #     first_row = detail_rows[0]
-        #
-        #     invoice = Invoice(
-        #         user_id=user.id,
-        #         invoice_number=inv_number,
-        #         invoice_date=first_row.invoice_date,
-        #     )
-        #     self.db.add(invoice)
-        #     self.db.flush()
-        #     self.stats["invoices_created"] += 1
-        #
-        #     # Bulk insert details
-        #     details = [
-        #         InvoiceDetail(
-        #             invoice_id=invoice.id,
-        #             product=row.product,
-        #             quantity=row.quantity,
-        #             unit_price=row.unit_price,
-        #             total=row.quantity * row.unit_price,
-        #         )
-        #         for row in detail_rows
-        #     ]
-        # self.db.bulk_save_objects(details)
-
-    def _get_or_create_users(
-        self, rows: list[InvoiceRowSchema], emails: list[str]
-    ) -> dict:
-        """Batch fetch existing users, create missing ones."""
-
-        # Fetch existing
-        existing = {
-            u.email: u
-            for u in self.db.query(User).filter(User.email.in_(emails)).all()
+    def _get_unique_customers(self, invoices: list[InvoiceRowSchema]):
+        """Extract unique customers from invoice rows"""
+        customers = {
+            invoice.customer_nit: {
+                "nit": invoice.customer_nit,
+                "name": invoice.customer_name,
+            }
+            for invoice in invoices
         }
-        self.stats["users_existing"] += len(existing)
 
-        # Find missing emails
-        email_to_name = {r.user_email: r.user_name for r in rows}
-        missing_emails = set(emails) - set(existing.keys())
+        return list(customers.values())
 
-        # Bulk create missing users
-        if missing_emails:
-            new_users = [
-                User(email=email, name=email_to_name[email])
-                for email in missing_emails
-            ]
-            self.db.bulk_save_objects(new_users, return_defaults=True)
-            self.db.flush()
+    def _create_missing_companies(self, rows: list[InvoiceRowSchema]):
+        """Find and create companies that don't exist in the database"""
+        # 1. Batch get/create users
+        unique_companies = self._get_unique_companies(rows)
 
-            # Refresh to get IDs
-            for user in new_users:
-                existing[user.email] = user
-            self.stats["users_created"] += len(new_users)
+        # Get existing company NITs from database
+        existing_nits = self.company_repo.get_companies_nits()
+        existing_nits_set = set(existing_nits)
 
-        return existing
+        # Find companies that don't exist
+        new_companies = []
+        for company_data in unique_companies:
+            if company_data["nit"] not in existing_nits_set:
+                new_company = Company(
+                    nit=company_data["nit"],
+                    name=company_data["name"],
+                    created_by=self.current_user.auth_id,
+                )
+                new_companies.append(new_company)
+
+        # Bulk insert new companies
+        if new_companies:
+            self.company_repo.add_bulk(new_companies)
+
+            logger.info("Created $d new companies", len(new_companies))
+        else:
+            logger.info("No new companies to create")
+
+    def _create_missing_customers(self, invoices: list[InvoiceRowSchema]):
+        """Find and create customers that do not exist in the database"""
+        unique_customers = self._get_unique_customers(invoices)
+
+        existing_nits = self.customer_repo.get_customer_nits()
+        existing_nits_set = set(existing_nits)
+
+        # Create missing customers
+        new_customers = []
+        for customer_data in unique_customers:
+            if customer_data["nit"] not in existing_nits_set:
+                new_customer = Customer(
+                    nit=customer_data["nit"],
+                    name=customer_data["name"],
+                    created_by=self.current_user.auth_id,
+                )
+                new_customers.append(new_customer)
+
+        if new_customers:
+            self.customer_repo.add_bulk(new_customers)
+
+            logger.info("Created $d new customers", len(new_customers))
+        else:
+            logger.info("No new customers to create")
+
+    def _process_validated_rows(self, rows: list[InvoiceRowSchema]) -> None:
+        """Process validated rows: companies, invoices, details."""
+        existing_companies = self._create_missing_companies(rows)
+        customers = self._create_missing_customers(rows)

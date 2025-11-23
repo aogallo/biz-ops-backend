@@ -1,9 +1,10 @@
 """Invoice API schemas for requests and responses."""
-
+import math
 from datetime import datetime
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
+from sqlmodel import SQLModel
 
 from app.schemas.base import CamelCaseSchema
 from app.schemas.invoice_detail_schema import InvoiceDetailResponse
@@ -75,23 +76,27 @@ class InvoiceListResponse(CamelCaseSchema):
     total: int = Field(description="Total number of invoices")
 
 
-class InvoiceRowSchema:
+class InvoiceRowSchema(SQLModel):
     date: str
     authorization_number: str
     dte_type: str
     serie: str
-    dte_number: str
+    dte_number: int
     exportation: bool
     company_nit: str
     company_name: str
+    company_description: str
+    company_code: int
     customer_nit: str
     customer_name: str
+    certificator_nit: int
+    certificator_name: str
     state: str
     money: str
     total: float
     iva: float
-    is_void: bool
-    void_date: str
+    is_voided: bool
+    voided_date: str
     petroleum: float
     hotel: float
     tickets: float
@@ -104,3 +109,28 @@ class InvoiceRowSchema:
     cement_tax: float
     no_alcoholic_tax: float
     port_tariff_tax: float
+
+    @field_validator("is_voided", mode="before")
+    @classmethod
+    def transform_is_voided(cls, v: str) -> bool:
+        if v == "No":
+            return False
+        else:
+            return True
+
+    @field_validator("voided_date", mode="before")
+    @classmethod
+    def transform_voided_date(cls, v: str) -> str | None:
+        if isinstance(v, float) and math.isnan(v):
+            return ""
+        return v
+
+    @field_validator("customer_nit", mode="before")
+    @classmethod
+    def transform_customer_nit(cls, value: str):
+        return str(value)
+
+    @field_validator("company_nit", mode="before")
+    @classmethod
+    def transform_company_nit(cls, value: str):
+        return str(value)
