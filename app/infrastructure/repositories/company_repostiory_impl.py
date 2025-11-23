@@ -94,3 +94,8 @@ class CompanyRepositoryImpl(CompanyRepository):
         )
         result: list[Company] = list(self.db.exec(statement))
         return result
+
+    def get_by_name(self, name: str) -> Company | None:
+        statement = select(Company).where(Company.name == name)
+        result: Company | None = self.db.exec(statement).one_or_none()
+        return result

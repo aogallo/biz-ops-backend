@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile
 
 from app.dependencies import get_current_user, verify_token
 from app.infrastructure.database import get_session
@@ -24,3 +24,14 @@ def list_invoices(current_user=Depends(get_current_user)):
         invoices=[InvoiceResponse.model_validate(i) for i in invoices],
         total=len(invoices),
     )
+
+
+@router.post("/upload")
+async def upload_file(
+    file: UploadFile, current_user=Depends(get_current_user)
+):
+    file_bytes = await file.read()
+
+    service = InvoiceService(current_user)
+
+    service.process_file(file_bytes)

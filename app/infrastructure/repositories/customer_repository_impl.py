@@ -34,3 +34,8 @@ class CustomerRepositoryImpl(CustomerRepository):
         statement = select(Customer).where(Customer.email == email)
         result: Customer | None = self.db.exec(statement).one_or_none()
         return result
+
+    def get_by_name(self, name: str) -> Customer | None:
+        statement = select(Customer).where(Customer.name == name)
+        result: Customer | None = self.db.exec(statement).one_or_none()
+        return result

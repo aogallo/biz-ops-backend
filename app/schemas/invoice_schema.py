@@ -73,3 +73,34 @@ class InvoiceListResponse(CamelCaseSchema):
 
     invoices: list[InvoiceResponse]
     total: int = Field(description="Total number of invoices")
+
+
+class InvoiceRowSchema:
+    date: str
+    authorization_number: str
+    dte_type: str
+    serie: str
+    dte_number: str
+    exportation: bool
+    company_nit: str
+    company_name: str
+    customer_nit: str
+    customer_name: str
+    state: str
+    money: str
+    total: float
+    iva: float
+    is_void: bool
+    void_date: str
+    petroleum: float
+    hotel: float
+    tickets: float
+    # Timbre de Prensa
+    press_stamp: float
+    firefigthers: float
+    municipal_tax: float
+    alcoholic_tax: float
+    tobacco_tax: float
+    cement_tax: float
+    no_alcoholic_tax: float
+    port_tariff_tax: float

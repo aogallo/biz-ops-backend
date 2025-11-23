@@ -35,3 +35,10 @@ class CustomerRepository(ABC):
         Get all customers
         """
         pass
+
+    @abstractmethod
+    def get_by_name(self, name: str) -> Customer | None:
+        """
+        Get customer by name
+        """
+        pass
