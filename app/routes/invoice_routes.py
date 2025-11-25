@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, UploadFile
 
 from app.dependencies import get_current_user, verify_token
 from app.infrastructure.database import get_session
+from app.schemas.invoice_schema import InvoiceResponse
 from app.services.invoice_service import InvoiceService
 
 router = APIRouter(
@@ -14,7 +15,7 @@ router = APIRouter(
 )
 
 
-@router.get("/")
+@router.get("/", response_model=list[InvoiceResponse])
 def list_invoices(current_user=Depends(get_current_user)):
     """List all invoices."""
     service = InvoiceService(current_user)

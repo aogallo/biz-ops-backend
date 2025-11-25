@@ -8,9 +8,11 @@ from pydantic import Field, field_validator
 from sqlmodel import SQLModel
 
 from app.schemas.base import CamelCaseSchema
+from app.schemas.company_schema import CompanyResponse
+from app.schemas.customer_schema import CustomerResponse
 from app.schemas.invoice_detail_schema import InvoiceDetailResponse
 
-InvoiceState = Literal["draft", "open", "paid", "void"]
+InvoiceState = Literal["draft", "open", "paid", "void", "Vigente"]
 
 
 class InvoiceCreate(CamelCaseSchema):
@@ -52,8 +54,6 @@ class InvoiceResponse(CamelCaseSchema):
     dte_type: str
     serie: str
     dte_number: str
-    company_id: int
-    customer_id: int
     currency: str
     subtotal: float
     total_taxes: float
@@ -61,13 +61,16 @@ class InvoiceResponse(CamelCaseSchema):
     state: InvoiceState
     is_cancelled: bool | None
     cancelled_date: datetime | None
-    created_by: str
     created_at: datetime
-    updated_by: str | None
     updated_at: datetime | None
+    invoice_type: str
 
     # Optional nested details
     details: list[InvoiceDetailResponse] | None = None
+
+    company: CompanyResponse | None = None
+
+    customer: CustomerResponse | None = None
 
 
 class InvoiceListResponse(CamelCaseSchema):

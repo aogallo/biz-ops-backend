@@ -20,6 +20,7 @@ from app.infrastructure.repositories.invoice_repository_impl import (
     InvoiceRepositoryImpl,
 )
 from app.schemas.invoice_schema import InvoiceRowSchema
+from app.utils.dates import normalize_datetime
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ class InvoiceService:
         self.current_user = current_user
 
     def list_all_invoices(self):
-        return self.invoice_repo
+        return self.invoice_repo.get_all()
 
     def process_file(self, file_bytes: bytes):
         try:
@@ -110,6 +111,9 @@ class InvoiceService:
                 validated_row = InvoiceRowSchema.model_validate(row.to_dict())
                 validated.append(validated_row)
             except ValueError as e:
+                logger.error(
+                    "Failing creating the Invoice Row File %s", str(e)
+                )
                 raise ValueError(str(e)) from e
 
         return validated
@@ -177,14 +181,10 @@ class InvoiceService:
         """Find and create customers that do not exist in the database"""
         unique_customers = self._get_unique_customers(invoices)
 
-        print("unique_customers", unique_customers)
-
         existing_customers = self.customer_repo.get_customers_by_nit(
             unique_customers
         )
         existing_nits_set = {c.nit for c in existing_customers}
-
-        print("unique ntis", existing_nits_set)
 
         # Create missing customers
         new_customers = []
@@ -242,8 +242,21 @@ class InvoiceService:
                 )
                 continue
 
+            invoice = self.invoice_repo.get_invoice_by_serie_and_dte(
+                dte_number=row.dte_number, serie=row.serie
+            )
+
+            if invoice is not None:
+                logger.info(
+                    "Invoice already exist serie: %s, dte_number: %s",
+                    row.serie,
+                    row.dte_number,
+                )
+                continue
+
             # Parse date from string
-            invoice_date = datetime.strptime(row.date, "%Y-%m-%d %H:%M:%S")
+            # time data '2025-11-20T15:01:19' does match format '%Y-%m-%d %H:%M:%S'
+            invoice_date = normalize_datetime(row.date)
 
             # Create invoice header
             invoice = Invoice(
@@ -255,7 +268,7 @@ class InvoiceService:
                 company_id=company_id,
                 customer_id=customer_id,
                 currency=row.money,
-                state="open" if not row.is_voided else "void",
+                state=row.state,
                 is_cancelled=row.is_voided,
                 cancelled_date=(
                     datetime.strptime(row.voided_date, "%Y-%m-%d %H:%M:%S")
@@ -267,6 +280,7 @@ class InvoiceService:
 
             # Create invoice detail (one per row based on file structure)
             detail = InvoiceDetail(
+                invoice=invoice,
                 product_name="Invoice Item",  # Generic, no product details
                 quantity=1.0,
                 unit_price=row.total - row.iva,  # Total includes IVA

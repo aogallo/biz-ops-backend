@@ -39,9 +39,7 @@ class CustomerResponse(CamelCaseSchema):
     commercial_activity: str | None
     email: EmailStr
     address: str | None
-    created_by: str
     created_at: datetime
-    updated_by: str | None
     updated_at: datetime | None
 
 

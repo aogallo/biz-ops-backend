@@ -23,6 +23,10 @@ class InvoiceBase(SQLModel):
     serie: str = Field(index=True)
     dte_number: str
 
+    # income
+    # expenses
+    invoiceType: str = "expenses"
+
     company_id: int
     customer_id: int
 

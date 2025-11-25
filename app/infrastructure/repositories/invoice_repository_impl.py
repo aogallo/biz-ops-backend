@@ -77,3 +77,13 @@ class InvoiceRepositoryImpl(InvoiceRepository):
         for invoice in invoices:
             self.db.refresh(invoice)
         return invoices
+
+    def get_invoice_by_serie_and_dte(
+        self, serie: str, dte_number: int
+    ) -> Invoice | None:
+        """Get invoice by serie and dte number"""
+        statement = select(Invoice).where(
+            Invoice.serie == serie, Invoice.dte_number == dte_number
+        )
+        result: Invoice | None = self.db.exec(statement).one_or_none()
+        return result
