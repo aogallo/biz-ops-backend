@@ -1,4 +1,5 @@
 """Invoice API schemas for requests and responses."""
+
 import math
 from datetime import datetime
 from typing import Literal
@@ -77,6 +78,8 @@ class InvoiceListResponse(CamelCaseSchema):
 
 
 class InvoiceRowSchema(SQLModel):
+    """Schema for invoice row."""
+
     date: str
     authorization_number: str
     dte_type: str
@@ -113,6 +116,7 @@ class InvoiceRowSchema(SQLModel):
     @field_validator("is_voided", mode="before")
     @classmethod
     def transform_is_voided(cls, v: str) -> bool:
+        """Transform is_voided to boolean."""
         if v == "No":
             return False
         else:
@@ -121,6 +125,7 @@ class InvoiceRowSchema(SQLModel):
     @field_validator("voided_date", mode="before")
     @classmethod
     def transform_voided_date(cls, v: str) -> str | None:
+        """Transform voided_date to string."""
         if isinstance(v, float) and math.isnan(v):
             return ""
         return v
@@ -128,9 +133,18 @@ class InvoiceRowSchema(SQLModel):
     @field_validator("customer_nit", mode="before")
     @classmethod
     def transform_customer_nit(cls, value: str):
+        """Transform customer_nit to string."""
         return str(value)
 
     @field_validator("company_nit", mode="before")
     @classmethod
     def transform_company_nit(cls, value: str):
+        """Transform company_nit to string."""
         return str(value)
+
+
+class UniqueCustomers(CamelCaseSchema):
+    """Schema for unique customers."""
+
+    name: str
+    nit: str

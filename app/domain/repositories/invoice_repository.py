@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from app.domain.entities.invoice import Invoice, InvoiceCreate
+from app.domain.entities.invoice import Invoice
+from app.schemas.invoice_schema import InvoiceCreate
 
 
 class InvoiceRepository(ABC):

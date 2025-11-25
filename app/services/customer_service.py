@@ -18,7 +18,7 @@ class CustomerService:
         Create a new customer.
         Raises error if customer with same email exists.
         """
-        existed_customer = self.repository.get_by_email(email=customer.email)
+        existed_customer = self.repository.get_by_nit(customer.nit)
 
         if existed_customer is not None:
             raise HTTPException(

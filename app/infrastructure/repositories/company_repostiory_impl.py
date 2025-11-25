@@ -1,7 +1,6 @@
-from collections.abc import Sequence
 from typing import Any
 
-from sqlmodel import func, or_, select
+from sqlmodel import col, func, or_, select
 
 from app.domain.entities.company import Company, CompanyCreate
 from app.domain.entities.user import User
@@ -103,12 +102,16 @@ class CompanyRepositoryImpl(CompanyRepository):
         result: Company | None = self.db.exec(statement).one_or_none()
         return result
 
-    def get_companies_nits(self) -> Sequence[str]:
+    def get_companies_by_nit(self, companies) -> list[Company]:
         """Get existing company NITs"""
-        statement = select(Company.nit)
-        return self.db.exec(statement).all()
+        nits = [c["nit"] for c in companies]
+        statement = select(Company).where(col(Company.nit).in_(nits))
+        result: list[Company] = self.db.exec(statement)._allrows()
+        return list(result)
 
     def add_bulk(self, companies: list[Company]):
+        """Add bulk companies"""
         self.db.add_all(companies)
         self.db.commit()
-        self.db.refresh(companies)
+        for company in companies:
+            self.db.refresh(company)

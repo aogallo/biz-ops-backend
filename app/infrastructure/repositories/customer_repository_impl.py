@@ -1,5 +1,3 @@
-from collections.abc import Sequence
-
 from sqlmodel import col, select
 
 from app.domain.entities.customer import Customer, CustomerCreate
@@ -46,15 +44,25 @@ class CustomerRepositoryImpl(CustomerRepository):
         statement = select(Customer).where(
             col(Customer.name).in_(company_names)
         )
-        results = self.db.exec(statement).all()
-        return results
+        results: list[Customer] = self.db.exec(statement).all()
+        return list(results)
 
-    def get_customer_nits(self) -> Sequence[str]:
-        """Get existing custoemrs NITs"""
-        statement = select(Customer.nit)
-        return self.db.exec(statement).all()
+    def get_customers_by_nit(self, customers) -> list[Customer]:
+        """Get existing customers by NIT"""
+        nits = [c["nit"] for c in customers]
+        statement = select(Customer).where(col(Customer.nit).in_(nits))
+        result: list[Customer] = self.db.exec(statement)._allrows()
+        return list(result)
 
     def add_bulk(self, customers: list[Customer]):
+        """Add bulk customers"""
         self.db.add_all(customers)
         self.db.commit()
-        self.db.refresh(customers)
+        for customer in customers:
+            self.db.refresh(customer)
+
+    def get_by_nit(self, nit: str) -> Customer | None:
+        """Get customer by NIT"""
+        statement = select(Customer).where(Customer.nit == nit)
+        result: Customer | None = self.db.exec(statement).one_or_none()
+        return result

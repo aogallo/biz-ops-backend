@@ -25,7 +25,7 @@ class InvoiceBase(SQLModel):
     serie: str = Field(index=True)
     dte_number: str
 
-    company_id: int = Field(foreign_key="customer.id", index=True)
+    company_id: int = Field(foreign_key="company.id", index=True)
     customer_id: int = Field(foreign_key="customer.id", index=True)
 
     currency: str = "GTQ"
@@ -63,8 +63,6 @@ class InvoiceCreate(InvoiceBase):
     """
     Create invoice
     """
-
-    pass
 
 
 class InvoiceUpdate(SQLModel):
