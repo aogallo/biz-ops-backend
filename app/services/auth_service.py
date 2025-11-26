@@ -1,7 +1,5 @@
 class AuthService:
-    """
-    Application Layer - User Bussines logic (Use Case)
-    """
+    """Service for managing authentication."""
 
     def login(self, token: str):
         print("testing", token)

@@ -21,7 +21,9 @@ router = APIRouter(
 
 
 @router.post(
-    "/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED
+    "",
+    response_model=ProductResponse,
+    status_code=status.HTTP_201_CREATED,
 )
 def create_product(
     product: ProductCreate, current_user=Depends(get_current_user)
@@ -44,7 +46,7 @@ def create_product(
         ) from e
 
 
-@router.get("/", response_model=ProductListResponse)
+@router.get("", response_model=ProductListResponse)
 def list_products(current_user=Depends(get_current_user)):
     """
     Get all products.

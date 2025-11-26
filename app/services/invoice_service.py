@@ -89,13 +89,17 @@ class InvoiceService:
 
             CHUNK_SIZE = 1000  # Process rows in batches
 
+            response = ""
             # Process in chunks for memory efficiency
             for chunk_start in range(0, len(df), CHUNK_SIZE):
                 chunk = df.iloc[(chunk_start) : (chunk_start + CHUNK_SIZE)]
                 validated_rows = self._validate_chunk(chunk, chunk_start)
 
                 if validated_rows:
-                    self._process_validated_rows(validated_rows)
+                    response = self._process_validated_rows(validated_rows)
+
+            return response
+
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -110,11 +114,14 @@ class InvoiceService:
             try:
                 validated_row = InvoiceRowSchema.model_validate(row.to_dict())
                 validated.append(validated_row)
-            except ValueError as e:
+            except Exception as e:
                 logger.error(
                     "Failing creating the Invoice Row File %s", str(e)
                 )
-                raise ValueError(str(e)) from e
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="There are some lines do not match with the expected values",
+                ) from e
 
         return validated
 
@@ -316,10 +323,28 @@ class InvoiceService:
             logger.info(
                 "Created %d invoices with details", len(invoices_to_create)
             )
+            return "Created %d invoices with details", len(invoices_to_create)
         else:
             logger.info("No invoices to create")
+            return "No invoices to create"
 
     def _bulk_insert_invoices(self, invoices: list[Invoice]):
         """Bulk insert invoices with their details"""
         self.invoice_repo.add_bulk(invoices)
         logger.info("Invoices created successfully: %d", len(invoices))
+
+    def get_invoice_by_id(self, id: int):
+        invoice = self.invoice_repo.get_invoice_by_id(id)
+
+        if invoice is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Invoice not found",
+            )
+
+        return invoice
+
+    def get_invoice_deatils(self, id: int):
+        details = self.invoice_repo.get_invoice_details(id)
+
+        return details

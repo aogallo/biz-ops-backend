@@ -15,7 +15,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=list[CustomerResponse])
+@router.get("", response_model=list[CustomerResponse])
 def list_customers(current_user=Depends(get_current_user)):
     """List all customers."""
     service = CustomerService(current_user=current_user)

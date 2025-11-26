@@ -12,7 +12,7 @@ router = APIRouter(
 )
 
 
-@router.post("/")
+@router.post("")
 def create_category(category: CategoryCreate):
     service = CategoryService()
     return service.create_category(category)

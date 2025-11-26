@@ -20,7 +20,7 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=CompanyResponse)
+@router.post("", response_model=CompanyResponse)
 def create_company(
     company: CompanyCreate, current_user=Depends(get_current_user)
 ):
@@ -42,7 +42,7 @@ def create_company(
         ) from e
 
 
-@router.get("/", response_model=CompaniesResponse)
+@router.get("", response_model=CompaniesResponse)
 def list_companies(current_user=Depends(get_current_user)):
     """
     Get all companies.
