@@ -14,7 +14,10 @@ class ProductService:
         self.repository = ProductRepositoryImpl(current_user)
 
     def create_product(self, product_request: ProductCreate) -> Product:
-        """Create a new product. Raises error if product with same name exists."""
+        """
+        Create a new product.
+        Raises error if product with same name exists.
+        """
         # Check if product with same name already exists
         existing_product = self.repository.get_by_name(
             name=product_request.name
