@@ -112,5 +112,5 @@ class TestProductRoutes:
         assert "price" in first_product
         assert "stock" in first_product
         assert isinstance(first_product["name"], str)
-        assert isinstance(first_product["price"], (int, float))
+        assert isinstance(first_product["price"], int | float)
         assert isinstance(first_product["stock"], int)
