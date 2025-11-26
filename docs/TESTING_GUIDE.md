@@ -18,6 +18,26 @@ This guide provides comprehensive instructions for writing unit and integration 
 
 ## Overview
 
+We use `pytest` as our testing framework. Tests run against an **in-memory SQLite database** for speed and isolation, while production and staging environments use PostgreSQL.
+
+### Test vs Production Databases
+
+| Environment | Database | Configuration |
+|------------|----------|---------------|
+| **Tests** (local & CI) | SQLite in-memory | `sqlite:///:memory:` |
+| **Development** | SQLite file | `sqlite:///bizops_dev.db` |
+| **Staging** | PostgreSQL | Connection string from env |
+| **Production** | PostgreSQL | Connection string from env |
+
+**Why SQLite for tests?**
+- ✅ Fast (in-memory, no disk I/O)
+- ✅ Isolated (each test run gets fresh database)
+- ✅ No setup required (no Docker, no PostgreSQL server)
+- ✅ Works identically in local and CI environments
+- ✅ Deterministic (same behavior every time)
+
+### Test Structure
+
 We use `pytest` as our testing framework with the following structure:
 
 ```
@@ -2118,8 +2138,189 @@ Tests are automatically run in CI/CD pipelines. Ensure:
 - [Builder Pattern Guide](https://refactoring.guru/design-patterns/builder/python/example)
 - [SQLModel Testing](https://sqlmodel.tiangolo.com/tutorial/fastapi/tests/)
 
+## Test Database Configuration
+
+### How Test Database Works
+
+Tests use an in-memory SQLite database that is automatically configured in `tests/conftest.py`:
+
+```python
+# Environment variables are set BEFORE app import
+os.environ["DATABASE_URI"] = "sqlite:///:memory:"
+
+# Engine fixture uses the app's engine (configured with test DATABASE_URI)
+@pytest.fixture(name="engine", scope="session")
+def engine_fixture():
+    from app.infrastructure import database as db_module
+    SQLModel.metadata.create_all(db_module.engine)
+    return db_module.engine
+```
+
+**Key points:**
+1. Environment variables MUST be set before importing the app
+2. The app's engine is automatically configured with SQLite when tests run
+3. Tables are created automatically via `SQLModel.metadata.create_all()`
+4. All fixtures share the same engine for data consistency
+
+### Database Fixtures
+
+**`engine`** - Session-scoped SQLite engine
+- Created once per test session
+- Shared across all tests for performance
+- Tables created automatically
+
+**`session`** - Function-scoped database session
+- New session for each test
+- Automatically rolls back after test
+
+**`client`** - Test client without authentication
+- Uses test database
+- For testing unauthorized access (403 errors)
+
+**`authenticated_client`** - Test client with authentication mocks
+- Uses test database
+- Authentication dependencies overridden
+- For testing authorized endpoints
+
+**`clean_database`** - Auto-cleanup fixture
+- Runs after each test
+- Deletes all data for test isolation
+- Ensures tests don't affect each other
+
+### Creating Test Data
+
+#### Option 1: Using Fixtures (Recommended)
+
+```python
+@pytest.fixture
+def test_customer(session: Session) -> Customer:
+    """Create a test customer in the database."""
+    customer = Customer(
+        name="Test Corp",
+        nit="12345678-9",
+        created_by="test@example.com",
+    )
+    session.add(customer)
+    session.commit()
+    session.refresh(customer)
+    return customer
+
+def test_something(test_customer: Customer):
+    assert test_customer.id is not None
+```
+
+#### Option 2: Creating Data in Test
+
+```python
+def test_something(engine):
+    """Test with inline data creation."""
+    from sqlmodel import Session
+
+    with Session(engine) as session:
+        customer = Customer(name="Test", nit="12345678-9", created_by="test")
+        session.add(customer)
+        session.commit()
+
+    # Use customer in test
+    ...
+```
+
+#### Option 3: Via API (Integration Tests)
+
+```python
+def test_something(authenticated_client: TestClient):
+    """Test using API to create data."""
+    # Create via API
+    response = authenticated_client.post(
+        "/api/v1/customers/",
+        json={"name": "Test Corp", "nit": "12345678-9"},
+    )
+    assert response.status_code == 201
+
+    customer_id = response.json()["id"]
+    # Use customer_id in further tests
+    ...
+```
+
+### Handling Different Database Types
+
+The app automatically detects the database type and configures the engine appropriately:
+
+```python
+# In app/infrastructure/database.py
+if settings.DATABASE_URI.startswith("sqlite"):
+    # SQLite-specific configuration
+    engine = create_engine(
+        settings.DATABASE_URI,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+else:
+    # PostgreSQL/MySQL configuration
+    engine = create_engine(
+        settings.DATABASE_URI,
+        pool_pre_ping=True,
+        pool_size=5,
+        max_overflow=10,
+    )
+```
+
+This ensures:
+- ✅ Tests use SQLite (fast, no pooling needed)
+- ✅ Production uses PostgreSQL (with connection pooling)
+- ✅ No code changes needed between environments
+
+### CI/CD Configuration
+
+GitHub Actions workflow (`.github/workflows/test.yml`) ensures:
+
+1. **Environment variables are set** before running tests
+2. **SQLite is used** (no PostgreSQL setup needed)
+3. **All dependencies installed** via `uv`
+4. **Coverage reports generated** and uploaded
+
+```yaml
+# Key workflow steps:
+- Set environment: DATABASE_URI=sqlite:///:memory:
+- Install dependencies: uv sync && uv pip install -r requirements.txt
+- Run tests: uv run pytest tests/ --cov=app
+```
+
+### Troubleshooting Database Issues
+
+**Problem:** Tests fail with "relation does not exist" or "table not found"
+```
+Solution: Ensure conftest.py sets DATABASE_URI before importing app
+```
+
+**Problem:** Tests try to connect to PostgreSQL instead of SQLite
+```
+Solution: Check that environment variable is set at the TOP of conftest.py
+```
+
+**Problem:** Data from one test appears in another test
+```
+Solution: clean_database fixture should run after each test
+```
+
+**Problem:** Fixture can't find test data
+```
+Solution: Ensure fixtures use the same engine (check engine fixture scope)
+```
+
 ## Summary
 
 This guide provides a comprehensive framework for testing the biz-ops-backend application. Follow these patterns and checklists when adding new features to ensure high-quality, maintainable code.
+
+### Quick Checklist for New Tests
+
+- [ ] Uses `pytest` fixtures from `conftest.py`
+- [ ] Tests are isolated (don't depend on each other)
+- [ ] Uses SQLite in-memory database (via fixtures)
+- [ ] Follows AAA pattern (Arrange-Act-Assert)
+- [ ] Has descriptive test names
+- [ ] Covers both success and error cases
+- [ ] Achieves >80% code coverage
+- [ ] Passes in both local and CI environments
 
 For questions or improvements to this guide, please create an issue or PR in the repository.

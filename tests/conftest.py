@@ -1,12 +1,20 @@
 """Pytest configuration and shared fixtures."""
 
 import os
+
+# CRITICAL: Set test environment variables BEFORE any app imports
+# This ensures the app uses SQLite instead of PostgreSQL
+os.environ["DATABASE_URI"] = "sqlite:///:memory:"
+os.environ["AUTH0_DOMAIN"] = "test.auth0.com"
+os.environ["AUTH0_AUDIENCE"] = "https://test-api"
+os.environ["AUTH0_ISSUER"] = "https://test.auth0.com/"
+
+# ruff: noqa: E402 - imports must come after environment variable setup
 from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session, SQLModel, create_engine
-from sqlmodel.pool import StaticPool
+from sqlmodel import Session, SQLModel
 
 from app.domain.entities.product import Product
 from app.domain.entities.user import User
@@ -14,16 +22,22 @@ from app.infrastructure.database import get_session
 from app.main import app
 
 
-@pytest.fixture(name="engine")
+@pytest.fixture(name="engine", scope="session")
 def engine_fixture():
-    """Create an in-memory SQLite database engine for testing."""
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    SQLModel.metadata.create_all(engine)
-    return engine
+    """Create an in-memory SQLite database engine for testing.
+
+    Session-scoped to share the same database across all tests in the session.
+    This ensures data consistency and avoids PostgreSQL connection attempts.
+    """
+    # Import here to ensure engine is created with test environment variables
+    from app.infrastructure import database as db_module
+
+    # The app's engine is already created with our test DATABASE_URI
+    # Just ensure tables are created
+    SQLModel.metadata.create_all(db_module.engine)
+
+    # Return the app's engine so fixtures use the same engine
+    return db_module.engine
 
 
 @pytest.fixture(name="session")
@@ -131,7 +145,10 @@ def authenticated_client_fixture(
 
 @pytest.fixture(scope="function", autouse=True)
 def clean_database(engine):
-    """Clean database tables between tests."""
+    """Clean database tables between tests.
+
+    Runs after each test to ensure test isolation.
+    """
     # This runs before each test
     yield
     # This runs after each test - clear all data
@@ -139,18 +156,7 @@ def clean_database(engine):
 
     with Session(engine) as session:
         # Delete all products (add other tables as needed)
-        from app.domain.entities.product import Product
-
         products = session.exec(select(Product)).all()
         for product in products:
             session.delete(product)
         session.commit()
-
-
-@pytest.fixture(autouse=True)
-def set_test_env():
-    """Set environment variables for testing."""
-    os.environ.setdefault("AUTH0_DOMAIN", "test.auth0.com")
-    os.environ.setdefault("AUTH0_AUDIENCE", "https://test-api")
-    os.environ.setdefault("AUTH0_ISSUER", "https://test.auth0.com/")
-    os.environ.setdefault("DATABASE_URI", "sqlite:///:memory:")
