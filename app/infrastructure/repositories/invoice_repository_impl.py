@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlmodel import select
 
 from app.domain.entities.invoice import Invoice
+from app.domain.entities.invoice_detail import InvoiceDetail
 from app.domain.repositories.invoice_repository import InvoiceRepository
 from app.infrastructure.database import get_current_session
 from app.schemas.invoice_schema import InvoiceCreate
@@ -86,4 +87,16 @@ class InvoiceRepositoryImpl(InvoiceRepository):
             Invoice.serie == serie, Invoice.dte_number == dte_number
         )
         result: Invoice | None = self.db.exec(statement).one_or_none()
+        return result
+
+    def get_invoice_by_id(self, id: int) -> Invoice | None:
+        """Get an invoice by ID"""
+        statement = select(Invoice).where(Invoice.id == id)
+        result: Invoice | None = self.db.exec(statement).one_or_none()
+        return result
+
+    def get_invoice_details(self, id: int) -> list[InvoiceDetail] | None:
+        """Get an invoice by ID"""
+        statement = select(InvoiceDetail).where(InvoiceDetail.invoice_id == id)
+        result: list[InvoiceDetail] | None = self.db.exec(statement)._allrows()
         return result
