@@ -10,33 +10,70 @@ from app.domain.entities.invoice_detail import InvoiceDetail
 
 
 class InvoiceBuilder(SQLModel):
-    """Builder pattern for creating Invoice entities with line items."""
+    """Builder pattern for creating Invoice entities with line items.
 
-    def __init__(
-        self,
-        date: datetime,
-        authorization_number: str,
-        dte_type: str,
-        serie: str,
-        dte_number: str,
-        company_id: int,
-        customer_id: int,
-    ):
-        """Initialize the invoice builder."""
+    This builder follows the pure builder pattern - start with an empty builder
+    and configure it step by step using the with_* methods.
+
+    Example:
+        # Pure builder pattern
+        invoice = (
+            InvoiceBuilder()
+            .with_date(datetime.now())
+            .with_authorization_number("AUTH123")
+            .with_dte_type("FACTURA")
+            .with_serie("A")
+            .with_dte_number("001")
+            .with_company_id(1)
+            .with_customer_id(2)
+            .with_state("draft")
+            .with_created_by("user")
+            .add_simple_line("Product A", 2, 100.0, "user")
+            .build()
+        )
+
+        # Or use convenience classmethod
+        invoice = (
+            InvoiceBuilder.create_with_header(
+                date=datetime.now(),
+                authorization_number="AUTH123",
+                dte_type="FACTURA",
+                serie="A",
+                dte_number="001",
+                company_id=1,
+                customer_id=2,
+                state="draft",
+                created_by="user",
+            )
+            .add_simple_line("Product A", 2, 100.0, "user")
+            .build()
+        )
+    """
+
+    def __init__(self):
+        """Initialize an empty invoice builder.
+
+        All fields will be None/default until set via builder methods.
+        This follows the pure builder pattern from refactoring.guru.
+        """
         self._invoice = Invoice(
-            date=date,
-            authorization_number=authorization_number,
-            dte_type=dte_type,
-            serie=serie,
-            dte_number=dte_number,
-            company_id=company_id,
-            customer_id=customer_id,
+            date=None,
+            authorization_number=None,
+            dte_type=None,
+            serie=None,
+            dte_number=None,
+            company_id=None,
+            customer_id=None,
         )
         self._invoice.created_at = datetime.now(UTC)
         self._invoice.currency = "GTQ"
         self._invoice.subtotal = 0.0
         self._invoice.total_taxes = 0.0
         self._invoice.total_amount = 0.0
+        self._invoice.state = "draft"
+        self._invoice.created_by = "system"
+        self._invoice.updated_by = "system"
+        self._invoice.updated_at = datetime.now(UTC)
         self._invoice.is_cancelled = False
         self._invoice.details = []
 
@@ -347,6 +384,70 @@ class InvoiceBuilder(SQLModel):
         return self._invoice
 
     @classmethod
+    def create_with_header(
+        cls,
+        date: datetime,
+        authorization_number: str,
+        dte_type: str,
+        serie: str,
+        dte_number: str,
+        company_id: int,
+        customer_id: int,
+        state: InvoiceState,
+        created_by: str,
+        currency: str = "GTQ",
+    ) -> "InvoiceBuilder":
+        """Convenience classmethod to create a builder with all header fields.
+
+        This is a convenience method that sets all required header fields at once.
+        Returns a builder instance ready to add line items and build.
+
+        Args:
+            date: Invoice date
+            authorization_number: SAT authorization number
+            dte_type: Document type (e.g., "FACTURA", "NOTA_CREDITO")
+            serie: Invoice series
+            dte_number: Document number
+            company_id: Issuing company ID
+            customer_id: Customer ID
+            state: Invoice state (e.g., "draft", "open", "paid", "void")
+            created_by: Username or ID of creator
+            currency: Currency code (default "GTQ")
+
+        Returns:
+            InvoiceBuilder instance with header set, ready to add line items
+
+        Example:
+            invoice = (
+                InvoiceBuilder.create_with_header(
+                    date=datetime.now(),
+                    authorization_number="AUTH123",
+                    dte_type="FACTURA",
+                    serie="A",
+                    dte_number="001",
+                    company_id=1,
+                    customer_id=2,
+                    state="draft",
+                    created_by="user",
+                )
+                .add_simple_line("Product A", 2, 100.0, "user", iva=24.0)
+                .build()
+            )
+        """
+        return cls().with_header(
+            date=date,
+            authorization_number=authorization_number,
+            dte_type=dte_type,
+            serie=serie,
+            dte_number=dte_number,
+            company_id=company_id,
+            customer_id=customer_id,
+            state=state,
+            created_by=created_by,
+            currency=currency,
+        )
+
+    @classmethod
     def create_invoice(
         cls,
         date: datetime,
@@ -356,11 +457,13 @@ class InvoiceBuilder(SQLModel):
         dte_number: str,
         company_id: int,
         customer_id: int,
-        state: str,
+        state: InvoiceState,
         created_by: str,
         currency: str = "GTQ",
     ) -> "InvoiceBuilder":
         """Convenience method to create an invoice builder with header fields.
+
+        This is an alias for create_with_header() for backward compatibility.
 
         This returns a builder instance, not a built invoice, so you can
         continue adding line items.
@@ -387,7 +490,7 @@ class InvoiceBuilder(SQLModel):
                 .build()
             )
         """
-        return cls().with_header(
+        return cls.create_with_header(
             date=date,
             authorization_number=authorization_number,
             dte_type=dte_type,

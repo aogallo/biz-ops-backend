@@ -132,7 +132,7 @@ class TestInvoiceBuilder:
                 dte_number="001",
                 company_id=1,
                 customer_id=2,
-                state="DRAFT",
+                state="draft",
                 created_by="test_user",
                 currency="GTQ",
             )
@@ -146,7 +146,7 @@ class TestInvoiceBuilder:
         assert invoice.dte_number == "001"
         assert invoice.company_id == 1
         assert invoice.customer_id == 2
-        assert invoice.state == "DRAFT"
+        assert invoice.state == "draft"
         assert invoice.currency == "GTQ"
         assert invoice.created_by == "test_user"
 
@@ -162,7 +162,7 @@ class TestInvoiceBuilder:
                 dte_number="001",
                 company_id=1,
                 customer_id=2,
-                state="DRAFT",
+                state="draft",
                 created_by="test_user",
             )
             .add_line(
@@ -201,7 +201,7 @@ class TestInvoiceBuilder:
                 dte_number="001",
                 company_id=1,
                 customer_id=2,
-                state="DRAFT",
+                state="draft",
                 created_by="test_user",
             )
             .add_simple_line("Product A", 2, 100.0, "test_user", iva=24.0)
@@ -225,7 +225,7 @@ class TestInvoiceBuilder:
                 dte_number="001",
                 company_id=1,
                 customer_id=2,
-                state="DRAFT",
+                state="draft",
                 created_by="test_user",
             )
             .add_simple_line("Product A", 1, 100.0, "test_user")
@@ -259,7 +259,7 @@ class TestInvoiceBuilder:
                 dte_number="001",
                 company_id=1,
                 customer_id=2,
-                state="DRAFT",
+                state="draft",
                 created_by="test_user",
             )
             .add_lines(details)
@@ -271,13 +271,99 @@ class TestInvoiceBuilder:
 
     def test_invoice_missing_required_fields(self):
         """Test that missing required fields raise ValueError."""
+        # Test missing date
         with pytest.raises(ValueError, match="Invoice date is required"):
             InvoiceBuilder().build()
 
+        # Test missing authorization_number
         with pytest.raises(
             ValueError, match="Authorization number is required"
         ):
             InvoiceBuilder().with_date(datetime.now()).build()
+
+        # Test missing dte_type
+        with pytest.raises(ValueError, match="DTE type is required"):
+            (
+                InvoiceBuilder()
+                .with_date(datetime.now())
+                .with_authorization_number("AUTH123")
+                .build()
+            )
+
+        # Test missing serie
+        with pytest.raises(ValueError, match="Invoice serie is required"):
+            (
+                InvoiceBuilder()
+                .with_date(datetime.now())
+                .with_authorization_number("AUTH123")
+                .with_dte_type("FACTURA")
+                .build()
+            )
+
+        # Test missing dte_number
+        with pytest.raises(ValueError, match="DTE number is required"):
+            (
+                InvoiceBuilder()
+                .with_date(datetime.now())
+                .with_authorization_number("AUTH123")
+                .with_dte_type("FACTURA")
+                .with_serie("A")
+                .build()
+            )
+
+        # Test missing company_id
+        with pytest.raises(ValueError, match="Company ID is required"):
+            (
+                InvoiceBuilder()
+                .with_date(datetime.now())
+                .with_authorization_number("AUTH123")
+                .with_dte_type("FACTURA")
+                .with_serie("A")
+                .with_dte_number("001")
+                .build()
+            )
+
+        # Test missing customer_id
+        with pytest.raises(ValueError, match="Customer ID is required"):
+            (
+                InvoiceBuilder()
+                .with_date(datetime.now())
+                .with_authorization_number("AUTH123")
+                .with_dte_type("FACTURA")
+                .with_serie("A")
+                .with_dte_number("001")
+                .with_company_id(1)
+                .build()
+            )
+
+        # Test missing state
+        with pytest.raises(ValueError, match="Invoice state is required"):
+            (
+                InvoiceBuilder()
+                .with_date(datetime.now())
+                .with_authorization_number("AUTH123")
+                .with_dte_type("FACTURA")
+                .with_serie("A")
+                .with_dte_number("001")
+                .with_company_id(1)
+                .with_customer_id(2)
+                .build()
+            )
+
+        # Test missing created_by
+        with pytest.raises(ValueError, match="Created by is required"):
+            (
+                InvoiceBuilder()
+                .with_date(datetime.now())
+                .with_authorization_number("AUTH123")
+                .with_dte_type("FACTURA")
+                .with_serie("A")
+                .with_dte_number("001")
+                .with_company_id(1)
+                .with_customer_id(2)
+                .with_state("draft")
+                .build()
+            )
 
     def test_invoice_with_cancelled_status(self):
         """Test setting cancelled status."""
@@ -292,7 +378,7 @@ class TestInvoiceBuilder:
                 dte_number="001",
                 company_id=1,
                 customer_id=2,
-                state="CANCELLED",
+                state="void",
                 created_by="test_user",
             )
             .with_cancelled_status(True, cancelled_date)
@@ -314,7 +400,7 @@ class TestInvoiceBuilder:
                 dte_number="001",
                 company_id=1,
                 customer_id=2,
-                state="DRAFT",
+                state="draft",
                 created_by="test_user",
             )
             .add_simple_line("Product A", 10, 100.0, "test_user", iva=120.0)
@@ -339,7 +425,7 @@ class TestInvoiceBuilder:
                 dte_number="001",
                 company_id=1,
                 customer_id=2,
-                state="DRAFT",
+                state="draft",
                 created_by="test_user",
             )
             .with_updated_by("admin_user")
@@ -348,3 +434,55 @@ class TestInvoiceBuilder:
 
         assert invoice.updated_by == "admin_user"
         assert invoice.updated_at is not None
+
+    def test_create_with_header_convenience_method(self):
+        """Test InvoiceBuilder.create_with_header() convenience method."""
+        invoice = (
+            InvoiceBuilder.create_with_header(
+                date=datetime.now(),
+                authorization_number="AUTH456",
+                dte_type="NOTA_CREDITO",
+                serie="B",
+                dte_number="002",
+                company_id=1,
+                customer_id=3,
+                state="draft",
+                created_by="test_user",
+                currency="USD",
+            )
+            .add_simple_line("Product X", 3, 75.0, "test_user", iva=27.0)
+            .build()
+        )
+
+        assert invoice.authorization_number == "AUTH456"
+        assert invoice.dte_type == "NOTA_CREDITO"
+        assert invoice.serie == "B"
+        assert invoice.dte_number == "002"
+        assert invoice.currency == "USD"
+        assert len(invoice.details) == 1
+        assert invoice.subtotal == 225.0  # 3 * 75
+
+    def test_pure_builder_pattern(self):
+        """Test using pure builder pattern step by step."""
+        invoice = (
+            InvoiceBuilder()
+            .with_date(datetime.now())
+            .with_authorization_number("AUTH789")
+            .with_dte_type("FACTURA")
+            .with_serie("C")
+            .with_dte_number("003")
+            .with_company_id(2)
+            .with_customer_id(4)
+            .with_state("draft")
+            .with_created_by("builder_user")
+            .with_currency("EUR")
+            .add_simple_line("Service A", 1, 500.0, "builder_user", iva=60.0)
+            .build()
+        )
+
+        assert invoice.authorization_number == "AUTH789"
+        assert invoice.currency == "EUR"
+        assert invoice.company_id == 2
+        assert invoice.customer_id == 4
+        assert invoice.created_by == "builder_user"
+        assert len(invoice.details) == 1

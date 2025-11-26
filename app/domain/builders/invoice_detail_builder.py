@@ -6,23 +6,40 @@ from app.domain.entities.invoice_detail import InvoiceDetail
 
 
 class InvoiceDetailBuilder:
-    """Builder pattern for creating InvoiceDetail line items."""
+    """Builder pattern for creating InvoiceDetail line items.
+
+    This builder follows the pure builder pattern - start with an empty builder
+    and configure it step by step using the with_* methods.
+
+    Example:
+        detail = (
+            InvoiceDetailBuilder()
+            .with_product("Product A", code="PRD001")
+            .with_price(quantity=2, unit_price=100.0)
+            .with_iva(24.0)
+            .with_created_by("test_user")
+            .build()
+        )
+    """
 
     def __init__(self, invoice_id: int | None = None):
-        """Initialize the builder.
+        """Initialize an empty invoice detail builder.
+
+        All fields will be None/default until set via builder methods.
+        This follows the pure builder pattern from refactoring.guru.
 
         Args:
-            invoice_id: Optional invoice ID (can be set later)
+            invoice_id: Optional invoice ID (can be set later, defaults to 0)
         """
         self._detail = InvoiceDetail(
-            invoice_id=invoice_id or 0,
+            invoice_id=invoice_id,
             product_name="",
             quantity=0.0,
             unit_price=0.0,
             created_by="",
         )
 
-        # Set defaults
+        # Set tax defaults to 0.0
         self._detail.iva = 0.0
         self._detail.petroleo = 0.0
         self._detail.turismo_hospedaje = 0.0
@@ -35,6 +52,8 @@ class InvoiceDetailBuilder:
         self._detail.cemento = 0.0
         self._detail.bebidas_no_alcoholicas = 0.0
         self._detail.tarifa_portuaria = 0.0
+
+        # Set calculated defaults
         self._detail.subtotal = 0.0
         self._detail.total_taxes = 0.0
         self._detail.total = 0.0
