@@ -2,10 +2,12 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import EmailStr, Field
+
+from app.schemas.base import CamelCaseSchema
 
 
-class UserBase(BaseModel):
+class UserBase(CamelCaseSchema):
     """Base user schema with common fields."""
 
     email: EmailStr
@@ -18,7 +20,7 @@ class UserCreate(UserBase):
     auth_id: str
 
 
-class UserUpdate(BaseModel):
+class UserUpdate(CamelCaseSchema):
     """Schema for updating a user."""
 
     email: EmailStr | None = None
@@ -34,10 +36,8 @@ class UserResponse(UserBase):
     updated_by: str | None = None
     updated_at: datetime | None = None
 
-    model_config = {"from_attributes": True}
 
-
-class UserListResponse(BaseModel):
+class UserListResponse(CamelCaseSchema):
     """Schema for list of users response."""
 
     users: list[UserResponse]

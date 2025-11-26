@@ -7,6 +7,12 @@ name = "biz-ops-backend"
 version = "1.0.0"
 description = "Business Operations Backend API"
 requires-python = ">=3.12"
+dependencies = [
+    "openpyxl>=3.1.5",
+    "pandas>=2.3.3",
+    "pyarrow>=22.0.0",
+    "xlrd>=2.0.2",
+]
 
 # ==============================================================================
 # BLACK - CODE FORMATTER

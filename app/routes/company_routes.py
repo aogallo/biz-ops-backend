@@ -1,16 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.dependencies import verify_token
-from app.domain.entities.company import (
+from app.dependencies import get_current_user, verify_token
+from app.domain.entities.company import CompanyCreate as CompanyCreateEntity
+from app.infrastructure.database import get_session
+from app.schemas.company_schema import (
     CompaniesResponse,
     CompanyCreate,
     CompanyResponse,
 )
-from app.infrastructure.database import get_session
 from app.services.company_service import CompanyService
 
 router = APIRouter(
-    prefix="/company",
+    prefix="/companies",
     tags=["Companies"],
     dependencies=[
         Depends(verify_token),
@@ -18,11 +19,11 @@ router = APIRouter(
     ],
 )
 
-service = CompanyService()
 
-
-@router.post("/", response_model=CompanyResponse)
-def create_company(company: CompanyCreate):
+@router.post("", response_model=CompanyResponse)
+def create_company(
+    company: CompanyCreate, current_user=Depends(get_current_user)
+):
     """
     Create a new company
 
@@ -30,15 +31,19 @@ def create_company(company: CompanyCreate):
     """
 
     try:
-        return service.create_company(company=company)
+        service = CompanyService(current_user)
+        # Convert schema to entity
+        company_entity = CompanyCreateEntity(**company.model_dump())
+        created_company = service.create_company(company=company_entity)
+        return CompanyResponse.model_validate(created_company)
     except HTTPException as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
         ) from e
 
 
-@router.get("/", response_model=CompaniesResponse)
-def list_companies():
+@router.get("", response_model=CompaniesResponse)
+def list_companies(current_user=Depends(get_current_user)):
     """
     Get all companies.
 
@@ -46,7 +51,12 @@ def list_companies():
     """
 
     try:
-        return service.list_all_companies()
+        service = CompanyService(current_user)
+        result = service.list_all_companies()
+        return CompaniesResponse(
+            count=result["count"],
+            data=[CompanyResponse.model_validate(c) for c in result["data"]],
+        )
     except HTTPException as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)

@@ -3,11 +3,9 @@ from typing import TYPE_CHECKING, Literal
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.domain.entities.company import Company
-from app.domain.entities.customer import Customer
-from app.domain.entities.journal_entry import JournalEntry
-
 if TYPE_CHECKING:
+    from app.domain.entities.company import Company
+    from app.domain.entities.customer import Customer
     from app.domain.entities.invoice_detail import InvoiceDetail
 
 
@@ -25,8 +23,12 @@ class InvoiceBase(SQLModel):
     serie: str = Field(index=True)
     dte_number: str
 
-    company_id: int = Field(foreign_key="customer.id", index=True)
-    customer_id: int = Field(foreign_key="customer.id", index=True)
+    # income
+    # expenses
+    invoiceType: str = "expenses"
+
+    company_id: int
+    customer_id: int
 
     currency: str = "GTQ"
 
@@ -43,28 +45,20 @@ class InvoiceBase(SQLModel):
     # Void / Cancelled: The invoice was created by mistake and has been
     # cancelled
 
-    state: InvoiceState = "draft"
+    state: str = "draft"
     is_cancelled: bool | None = False
     cancelled_date: datetime | None = None
 
-    # Relationships
-    company: Company = Relationship(
-        sa_relationship_kwargs={"foreign_keys": "[Invoice.company_id]"}
-    )
-    customer: Customer = Relationship(
-        sa_relationship_kwargs={"foreign_keys": "[Invoice.customer_id]"}
-    )
-    journal_entries: list[JournalEntry] = Relationship(
-        back_populates="journal_entry"
-    )
+    # journal_entries: list[JournalEntry] = Relationship(
+    #     back_populates="journal_entry"
+    # )
+    #
 
 
 class InvoiceCreate(InvoiceBase):
     """
     Create invoice
     """
-
-    pass
 
 
 class InvoiceUpdate(SQLModel):
@@ -96,6 +90,18 @@ class Invoice(InvoiceBase, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_by: str | None = Field(default=None, index=True)
     updated_at: datetime | None = Field(default=None)
+
+    # Relationship with company
+    company_id: int = Field(foreign_key="company.id", index=True)
+    company: "Company" = Relationship(
+        sa_relationship_kwargs={"foreign_keys": "[Invoice.company_id]"}
+    )
+
+    # Relationship with customer
+    customer_id: int = Field(foreign_key="customer.id", index=True)
+    customer: "Customer" = Relationship(
+        sa_relationship_kwargs={"foreign_keys": "[Invoice.customer_id]"}
+    )
 
     # Relationship with invoice details
     details: list["InvoiceDetail"] = Relationship(back_populates="invoice")

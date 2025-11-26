@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from pydantic import BaseModel, EmailStr
+from pydantic import EmailStr
 from sqlmodel import Field, SQLModel
 
 
@@ -8,8 +8,10 @@ class CompanyBase(SQLModel):
     name: str = Field(unique=True, index=True)
     nit: str = Field(unique=True, index=True)
     date_birth: str | None = Field(default=None)
-    comercial_activity: str | None = Field(default=None)
-    email: EmailStr
+    commercial_activity: str | None = Field(default=None)
+    email: EmailStr | None = Field(
+        default="no-email@example.com", nullable=True
+    )
     address: str | None = Field(default=None)
 
 
@@ -24,15 +26,3 @@ class Company(CompanyBase, table=True):
 
 class CompanyCreate(CompanyBase):
     pass
-
-
-class CompanyResponse(CompanyBase):
-    id: int
-
-    created_at: datetime
-    updated_at: datetime | None
-
-
-class CompaniesResponse(BaseModel):
-    count: int
-    data: list[CompanyResponse]

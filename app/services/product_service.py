@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 
 from app.domain.entities.product import Product, ProductCreate
+from app.domain.entities.user import User
 from app.infrastructure.repositories.product_repository_impl import (
     ProductRepositoryImpl,
 )
@@ -9,11 +10,14 @@ from app.infrastructure.repositories.product_repository_impl import (
 class ProductService:
     """Service for managing products."""
 
-    def __init__(self):
-        self.repository = ProductRepositoryImpl()
+    def __init__(self, current_user: User):
+        self.repository = ProductRepositoryImpl(current_user)
 
     def create_product(self, product_request: ProductCreate) -> Product:
-        """Create a new product. Raises error if product with same name exists."""
+        """
+        Create a new product.
+        Raises error if product with same name exists.
+        """
         # Check if product with same name already exists
         existing_product = self.repository.get_by_name(
             name=product_request.name

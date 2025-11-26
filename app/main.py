@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from sqlalchemy import text
@@ -17,7 +18,14 @@ from app.core.exceptions import (
 )
 from app.core.logging_config import setup_logging
 from app.infrastructure.database import create_db_and_tables, engine
-from app.routes import company_routes, product_routes, user_routes
+from app.routes import (
+    account_routes,
+    category_routes,
+    company_routes,
+    customer_routes,
+    invoice_routes,
+    product_routes,
+)
 from app.schemas.common import HealthResponse
 
 # Setup logging
@@ -41,7 +49,7 @@ async def log_routes():
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI | None):
+async def lifespan(_app: FastAPI):
     """Handle application startup and shutdown events."""
     # Startup
     logger.info("Starting up Business Operations API...")
@@ -70,6 +78,19 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=True,
+    allow_methods=[
+        "*"
+    ],  # Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],  # Allow all headers
+    expose_headers=["*"],  # Expose all headers to the browser
+)
+logger.info("CORS enabled for origins: %s", settings.cors_origins_list)
 
 
 # Exception handlers
@@ -146,12 +167,14 @@ async def sqlalchemy_exception_handler(_: Request, exc: SQLAlchemyError):
     )
 
 
+# Health check endpoints (version-agnostic for load balancers/monitoring)
 @app.get("/", response_model=HealthResponse, tags=["Health"])
 async def health_check():
     """
     Health check endpoint.
 
     Returns the API status, version, and database connection status.
+    Available at root level for monitoring and load balancer health checks.
     """
     # Check database connection
     try:
@@ -180,7 +203,17 @@ async def detailed_health_check():
     return await health_check()
 
 
-# Include routers
-app.include_router(router=user_routes.router)
-app.include_router(router=product_routes.router)
-app.include_router(router=company_routes.router)
+# API Version prefix
+API_V1_PREFIX = "/api/v1"
+
+# Include v1 routers
+app.include_router(router=product_routes.router, prefix=API_V1_PREFIX)
+app.include_router(router=company_routes.router, prefix=API_V1_PREFIX)
+app.include_router(router=customer_routes.router, prefix=API_V1_PREFIX)
+app.include_router(router=invoice_routes.router, prefix=API_V1_PREFIX)
+app.include_router(router=category_routes.router, prefix=API_V1_PREFIX)
+app.include_router(router=account_routes.router, prefix=API_V1_PREFIX)
+
+# Future v2 routers can be added like this:
+# API_V2_PREFIX = "/api/v2"
+# app.include_router(router=user_routes_v2.router, prefix=API_V2_PREFIX)

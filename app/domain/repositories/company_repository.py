@@ -35,3 +35,10 @@ class CompanyRepository(ABC):
         Get a company by email
         """
         pass
+
+    @abstractmethod
+    def get_by_name(self, name: str) -> Company | None:
+        """
+        Get company by name
+        """
+        pass

@@ -1,8 +1,9 @@
 from typing import override
 
-from sqlmodel import Session, select
+from sqlmodel import select
 
 from app.domain.entities.product import Product, ProductCreate
+from app.domain.entities.user import User
 from app.domain.repositories.product_respository import ProductRepository
 from app.infrastructure.database import get_current_session
 
@@ -10,13 +11,16 @@ from app.infrastructure.database import get_current_session
 class ProductRepositoryImpl(ProductRepository):
     """Implementation of Product Repository"""
 
-    def __init__(self, session: Session | None = None) -> None:
-        self.db = session or get_current_session()
+    def __init__(self, current_user: User) -> None:
+        self.db = get_current_session()
+        self.current_user = current_user
 
     @override
     def create(self, product: ProductCreate) -> Product:
         """Create a new product"""
-        db_product: Product = Product.model_validate(product)
+        db_product: Product = Product.model_validate(
+            product, update={"created_by": self.current_user.auth_id}
+        )
         self.db.add(db_product)
         self.db.commit()
         self.db.refresh(db_product)

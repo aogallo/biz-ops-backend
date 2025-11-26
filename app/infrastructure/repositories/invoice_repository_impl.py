@@ -1,22 +1,102 @@
-from typing import override
+from datetime import datetime
 
-from fastapi import Depends
-from sqlmodel import Session
+from sqlmodel import select
 
-from app.domain.entities.invoice import Invoice, InvoiceCreate
+from app.domain.entities.invoice import Invoice
+from app.domain.entities.invoice_detail import InvoiceDetail
 from app.domain.repositories.invoice_repository import InvoiceRepository
 from app.infrastructure.database import get_current_session
+from app.schemas.invoice_schema import InvoiceCreate
 
 
 class InvoiceRepositoryImpl(InvoiceRepository):
     """Implementation of Invoice Repository"""
 
-    def __init__(
-        self, session: Session | None = Depends(get_current_session)
-    ) -> None:
-        self.db = session
+    def __init__(self) -> None:
+        self.db = get_current_session()
 
-    @override
     def create_invoice(self, invoice: InvoiceCreate) -> Invoice:
-        """Create a new invoice"""
-        pass
+        new_invoice: Invoice = Invoice.model_validate(invoice)
+        self.db.add(new_invoice)
+        self.db.commit()
+        self.db.refresh(new_invoice)
+        return new_invoice
+
+    def get_invoice_by_number(
+        self, dte_number: str, serie: str
+    ) -> Invoice | None:
+        """Get an invoice by DTE number and serie"""
+        statement = select(Invoice).where(
+            Invoice.dte_number == dte_number, Invoice.serie == serie
+        )
+        result: Invoice | None = self.db.exec(statement).one_or_none()
+        return result
+
+    def get_cancelled_invoices(self) -> list[Invoice]:
+        """Get all cancelled invoices"""
+        statement = select(Invoice).where(bool(Invoice.is_cancelled))
+        result: list[Invoice] = self.db.exec(statement)._allrows()
+        return result
+
+    def get_invoices_by_customer(self, customer_id: int) -> list[Invoice]:
+        """Get all invoices by customer"""
+        statement = select(Invoice).where(Invoice.customer_id == customer_id)
+        result: list[Invoice] = self.db.exec(statement)._allrows()
+        return result
+
+    def get_invoices_by_date_range(
+        self, start_date: datetime, end_date: datetime
+    ) -> list[Invoice]:
+        """Get all invoices by date range"""
+        statement = select(Invoice).where(
+            Invoice.date >= start_date, Invoice.date <= end_date
+        )
+        result: list[Invoice] = self.db.exec(statement)._allrows()
+        return result
+
+    def cancel_invoice(self, invoice_id: int, cancelled_by: str) -> bool:
+        """Cancel an invoice"""
+        statement = select(Invoice).where(Invoice.id == invoice_id)
+        invoice: Invoice | None = self.db.exec(statement).one_or_none()
+        if invoice:
+            invoice.is_cancelled = True
+            invoice.cancelled_by = cancelled_by
+            self.db.commit()
+            return True
+        return False
+
+    def get_all(self) -> list[Invoice]:
+        """Get all invoices"""
+        statement = select(Invoice)
+        result: list[Invoice] = self.db.exec(statement)._allrows()
+        return result
+
+    def add_bulk(self, invoices: list[Invoice]):
+        """Add bulk invoices"""
+        self.db.add_all(invoices)
+        self.db.commit()
+        for invoice in invoices:
+            self.db.refresh(invoice)
+        return invoices
+
+    def get_invoice_by_serie_and_dte(
+        self, serie: str, dte_number: int
+    ) -> Invoice | None:
+        """Get invoice by serie and dte number"""
+        statement = select(Invoice).where(
+            Invoice.serie == serie, Invoice.dte_number == dte_number
+        )
+        result: Invoice | None = self.db.exec(statement).one_or_none()
+        return result
+
+    def get_invoice_by_id(self, id: int) -> Invoice | None:
+        """Get an invoice by ID"""
+        statement = select(Invoice).where(Invoice.id == id)
+        result: Invoice | None = self.db.exec(statement).one_or_none()
+        return result
+
+    def get_invoice_details(self, id: int) -> list[InvoiceDetail] | None:
+        """Get an invoice by ID"""
+        statement = select(InvoiceDetail).where(InvoiceDetail.invoice_id == id)
+        result: list[InvoiceDetail] | None = self.db.exec(statement)._allrows()
+        return result

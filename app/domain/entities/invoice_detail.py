@@ -12,8 +12,6 @@ class InvoiceDetailBase(SQLModel):
     Base invoice detail
     """
 
-    invoice_id: int = Field(foreign_key="invoice.id")
-
     # Product/Service information
     product_code: str | None = None
     product_name: str
@@ -86,6 +84,7 @@ class InvoiceDetail(InvoiceDetailBase, table=True):
     updated_at: datetime | None = Field(default=None)
 
     # Relationships
+    invoice_id: int | None = Field(default=None, foreign_key="invoice.id")
     invoice: "Invoice" = Relationship(back_populates="details")
 
     def calculate_totals(self):

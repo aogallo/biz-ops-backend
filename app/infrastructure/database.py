@@ -14,13 +14,26 @@ from app.domain.entities.user import User
 logger = logging.getLogger(__name__)
 
 try:
-    engine = create_engine(
-        settings.DATABASE_URI,
-        echo=settings.DEBUG,
-        pool_pre_ping=True,  # Enable connection health checks
-        pool_size=5,  # Limit connection pool size
-        max_overflow=10,  # Allow some overflow for peak loads
-    )
+    # SQLite doesn't support pool_size and max_overflow parameters
+    # Use different configurations based on database type
+    if settings.DATABASE_URI.startswith("sqlite"):
+        from sqlmodel.pool import StaticPool
+
+        engine = create_engine(
+            settings.DATABASE_URI,
+            echo=settings.DEBUG,
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+    else:
+        # PostgreSQL, MySQL, etc. support connection pooling
+        engine = create_engine(
+            settings.DATABASE_URI,
+            echo=settings.DEBUG,
+            pool_pre_ping=True,  # Enable connection health checks
+            pool_size=5,  # Limit connection pool size
+            max_overflow=10,  # Allow some overflow for peak loads
+        )
 except Exception as e:
     logger.error("Failed to create database engine: %s", str(e))
     raise
@@ -90,4 +103,4 @@ def get_current_session() -> Session:
     return Session(engine)
 
 
-SessionDep = Annotated[Session, Depends(get_current_session)]
+SessionDep = Annotated[Session, Depends(get_session)]

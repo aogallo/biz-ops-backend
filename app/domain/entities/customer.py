@@ -11,10 +11,13 @@ class CustomerBase(SQLModel):
 
     name: str = Field(unique=True, index=True)
     nit: str = Field(unique=True, index=True)
-    date_birth: str
-    comercial_activity: str
-    email: EmailStr
-    address: str
+    date_birth: str | None = Field(default=None)
+    commercial_activity: str | None = Field(default=None)
+    email: EmailStr | None = Field(
+        default="no-email@example.com",
+        nullable=True,
+    )
+    address: str | None = Field(default=None)
 
 
 class CustomerCreate(CustomerBase):
