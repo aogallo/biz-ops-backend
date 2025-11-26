@@ -44,8 +44,8 @@ class CustomerRepositoryImpl(CustomerRepository):
         statement = select(Customer).where(
             col(Customer.name).in_(company_names)
         )
-        results: list[Customer] = self.db.exec(statement).all()
-        return list(results)
+        results: list[Customer] = list(self.db.exec(statement).all())
+        return results
 
     def get_customers_by_nit(self, customers) -> list[Customer]:
         """Get existing customers by NIT"""
