@@ -18,7 +18,12 @@ This guide provides comprehensive instructions for writing unit and integration 
 
 ## Overview
 
-We use `pytest` as our testing framework. Tests run against an **in-memory SQLite database** for speed and isolation, while production and staging environments use PostgreSQL.
+We use `pytest` as our testing framework with a clear separation:
+
+- **Unit Tests** (`tests/unit/`) → Test **business logic** in isolation (services, repositories, builders)
+- **Integration Tests** (`tests/integration/`) → Test **endpoints** and their integration with the system
+
+Integration tests run against an **in-memory SQLite database** for speed and isolation, while production and staging environments use PostgreSQL.
 
 ### Test vs Production Databases
 
@@ -35,6 +40,20 @@ We use `pytest` as our testing framework. Tests run against an **in-memory SQLit
 - ✅ No setup required (no Docker, no PostgreSQL server)
 - ✅ Works identically in local and CI environments
 - ✅ Deterministic (same behavior every time)
+
+### Testing Philosophy
+
+**Unit Tests = Business Logic**
+- Test services, repositories, builders in isolation
+- Mock external dependencies (database, APIs)
+- Fast, no database access
+- Focus on logic correctness
+
+**Integration Tests = Endpoints**
+- Test API routes end-to-end
+- Use real database (SQLite in-memory)
+- Test request/response handling
+- Focus on integration correctness
 
 ### Test Structure
 
@@ -89,7 +108,23 @@ class TestSomethingRoutes:
     pass
 ```
 
-## Unit Testing
+## Unit Testing (Business Logic)
+
+**Purpose:** Test business logic in isolation without touching the database or external systems.
+
+**What to test:**
+- ✅ Services (business logic with mocked repositories)
+- ✅ Builders (object construction patterns)
+- ✅ Repositories (data access logic with mocked database)
+- ✅ Entities (domain models)
+- ✅ Utilities and helpers
+
+**Key principles:**
+- 🔒 **No database access** - Mock all database calls
+- 🔒 **No external APIs** - Mock all external dependencies
+- ⚡ **Fast execution** - Tests should run in milliseconds
+- 🎯 **Single responsibility** - Test one thing at a time
+- 🧪 **Arrange-Act-Assert** - Clear test structure
 
 Unit tests focus on testing individual components in isolation.
 
@@ -1114,7 +1149,24 @@ class TestProductRepository:
 ```
 
 
-## Integration Testing
+## Integration Testing (Endpoints)
+
+**Purpose:** Test API endpoints end-to-end with real database interactions.
+
+**What to test:**
+- ✅ API routes (request → response flow)
+- ✅ Authentication/Authorization
+- ✅ Request validation
+- ✅ Response formatting
+- ✅ Database operations via endpoints
+- ✅ Error handling and status codes
+
+**Key principles:**
+- 🔌 **Real database** - Uses SQLite in-memory for speed
+- 🌐 **Full HTTP lifecycle** - TestClient makes real HTTP requests
+- 🔐 **Mock auth** - Override authentication dependencies
+- 🧹 **Clean slate** - Database cleared between tests
+- 📊 **End-to-end** - Test complete request/response cycle
 
 Integration tests verify that the entire system works together, from HTTP request to database.
 
