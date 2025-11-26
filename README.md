@@ -294,6 +294,11 @@ The hooks will automatically:
 
 ## 📚 API Documentation
 
+### Developer Guides
+
+- **[Quick Reference](docs/QUICK_REFERENCE.md)** - Quick lookup for creating API endpoints (templates, patterns, common mistakes)
+- **[API Schema & Entity Development Guide](docs/API_SCHEMA_ENTITY_GUIDE.md)** - Comprehensive guide for creating new API endpoints with proper schema/entity separation and camelCase handling
+
 ### Endpoints
 
 #### Health Check
