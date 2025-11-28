@@ -1,18 +1,17 @@
 from typing import Any
 
-from sqlmodel import col, func, or_, select
+from sqlmodel import Session, col, func, or_, select
 
 from app.domain.entities.company import Company, CompanyCreate
 from app.domain.entities.user import User
 from app.domain.repositories.company_repository import CompanyRepository
-from app.infrastructure.database import get_current_session
 
 
 class CompanyRepositoryImpl(CompanyRepository):
     """Implementation of Company Repository"""
 
-    def __init__(self, current_user: User) -> None:
-        self.db = get_current_session()
+    def __init__(self, session: Session, current_user: User) -> None:
+        self.db = session
         self.current_user = current_user
 
     def create(self, company: CompanyCreate) -> Company:

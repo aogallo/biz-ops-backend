@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status
+from sqlmodel import Session
 
 from app.domain.entities.product import Product, ProductCreate
 from app.domain.entities.user import User
@@ -10,8 +11,8 @@ from app.infrastructure.repositories.product_repository_impl import (
 class ProductService:
     """Service for managing products."""
 
-    def __init__(self, current_user: User):
-        self.repository = ProductRepositoryImpl(current_user)
+    def __init__(self, session: Session, current_user: User):
+        self.repository = ProductRepositoryImpl(session, current_user)
 
     def create_product(self, product_request: ProductCreate) -> Product:
         """

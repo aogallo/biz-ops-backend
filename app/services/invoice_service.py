@@ -4,6 +4,7 @@ from io import BytesIO
 
 import pandas as pd
 from fastapi import HTTPException, status
+from sqlmodel import Session
 
 from app.domain.entities.company import Company
 from app.domain.entities.customer import Customer
@@ -28,10 +29,10 @@ logger = logging.getLogger(__name__)
 class InvoiceService:
     """Service for managing invoices."""
 
-    def __init__(self, current_user: User) -> None:
-        self.customer_repo = CustomerRepositoryImpl(current_user)
-        self.company_repo = CompanyRepositoryImpl(current_user)
-        self.invoice_repo = InvoiceRepositoryImpl()
+    def __init__(self, session: Session, current_user: User) -> None:
+        self.customer_repo = CustomerRepositoryImpl(session, current_user)
+        self.company_repo = CompanyRepositoryImpl(session, current_user)
+        self.invoice_repo = InvoiceRepositoryImpl(session)
         self.errors: list[dict] = []
         self.current_user = current_user
 

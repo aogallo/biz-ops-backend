@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlmodel import Session
 
 from app.dependencies import get_current_user, verify_token
 from app.domain.entities.account import AccountCreate as AccountCreateEntity
@@ -9,15 +10,18 @@ from app.services.account_service import AccountService
 router = APIRouter(
     prefix="/accounts",
     tags=["accounts"],
-    dependencies=[Depends(verify_token), Depends(get_session)],
+    dependencies=[Depends(verify_token)],
 )
 
 
-@router.get("")
-def list_accounts(current_user=Depends(get_current_user)):
+@router.get("", response_model=list[AccountResponse])
+def list_accounts(
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+):
     """List all accounts"""
     try:
-        service = AccountService(current_user)
+        service = AccountService(session, current_user)
         return service.list_accounts()
     except HTTPException as e:
         raise HTTPException(
@@ -32,7 +36,9 @@ def list_accounts(current_user=Depends(get_current_user)):
     status_code=status.HTTP_201_CREATED,
 )
 def create_account(
-    account: AccountCreate, current_user=Depends(get_current_user)
+    account: AccountCreate,
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
 ):
     """
     Create a new account.
@@ -40,7 +46,7 @@ def create_account(
     Returns the created account.
     """
     try:
-        service = AccountService(current_user)
+        service = AccountService(session, current_user)
         # Convert schema to entity
         account_entity = AccountCreateEntity(**account.model_dump())
         created_account = service.create_account(account_entity)

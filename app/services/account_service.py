@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status
+from sqlmodel import Session
 
 from app.domain.entities.account import Account, AccountCreate
 from app.domain.entities.user import User
@@ -10,8 +11,8 @@ from app.infrastructure.repositories.account_respository_impl import (
 class AccountService:
     """Service for managing accounts."""
 
-    def __init__(self, current_user: User) -> None:
-        self.account_repo = AccountRepositoryImpl(current_user)
+    def __init__(self, session: Session, current_user: User) -> None:
+        self.account_repo = AccountRepositoryImpl(session, current_user)
 
     def list_accounts(self) -> list[Account]:
         """List all accounts"""

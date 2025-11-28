@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlmodel import Session
 
 from app.dependencies import get_current_user, verify_token
 from app.domain.entities.product import ProductCreate as ProductCreateEntity
@@ -15,7 +16,6 @@ router = APIRouter(
     tags=["Products"],
     dependencies=[
         Depends(verify_token),
-        Depends(get_session),
     ],
 )
 
@@ -26,7 +26,9 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
 )
 def create_product(
-    product: ProductCreate, current_user=Depends(get_current_user)
+    product: ProductCreate,
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
 ):
     """
     Create a new product.
@@ -34,7 +36,7 @@ def create_product(
     Returns the created product.
     """
     try:
-        service = ProductService(current_user)
+        service = ProductService(session, current_user)
         # Convert schema to entity
         product_entity = ProductCreateEntity(**product.model_dump())
         created_product = service.create_product(product_entity)
@@ -47,13 +49,16 @@ def create_product(
 
 
 @router.get("", response_model=ProductListResponse)
-def list_products(current_user=Depends(get_current_user)):
+def list_products(
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+):
     """
     Get all products.
 
     Returns a list of all products in the system.
     """
-    service = ProductService(current_user)
+    service = ProductService(session, current_user)
     products = service.list_all_products()
     return ProductListResponse(
         products=[ProductResponse.model_validate(p) for p in products],

@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status
+from sqlmodel import Session
 
 from app.domain.entities.company import CompanyCreate
 from app.domain.entities.user import User
@@ -10,8 +11,8 @@ from app.infrastructure.repositories.company_repostiory_impl import (
 class CompanyService:
     """Service for managing companies."""
 
-    def __init__(self, current_user: User) -> None:
-        self.repository = CompanyRepositoryImpl(current_user)
+    def __init__(self, session: Session, current_user: User) -> None:
+        self.repository = CompanyRepositoryImpl(session, current_user)
 
     def create_company(self, company: CompanyCreate):
         existed_company = self.repository.get_company_by_nit(nit=company.nit)

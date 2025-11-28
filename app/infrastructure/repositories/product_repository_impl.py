@@ -1,18 +1,17 @@
 from typing import override
 
-from sqlmodel import select
+from sqlmodel import Session, select
 
 from app.domain.entities.product import Product, ProductCreate
 from app.domain.entities.user import User
 from app.domain.repositories.product_respository import ProductRepository
-from app.infrastructure.database import get_current_session
 
 
 class ProductRepositoryImpl(ProductRepository):
     """Implementation of Product Repository"""
 
-    def __init__(self, current_user: User) -> None:
-        self.db = get_current_session()
+    def __init__(self, session: Session, current_user: User) -> None:
+        self.db = session
         self.current_user = current_user
 
     @override

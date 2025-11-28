@@ -1,14 +1,15 @@
-from sqlmodel import col, select
+from sqlmodel import Session, col, select
 
 from app.domain.entities.customer import Customer, CustomerCreate
 from app.domain.entities.user import User
 from app.domain.repositories.customer_repository import CustomerRepository
-from app.infrastructure.database import get_current_session
 
 
 class CustomerRepositoryImpl(CustomerRepository):
-    def __init__(self, current_user: User) -> None:
-        self.db = get_current_session()
+    """Implementation of Customer Repository"""
+
+    def __init__(self, session: Session, current_user: User) -> None:
+        self.db = session
         self.current_user = current_user
 
     def create(self, customer_create: CustomerCreate) -> Customer:

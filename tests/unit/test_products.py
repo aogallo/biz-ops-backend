@@ -22,14 +22,19 @@ class TestProductService:
         )
 
     @pytest.fixture
+    def mock_session(self):
+        """Create a mock database session."""
+        return Mock()
+
+    @pytest.fixture
     def mock_repository(self):
         """Create a mock repository."""
         return Mock()
 
     @pytest.fixture
-    def service(self, mock_user, mock_repository, monkeypatch):
+    def service(self, mock_session, mock_user, mock_repository, monkeypatch):
         """Create a ProductService with mocked repository."""
-        service = ProductService(current_user=mock_user)
+        service = ProductService(session=mock_session, current_user=mock_user)
         # Replace the repository with our mock
         monkeypatch.setattr(service, "repository", mock_repository)
         return service

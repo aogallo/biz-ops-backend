@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlmodel import Session
 
 from app.dependencies import get_current_user, verify_token
 from app.domain.entities.company import CompanyCreate as CompanyCreateEntity
@@ -15,14 +16,15 @@ router = APIRouter(
     tags=["Companies"],
     dependencies=[
         Depends(verify_token),
-        Depends(get_session),
     ],
 )
 
 
 @router.post("", response_model=CompanyResponse)
 def create_company(
-    company: CompanyCreate, current_user=Depends(get_current_user)
+    company: CompanyCreate,
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
 ):
     """
     Create a new company
@@ -31,7 +33,7 @@ def create_company(
     """
 
     try:
-        service = CompanyService(current_user)
+        service = CompanyService(session, current_user)
         # Convert schema to entity
         company_entity = CompanyCreateEntity(**company.model_dump())
         created_company = service.create_company(company=company_entity)
@@ -43,7 +45,10 @@ def create_company(
 
 
 @router.get("", response_model=CompaniesResponse)
-def list_companies(current_user=Depends(get_current_user)):
+def list_companies(
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+):
     """
     Get all companies.
 
@@ -51,7 +56,7 @@ def list_companies(current_user=Depends(get_current_user)):
     """
 
     try:
-        service = CompanyService(current_user)
+        service = CompanyService(session, current_user)
         result = service.list_all_companies()
         return CompaniesResponse(
             count=result["count"],

@@ -1,19 +1,18 @@
 from datetime import datetime
 
-from sqlmodel import select
+from sqlmodel import Session, select
 
 from app.domain.entities.invoice import Invoice
 from app.domain.entities.invoice_detail import InvoiceDetail
 from app.domain.repositories.invoice_repository import InvoiceRepository
-from app.infrastructure.database import get_current_session
 from app.schemas.invoice_schema import InvoiceCreate
 
 
 class InvoiceRepositoryImpl(InvoiceRepository):
     """Implementation of Invoice Repository"""
 
-    def __init__(self) -> None:
-        self.db = get_current_session()
+    def __init__(self, session: Session) -> None:
+        self.db = session
 
     def create_invoice(self, invoice: InvoiceCreate) -> Invoice:
         new_invoice: Invoice = Invoice.model_validate(invoice)
