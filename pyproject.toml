@@ -186,3 +186,8 @@ disable_error_code = ["call-arg"]
 init_forbid_extra = true
 init_typed = true
 warn_required_dynamic_aliases = true
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.7",
+]
