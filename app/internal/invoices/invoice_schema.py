@@ -7,10 +7,11 @@ from typing import Literal
 from pydantic import Field, field_validator
 from sqlmodel import SQLModel
 
+from app.internal.accounts.account_entity import Account
+from app.internal.invoices.invoice_detail_schema import InvoiceDetailResponse
 from app.schemas.base import CamelCaseSchema
 from app.schemas.company_schema import CompanyResponse
 from app.schemas.customer_schema import CustomerResponse
-from app.schemas.invoice_detail_schema import InvoiceDetailResponse
 
 InvoiceState = Literal["draft", "open", "paid", "void", "Vigente"]
 
@@ -43,6 +44,7 @@ class InvoiceUpdate(CamelCaseSchema):
     state: str | None = None
     is_cancelled: bool | None = None
     cancelled_date: datetime | None = None
+    account_id: int | None = None
 
 
 class InvoiceResponse(CamelCaseSchema):
@@ -71,6 +73,8 @@ class InvoiceResponse(CamelCaseSchema):
     company: CompanyResponse | None = None
 
     customer: CustomerResponse | None = None
+
+    account: Account | None = None
 
 
 class InvoiceListResponse(CamelCaseSchema):

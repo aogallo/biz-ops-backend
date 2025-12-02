@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status
+from sqlmodel import Session
 
 from app.domain.entities.customer import CustomerCreate
 from app.domain.entities.user import User
@@ -10,8 +11,8 @@ from app.infrastructure.repositories.customer_repository_impl import (
 class CustomerService:
     """Service for managing customers."""
 
-    def __init__(self, current_user: User) -> None:
-        self.repository = CustomerRepositoryImpl(current_user=current_user)
+    def __init__(self, session: Session, current_user: User) -> None:
+        self.repository = CustomerRepositoryImpl(session, current_user)
 
     def create_customer(self, customer: CustomerCreate):
         """

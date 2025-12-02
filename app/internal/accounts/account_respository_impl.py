@@ -1,16 +1,15 @@
-from sqlmodel import select
+from sqlmodel import Session, select
 
-from app.domain.entities.account import Account, AccountCreate
 from app.domain.entities.user import User
-from app.domain.repositories.account_repository import AccountRepository
-from app.infrastructure.database import get_current_session
+from app.internal.accounts.account_entity import Account, AccountCreate
+from app.internal.accounts.account_repository import AccountRepository
 
 
 class AccountRepositoryImpl(AccountRepository):
     """Implementation of Account Repository"""
 
-    def __init__(self, current_user: User) -> None:
-        self.db = get_current_session()
+    def __init__(self, session: Session, current_user: User) -> None:
+        self.db = session
         self.current_user = current_user
 
     def get_all(self) -> list[Account]:
@@ -38,3 +37,7 @@ class AccountRepositoryImpl(AccountRepository):
             statement=statement
         ).one_or_none()
         return account
+
+    def get_by_id(self, id: int) -> Account | None:
+        """Get an account by id"""
+        return self.db.get(Account, id)

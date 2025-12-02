@@ -1,19 +1,19 @@
 from datetime import datetime
 
-from sqlmodel import select
+from sqlalchemy.exc import SQLAlchemyError
+from sqlmodel import Session, select
 
-from app.domain.entities.invoice import Invoice
-from app.domain.entities.invoice_detail import InvoiceDetail
-from app.domain.repositories.invoice_repository import InvoiceRepository
-from app.infrastructure.database import get_current_session
-from app.schemas.invoice_schema import InvoiceCreate
+from app.internal.invoices.invoice_detail_entity import InvoiceDetail
+from app.internal.invoices.invoice_entity import Invoice
+from app.internal.invoices.invoice_repository import InvoiceRepository
+from app.internal.invoices.invoice_schema import InvoiceCreate
 
 
 class InvoiceRepositoryImpl(InvoiceRepository):
     """Implementation of Invoice Repository"""
 
-    def __init__(self) -> None:
-        self.db = get_current_session()
+    def __init__(self, session: Session) -> None:
+        self.db = session
 
     def create_invoice(self, invoice: InvoiceCreate) -> Invoice:
         new_invoice: Invoice = Invoice.model_validate(invoice)
@@ -100,3 +100,12 @@ class InvoiceRepositoryImpl(InvoiceRepository):
         statement = select(InvoiceDetail).where(InvoiceDetail.invoice_id == id)
         result: list[InvoiceDetail] | None = self.db.exec(statement)._allrows()
         return result
+
+    def update_by_id(self, invoice: Invoice):
+        try:
+            self.db.add(invoice)
+            self.db.commit()
+            self.db.refresh(invoice)
+            return True
+        except SQLAlchemyError:
+            return False

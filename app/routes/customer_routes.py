@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from sqlmodel import Session
 
 from app.dependencies import get_current_user, verify_token
 from app.infrastructure.database import get_session
@@ -10,13 +11,15 @@ router = APIRouter(
     tags=["Customers"],
     dependencies=[
         Depends(verify_token),
-        Depends(get_session),
     ],
 )
 
 
 @router.get("", response_model=list[CustomerResponse])
-def list_customers(current_user=Depends(get_current_user)):
+def list_customers(
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+):
     """List all customers."""
-    service = CustomerService(current_user=current_user)
+    service = CustomerService(session, current_user)
     return service.list_all_customers()

@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.domain.entities.customer import Customer
-from app.domain.entities.invoice import Invoice
+from app.internal.invoices.invoice_entity import Invoice
 
 
 class JournalEntryBase(SQLModel):

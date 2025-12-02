@@ -90,7 +90,7 @@ This document summarizes all the improvements made to the Business Operations Ba
   - pytest-asyncio 0.21.1
   - pytest-cov 4.1.0
   - pytest-mock 3.12.0
-  - ruff 0.1.8
+  - ruff 0.14.7
   - black 23.12.1
   - mypy 1.7.1
   - pre-commit 3.6.0
@@ -124,7 +124,7 @@ This document summarizes all the improvements made to the Business Operations Ba
 - **Impact**: Reusable test infrastructure
 
 #### Example Tests
-- **Created**: 
+- **Created**:
   - Unit tests for UserRepository (6 tests)
   - Unit tests for UserService (4 tests)
   - Integration tests for user routes (3 tests)
@@ -388,6 +388,3 @@ This improvement roadmap follows industry best practices from:
 **Date**: October 14, 2025
 
 **Next Review**: Add remaining test coverage for vendors and RBAC
-
-
-

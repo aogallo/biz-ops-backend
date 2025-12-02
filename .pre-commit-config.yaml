@@ -10,20 +10,17 @@ repos:
       - id: check-toml
       - id: check-merge-conflict
       - id: detect-private-key
-
   - repo: https://github.com/psf/black
     rev: 23.12.1
     hooks:
       - id: black
         language_version: python3.12
-
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.14.5
     hooks:
       # Run the formatter.
       - id: ruff-check
         args: ["app/", "--output-format=github"]
-
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.7.1
     hooks:
@@ -31,5 +28,6 @@ repos:
         additional_dependencies:
           - pydantic>=2.0
           - sqlalchemy>=2.0
+          - sqlmodel
           - types-PyYAML
-        args: [--ignore-missing-imports ]
+        args: [--ignore-missing-imports]

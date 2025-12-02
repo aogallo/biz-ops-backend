@@ -4,11 +4,10 @@ from io import BytesIO
 
 import pandas as pd
 from fastapi import HTTPException, status
+from sqlmodel import Session
 
 from app.domain.entities.company import Company
 from app.domain.entities.customer import Customer
-from app.domain.entities.invoice import Invoice
-from app.domain.entities.invoice_detail import InvoiceDetail
 from app.domain.entities.user import User
 from app.infrastructure.repositories.company_repostiory_impl import (
     CompanyRepositoryImpl,
@@ -16,10 +15,13 @@ from app.infrastructure.repositories.company_repostiory_impl import (
 from app.infrastructure.repositories.customer_repository_impl import (
     CustomerRepositoryImpl,
 )
-from app.infrastructure.repositories.invoice_repository_impl import (
-    InvoiceRepositoryImpl,
+from app.internal.accounts.account_respository_impl import (
+    AccountRepositoryImpl,
 )
-from app.schemas.invoice_schema import InvoiceRowSchema
+from app.internal.invoices.invoice_detail_entity import InvoiceDetail
+from app.internal.invoices.invoice_entity import Invoice, InvoiceUpdate
+from app.internal.invoices.invoice_repository_impl import InvoiceRepositoryImpl
+from app.internal.invoices.invoice_schema import InvoiceRowSchema
 from app.utils.dates import normalize_datetime
 
 logger = logging.getLogger(__name__)
@@ -28,10 +30,13 @@ logger = logging.getLogger(__name__)
 class InvoiceService:
     """Service for managing invoices."""
 
-    def __init__(self, current_user: User) -> None:
-        self.customer_repo = CustomerRepositoryImpl(current_user)
-        self.company_repo = CompanyRepositoryImpl(current_user)
-        self.invoice_repo = InvoiceRepositoryImpl()
+    def __init__(self, session: Session, current_user: User) -> None:
+        self.customer_repo = CustomerRepositoryImpl(session, current_user)
+        self.company_repo = CompanyRepositoryImpl(session, current_user)
+        self.invoice_repo = InvoiceRepositoryImpl(session)
+        self.accont_repo = AccountRepositoryImpl(
+            session=session, current_user=current_user
+        )
         self.errors: list[dict] = []
         self.current_user = current_user
 
@@ -339,7 +344,7 @@ class InvoiceService:
         if invoice is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Invoice not found",
+                detail="Invoice does not found",
             )
 
         return invoice
@@ -348,3 +353,26 @@ class InvoiceService:
         details = self.invoice_repo.get_invoice_details(id)
 
         return details
+
+    def update_invoice_by_id(self, id: int, invoice: InvoiceUpdate):
+        db_invoice = self.invoice_repo.get_invoice_by_id(id)
+
+        if db_invoice is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Invoice not exist",
+            )
+
+        if invoice.account_id is not None:
+            db_account = self.accont_repo.get_by_id(id=invoice.account_id)
+
+            if db_account is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Account does not exist",
+                )
+
+        invoice_data = invoice.model_dump(exclude_unset=True)
+        db_invoice.sqlmodel_update(invoice_data)
+
+        return self.invoice_repo.update_by_id(db_invoice)
