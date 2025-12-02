@@ -1,11 +1,9 @@
 from fastapi import HTTPException, status
 from sqlmodel import Session
 
-from app.domain.entities.product import Product, ProductCreate
-from app.domain.entities.user import User
-from app.infrastructure.repositories.product_repository_impl import (
-    ProductRepositoryImpl,
-)
+from app.internal.product.entity import Product, ProductCreate
+from app.internal.product.repository_impl import ProductRepositoryImpl
+from app.internal.user.entity import User
 
 
 class ProductService:

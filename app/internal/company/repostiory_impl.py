@@ -2,9 +2,9 @@ from typing import Any
 
 from sqlmodel import Session, col, func, or_, select
 
-from app.domain.entities.user import User
 from app.internal.company.entity import Company, CompanyCreate
 from app.internal.company.repository import CompanyRepository
+from app.internal.user.entity import User
 
 
 class CompanyRepositoryImpl(CompanyRepository):

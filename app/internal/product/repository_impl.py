@@ -2,9 +2,9 @@ from typing import override
 
 from sqlmodel import Session, select
 
-from app.domain.entities.product import Product, ProductCreate
-from app.domain.entities.user import User
-from app.domain.repositories.product_respository import ProductRepository
+from app.internal.product.entity import Product, ProductCreate
+from app.internal.product.respository import ProductRepository
+from app.internal.user.entity import User
 
 
 class ProductRepositoryImpl(ProductRepository):

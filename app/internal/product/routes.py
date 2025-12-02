@@ -2,14 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 
 from app.dependencies import get_current_user, verify_token
-from app.domain.entities.product import ProductCreate as ProductCreateEntity
 from app.infrastructure.database import get_session
-from app.schemas.product_schema import (
+from app.internal.product.entity import ProductCreate as ProductCreateEntity
+from app.internal.product.schema import (
     ProductCreate,
     ProductListResponse,
     ProductResponse,
 )
-from app.services.product_service import ProductService
+from app.internal.product.service import ProductService
 
 router = APIRouter(
     prefix="/products",

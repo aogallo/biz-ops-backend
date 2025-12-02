@@ -1,8 +1,8 @@
 from sqlmodel import Session, col, select
 
-from app.domain.entities.user import User
 from app.internal.customer.entity import Customer, CustomerCreate
 from app.internal.customer.repository import CustomerRepository
+from app.internal.user.entity import User
 
 
 class CustomerRepositoryImpl(CustomerRepository):

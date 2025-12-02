@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from app.domain.entities.product import Product, ProductCreate
+from app.internal.product.entity import Product, ProductCreate
 
 
 class ProductRepository(ABC):
