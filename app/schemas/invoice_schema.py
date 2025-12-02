@@ -43,6 +43,7 @@ class InvoiceUpdate(CamelCaseSchema):
     state: str | None = None
     is_cancelled: bool | None = None
     cancelled_date: datetime | None = None
+    account_id: int | None = None
 
 
 class InvoiceResponse(CamelCaseSchema):

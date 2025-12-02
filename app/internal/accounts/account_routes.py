@@ -2,10 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 
 from app.dependencies import get_current_user, verify_token
-from app.domain.entities.account import AccountCreate as AccountCreateEntity
 from app.infrastructure.database import get_session
+from app.internal.accounts.account_entity import (
+    AccountCreate as AccountCreateEntity,
+)
+from app.internal.accounts.account_service import AccountService
 from app.schemas.account_schema import AccountCreate, AccountResponse
-from app.services.account_service import AccountService
 
 router = APIRouter(
     prefix="/accounts",

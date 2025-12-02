@@ -8,7 +8,7 @@ from sqlmodel import Session
 
 from app.domain.entities.company import Company
 from app.domain.entities.customer import Customer
-from app.domain.entities.invoice import Invoice
+from app.domain.entities.invoice import Invoice, InvoiceUpdate
 from app.domain.entities.invoice_detail import InvoiceDetail
 from app.domain.entities.user import User
 from app.infrastructure.repositories.company_repostiory_impl import (
@@ -19,6 +19,9 @@ from app.infrastructure.repositories.customer_repository_impl import (
 )
 from app.infrastructure.repositories.invoice_repository_impl import (
     InvoiceRepositoryImpl,
+)
+from app.internal.accounts.account_respository_impl import (
+    AccountRepositoryImpl,
 )
 from app.schemas.invoice_schema import InvoiceRowSchema
 from app.utils.dates import normalize_datetime
@@ -33,6 +36,9 @@ class InvoiceService:
         self.customer_repo = CustomerRepositoryImpl(session, current_user)
         self.company_repo = CompanyRepositoryImpl(session, current_user)
         self.invoice_repo = InvoiceRepositoryImpl(session)
+        self.accont_repo = AccountRepositoryImpl(
+            session=session, current_user=current_user
+        )
         self.errors: list[dict] = []
         self.current_user = current_user
 
@@ -349,3 +355,22 @@ class InvoiceService:
         details = self.invoice_repo.get_invoice_details(id)
 
         return details
+
+    def update_invoice_by_id(self, id: int, invoice: InvoiceUpdate):
+        db_invoice = self.invoice_repo.get_invoice_by_id(id)
+
+        if db_invoice is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Invoice not exists",
+            )
+
+        db_account = self.accont_repo.get_by_id(id)
+
+        if db_account is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Account not exists",
+            )
+
+        print("db_account", db_account)

@@ -1,8 +1,8 @@
 from sqlmodel import Session, select
 
-from app.domain.entities.account import Account, AccountCreate
 from app.domain.entities.user import User
-from app.domain.repositories.account_repository import AccountRepository
+from app.internal.accounts.account_entity import Account, AccountCreate
+from app.internal.accounts.account_repository import AccountRepository
 
 
 class AccountRepositoryImpl(AccountRepository):
@@ -37,3 +37,7 @@ class AccountRepositoryImpl(AccountRepository):
             statement=statement
         ).one_or_none()
         return account
+
+    def get_by_id(self, id: int) -> Account | None:
+        """Get an account by id"""
+        return self.db.get(Account, id)

@@ -1,10 +1,18 @@
-from fastapi import APIRouter, Depends, Response, UploadFile
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Response,
+    UploadFile,
+    status,
+)
 from sqlmodel import Session
 
 from app.dependencies import get_current_user, verify_token
+from app.domain.entities.invoice import InvoiceUpdate as InvoiceUpdateEntity
 from app.infrastructure.database import get_session
 from app.schemas.invoice_detail_schema import InvoiceDetailResponse
-from app.schemas.invoice_schema import InvoiceResponse
+from app.schemas.invoice_schema import InvoiceResponse, InvoiceUpdate
 from app.services.invoice_service import InvoiceService
 
 router = APIRouter(
@@ -64,3 +72,27 @@ async def upload_file(
     service.process_file(file_bytes)
 
     return Response(status_code=200)
+
+
+@router.patch("/{id}")
+def update_invoice(
+    id: int,
+    invoice: InvoiceUpdate,
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+):
+    """
+    Update an invoice.
+
+    Returns the updated invoice.
+    """
+    try:
+        service = InvoiceService(session, current_user)
+        invoice_entity = InvoiceUpdateEntity(
+            **invoice.model_dump(exclude_unset=True)
+        )
+        updated_invoice = service.update_invoice_by_id(id, invoice_entity)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
