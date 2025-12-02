@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from app.internal.invoices.invoice_entity import Invoice
-from app.internal.invoices.invoice_schema import InvoiceCreate
+from app.internal.invoice.invoice_entity import Invoice
+from app.internal.invoice.invoice_schema import InvoiceCreate
 
 
 class InvoiceRepository(ABC):

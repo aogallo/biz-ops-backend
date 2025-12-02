@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from app.internal.accounts.account_entity import Account
+from app.internal.account.account_entity import Account
 
 
 class AccountRepository(ABC):

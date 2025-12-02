@@ -3,10 +3,10 @@ from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, select
 
-from app.internal.invoices.invoice_detail_entity import InvoiceDetail
-from app.internal.invoices.invoice_entity import Invoice
-from app.internal.invoices.invoice_repository import InvoiceRepository
-from app.internal.invoices.invoice_schema import InvoiceCreate
+from app.internal.invoice.invoice_detail_entity import InvoiceDetail
+from app.internal.invoice.invoice_entity import Invoice
+from app.internal.invoice.invoice_repository import InvoiceRepository
+from app.internal.invoice.invoice_schema import InvoiceCreate
 
 
 class InvoiceRepositoryImpl(InvoiceRepository):

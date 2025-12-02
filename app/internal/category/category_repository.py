@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from app.domain.entities.category import Category, CategoryCreate
+from app.internal.category.category_entity import Category, CategoryCreate
 
 
 class CategoryRepository(ABC):

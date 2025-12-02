@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from app.internal.invoices.invoice_detail_entity import (
+from app.internal.invoice.invoice_detail_entity import (
     InvoiceDetail,
     InvoiceDetailCreate,
 )

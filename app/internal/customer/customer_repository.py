@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from app.internal.customers.customer_entity import Customer, CustomerCreate
+from app.internal.customer.customer_entity import Customer, CustomerCreate
 
 
 class CustomerRepository(ABC):

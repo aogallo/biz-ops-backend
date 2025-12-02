@@ -11,17 +11,15 @@ from app.domain.entities.user import User
 from app.infrastructure.repositories.company_repostiory_impl import (
     CompanyRepositoryImpl,
 )
-from app.internal.accounts.account_respository_impl import (
-    AccountRepositoryImpl,
-)
-from app.internal.customers.customer_entity import Customer
-from app.internal.customers.customer_repository_impl import (
+from app.internal.account.account_respository_impl import AccountRepositoryImpl
+from app.internal.customer.customer_entity import Customer
+from app.internal.customer.customer_repository_impl import (
     CustomerRepositoryImpl,
 )
-from app.internal.invoices.invoice_detail_entity import InvoiceDetail
-from app.internal.invoices.invoice_entity import Invoice, InvoiceUpdate
-from app.internal.invoices.invoice_repository_impl import InvoiceRepositoryImpl
-from app.internal.invoices.invoice_schema import InvoiceRowSchema
+from app.internal.invoice.invoice_detail_entity import InvoiceDetail
+from app.internal.invoice.invoice_entity import Invoice, InvoiceUpdate
+from app.internal.invoice.invoice_repository_impl import InvoiceRepositoryImpl
+from app.internal.invoice.invoice_schema import InvoiceRowSchema
 from app.utils.dates import normalize_datetime
 
 logger = logging.getLogger(__name__)

@@ -2,8 +2,8 @@ from fastapi import HTTPException, status
 from sqlmodel import Session
 
 from app.domain.entities.user import User
-from app.internal.customers.customer_entity import CustomerCreate
-from app.internal.customers.customer_repository_impl import (
+from app.internal.customer.customer_entity import CustomerCreate
+from app.internal.customer.customer_repository_impl import (
     CustomerRepositoryImpl,
 )
 

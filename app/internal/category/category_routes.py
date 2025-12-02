@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
 from app.dependencies import verify_token
-from app.domain.entities.category import CategoryCreate
 from app.infrastructure.database import get_session
-from app.services.category_service import CategoryService
+from app.internal.category.category_entity import CategoryCreate
+from app.internal.category.category_service import CategoryService
 
 router = APIRouter(
     prefix="/category",

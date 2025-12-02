@@ -2,8 +2,8 @@ from datetime import UTC, datetime
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.internal.customers.customer_entity import Customer
-from app.internal.invoices.invoice_entity import Invoice
+from app.internal.customer.customer_entity import Customer
+from app.internal.invoice.invoice_entity import Invoice
 
 
 class JournalEntryBase(SQLModel):

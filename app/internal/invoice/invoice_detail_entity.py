@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
-    from app.domain.entities.invoice import Invoice
+    from app.internal.invoice.invoice_entity import Invoice
 
 
 class InvoiceDetailBase(SQLModel):

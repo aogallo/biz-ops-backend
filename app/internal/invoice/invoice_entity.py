@@ -5,9 +5,9 @@ from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from app.domain.entities.company import Company
-    from app.internal.accounts.account_entity import Account
-    from app.internal.customers.customer_entity import Customer
-    from app.internal.invoices.invoice_detail_entity import InvoiceDetail
+    from app.internal.account.account_entity import Account
+    from app.internal.customer.customer_entity import Customer
+    from app.internal.invoice.invoice_detail_entity import InvoiceDetail
 
 InvoiceState = Literal["draft", "open", "paid", "void"]
 
