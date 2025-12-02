@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.domain.entities.customer import Customer
+from app.internal.customers.customer_entity import Customer
 from app.internal.invoices.invoice_entity import Invoice
 
 

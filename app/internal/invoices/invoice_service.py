@@ -7,16 +7,16 @@ from fastapi import HTTPException, status
 from sqlmodel import Session
 
 from app.domain.entities.company import Company
-from app.domain.entities.customer import Customer
 from app.domain.entities.user import User
 from app.infrastructure.repositories.company_repostiory_impl import (
     CompanyRepositoryImpl,
 )
-from app.infrastructure.repositories.customer_repository_impl import (
-    CustomerRepositoryImpl,
-)
 from app.internal.accounts.account_respository_impl import (
     AccountRepositoryImpl,
+)
+from app.internal.customers.customer_entity import Customer
+from app.internal.customers.customer_repository_impl import (
+    CustomerRepositoryImpl,
 )
 from app.internal.invoices.invoice_detail_entity import InvoiceDetail
 from app.internal.invoices.invoice_entity import Invoice, InvoiceUpdate

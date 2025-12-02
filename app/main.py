@@ -19,13 +19,9 @@ from app.core.exceptions import (
 from app.core.logging_config import setup_logging
 from app.infrastructure.database import create_db_and_tables, engine
 from app.internal.accounts import account_routes
+from app.internal.customers import customer_routes
 from app.internal.invoices import invoice_routes
-from app.routes import (
-    category_routes,
-    company_routes,
-    customer_routes,
-    product_routes,
-)
+from app.routes import category_routes, company_routes, product_routes
 from app.schemas.common import HealthResponse
 
 # Setup logging

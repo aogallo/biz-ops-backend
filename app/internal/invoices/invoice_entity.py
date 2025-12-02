@@ -5,8 +5,8 @@ from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from app.domain.entities.company import Company
-    from app.domain.entities.customer import Customer
     from app.internal.accounts.account_entity import Account
+    from app.internal.customers.customer_entity import Customer
     from app.internal.invoices.invoice_detail_entity import InvoiceDetail
 
 InvoiceState = Literal["draft", "open", "paid", "void"]
