@@ -167,6 +167,7 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = [
     "app.infrastructure.repositories.*",
+    "app.internal.*",
 ]
 ignore_missing_imports = true
 
