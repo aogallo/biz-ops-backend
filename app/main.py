@@ -19,7 +19,7 @@ from app.core.exceptions import (
 from app.core.logging_config import setup_logging
 from app.infrastructure.database import create_db_and_tables, engine
 from app.internal.account import account_routes
-from app.internal.category import category_routes
+from app.internal.category import routes as category_routes
 from app.internal.customer import customer_routes
 from app.internal.invoice import invoice_routes
 from app.routes import company_routes, product_routes

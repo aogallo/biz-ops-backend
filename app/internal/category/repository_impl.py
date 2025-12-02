@@ -1,7 +1,7 @@
 from sqlmodel import Session
 
-from app.internal.category.category_entity import Category, CategoryCreate
-from app.internal.category.category_repository import CategoryRepository
+from app.internal.category.entity import Category, CategoryCreate
+from app.internal.category.repository import CategoryRepository
 
 
 class CategoryRepositoryImpl(CategoryRepository):

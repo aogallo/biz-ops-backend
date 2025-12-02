@@ -3,8 +3,8 @@ from sqlmodel import Session
 
 from app.dependencies import verify_token
 from app.infrastructure.database import get_session
-from app.internal.category.category_entity import CategoryCreate
-from app.internal.category.category_service import CategoryService
+from app.internal.category.entity import CategoryCreate
+from app.internal.category.service import CategoryService
 
 router = APIRouter(
     prefix="/category",
