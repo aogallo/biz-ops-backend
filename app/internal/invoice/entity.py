@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, Literal
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
-    from app.domain.entities.company import Company
-    from app.internal.account.account_entity import Account
-    from app.internal.customer.customer_entity import Customer
+    from app.internal.account.entity import Account
+    from app.internal.company.entity import Company
+    from app.internal.customer.entity import Customer
     from app.internal.invoice.invoice_detail_entity import InvoiceDetail
 
 InvoiceState = Literal["draft", "open", "paid", "void"]

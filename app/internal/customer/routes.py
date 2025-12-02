@@ -3,8 +3,8 @@ from sqlmodel import Session
 
 from app.dependencies import get_current_user, verify_token
 from app.infrastructure.database import get_session
-from app.internal.customer.customer_schema import CustomerResponse
-from app.internal.customer.customer_service import CustomerService
+from app.internal.customer.schema import CustomerResponse
+from app.internal.customer.service import CustomerService
 
 router = APIRouter(
     prefix="/customers",

@@ -1,8 +1,8 @@
 from sqlmodel import Session, select
 
 from app.domain.entities.user import User
-from app.internal.account.account_entity import Account, AccountCreate
-from app.internal.account.account_repository import AccountRepository
+from app.internal.account.entity import Account, AccountCreate
+from app.internal.account.repository import AccountRepository
 
 
 class AccountRepositoryImpl(AccountRepository):

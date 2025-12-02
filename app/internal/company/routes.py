@@ -2,14 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 
 from app.dependencies import get_current_user, verify_token
-from app.domain.entities.company import CompanyCreate as CompanyCreateEntity
 from app.infrastructure.database import get_session
-from app.schemas.company_schema import (
+from app.internal.company.entity import CompanyCreate as CompanyCreateEntity
+from app.internal.company.schema import (
     CompaniesResponse,
     CompanyCreate,
     CompanyResponse,
 )
-from app.services.company_service import CompanyService
+from app.internal.company.service import CompanyService
 
 router = APIRouter(
     prefix="/companies",

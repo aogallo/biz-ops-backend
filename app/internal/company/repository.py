@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from app.domain.entities.company import Company, CompanyCreate
+from app.internal.company.entity import Company, CompanyCreate
 
 
 class CompanyRepository(ABC):

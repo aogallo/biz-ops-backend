@@ -10,12 +10,10 @@ from sqlmodel import Session
 
 from app.dependencies import get_current_user, verify_token
 from app.infrastructure.database import get_session
+from app.internal.invoice.entity import InvoiceUpdate as InvoiceUpdateEntity
 from app.internal.invoice.invoice_detail_schema import InvoiceDetailResponse
-from app.internal.invoice.invoice_entity import (
-    InvoiceUpdate as InvoiceUpdateEntity,
-)
-from app.internal.invoice.invoice_schema import InvoiceResponse, InvoiceUpdate
-from app.internal.invoice.invoice_service import InvoiceService
+from app.internal.invoice.schema import InvoiceResponse, InvoiceUpdate
+from app.internal.invoice.service import InvoiceService
 
 router = APIRouter(
     prefix="/invoices",

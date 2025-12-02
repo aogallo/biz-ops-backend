@@ -1,11 +1,9 @@
 from fastapi import HTTPException, status
 from sqlmodel import Session
 
-from app.domain.entities.company import CompanyCreate
 from app.domain.entities.user import User
-from app.infrastructure.repositories.company_repostiory_impl import (
-    CompanyRepositoryImpl,
-)
+from app.internal.company.entity import CompanyCreate
+from app.internal.company.repostiory_impl import CompanyRepositoryImpl
 
 
 class CompanyService:

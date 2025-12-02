@@ -7,11 +7,11 @@ from typing import Literal
 from pydantic import Field, field_validator
 from sqlmodel import SQLModel
 
-from app.internal.account.account_entity import Account
-from app.internal.customer.customer_schema import CustomerResponse
+from app.internal.account.entity import Account
+from app.internal.company.schema import CompanyResponse
+from app.internal.customer.schema import CustomerResponse
 from app.internal.invoice.invoice_detail_schema import InvoiceDetailResponse
 from app.schemas.base import CamelCaseSchema
-from app.schemas.company_schema import CompanyResponse
 
 InvoiceState = Literal["draft", "open", "paid", "void", "Vigente"]
 
