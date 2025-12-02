@@ -76,7 +76,7 @@ async def upload_file(
     return Response(status_code=200)
 
 
-@router.patch("/{id}")
+@router.patch("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def update_invoice(
     id: int,
     invoice: InvoiceUpdate,
@@ -93,7 +93,7 @@ def update_invoice(
         invoice_entity = InvoiceUpdateEntity(
             **invoice.model_dump(exclude_unset=True)
         )
-        updated_invoice = service.update_invoice_by_id(id, invoice_entity)
+        service.update_invoice_by_id(id, invoice_entity)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)

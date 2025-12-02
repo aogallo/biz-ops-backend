@@ -344,7 +344,7 @@ class InvoiceService:
         if invoice is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Invoice not found",
+                detail="Invoice does not found",
             )
 
         return invoice
@@ -360,17 +360,19 @@ class InvoiceService:
         if db_invoice is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Invoice not exists",
+                detail="Invoice not exist",
             )
 
-        db_account = self.accont_repo.get_by_id(id)
+        if invoice.account_id is not None:
+            db_account = self.accont_repo.get_by_id(id=invoice.account_id)
 
-        if db_account is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Account not exists",
-            )
+            if db_account is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Account does not exist",
+                )
 
         invoice_data = invoice.model_dump(exclude_unset=True)
         db_invoice.sqlmodel_update(invoice_data)
+
         return self.invoice_repo.update_by_id(db_invoice)

@@ -7,6 +7,7 @@ from typing import Literal
 from pydantic import Field, field_validator
 from sqlmodel import SQLModel
 
+from app.internal.accounts.account_entity import Account
 from app.internal.invoices.invoice_detail_schema import InvoiceDetailResponse
 from app.schemas.base import CamelCaseSchema
 from app.schemas.company_schema import CompanyResponse
@@ -72,6 +73,8 @@ class InvoiceResponse(CamelCaseSchema):
     company: CompanyResponse | None = None
 
     customer: CustomerResponse | None = None
+
+    account: Account | None = None
 
 
 class InvoiceListResponse(CamelCaseSchema):

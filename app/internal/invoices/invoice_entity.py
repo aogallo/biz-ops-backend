@@ -6,6 +6,7 @@ from sqlmodel import Field, Relationship, SQLModel
 if TYPE_CHECKING:
     from app.domain.entities.company import Company
     from app.domain.entities.customer import Customer
+    from app.internal.accounts.account_entity import Account
     from app.internal.invoices.invoice_detail_entity import InvoiceDetail
 
 InvoiceState = Literal["draft", "open", "paid", "void"]
@@ -101,6 +102,14 @@ class Invoice(InvoiceBase, table=True):
     customer_id: int = Field(foreign_key="customer.id", index=True)
     customer: "Customer" = Relationship(
         sa_relationship_kwargs={"foreign_keys": "[Invoice.customer_id]"}
+    )
+
+    # Relationship with accoutn
+    account_id: int | None = Field(
+        foreign_key="account.id", index=True, default=None
+    )
+    account: "Account" = Relationship(
+        sa_relationship_kwargs={"foreign_keys": "[Invoice.account_id]"}
     )
 
     # Relationship with invoice details
