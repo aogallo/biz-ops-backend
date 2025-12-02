@@ -29,8 +29,10 @@ try:
             settings.DATABASE_URI,
             echo=settings.DEBUG,
             pool_pre_ping=True,  # Enable connection health checks
-            pool_size=5,  # Limit connection pool size
-            max_overflow=10,  # Allow some overflow for peak loads
+            pool_size=10,  # Limit connection pool size
+            max_overflow=20,  # Allow some overflow for peak loads
+            pool_timeout=30,  # Add timeout for getting connection from pool
+            pool_recycle=3600,  # Recycle connections after 1 hour
         )
 except Exception as e:
     logger.error("Failed to create database engine: %s", str(e))
@@ -52,12 +54,15 @@ def get_session() -> Generator[Session, None, None]:
 
     Creates a new session for each request and ensures it's properly closed.
     """
+    session = Session(engine)
     try:
-        with Session(engine) as session:
-            yield session
+        yield session
     except SQLAlchemyError as e:
+        session.rollback()
         logger.error("Database session error: %s", str(e))
         raise
+    finally:
+        session.close()
 
 
 SessionDep = Annotated[Session, Depends(get_session)]
