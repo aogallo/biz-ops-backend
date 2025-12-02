@@ -9,11 +9,13 @@ from fastapi import (
 from sqlmodel import Session
 
 from app.dependencies import get_current_user, verify_token
-from app.domain.entities.invoice import InvoiceUpdate as InvoiceUpdateEntity
 from app.infrastructure.database import get_session
-from app.schemas.invoice_detail_schema import InvoiceDetailResponse
-from app.schemas.invoice_schema import InvoiceResponse, InvoiceUpdate
-from app.services.invoice_service import InvoiceService
+from app.internal.invoices.invoice_detail_schema import InvoiceDetailResponse
+from app.internal.invoices.invoice_entity import (
+    InvoiceUpdate as InvoiceUpdateEntity,
+)
+from app.internal.invoices.invoice_schema import InvoiceResponse, InvoiceUpdate
+from app.internal.invoices.invoice_service import InvoiceService
 
 router = APIRouter(
     prefix="/invoices",

@@ -1,11 +1,12 @@
 from datetime import datetime
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, select
 
-from app.domain.entities.invoice import Invoice
-from app.domain.entities.invoice_detail import InvoiceDetail
-from app.domain.repositories.invoice_repository import InvoiceRepository
-from app.schemas.invoice_schema import InvoiceCreate
+from app.internal.invoices.invoice_detail_entity import InvoiceDetail
+from app.internal.invoices.invoice_entity import Invoice
+from app.internal.invoices.invoice_repository import InvoiceRepository
+from app.internal.invoices.invoice_schema import InvoiceCreate
 
 
 class InvoiceRepositoryImpl(InvoiceRepository):
@@ -99,3 +100,12 @@ class InvoiceRepositoryImpl(InvoiceRepository):
         statement = select(InvoiceDetail).where(InvoiceDetail.invoice_id == id)
         result: list[InvoiceDetail] | None = self.db.exec(statement)._allrows()
         return result
+
+    def update_by_id(self, invoice: Invoice):
+        try:
+            self.db.add(invoice)
+            self.db.commit()
+            self.db.refresh(invoice)
+            return True
+        except SQLAlchemyError:
+            return False

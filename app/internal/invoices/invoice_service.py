@@ -8,8 +8,6 @@ from sqlmodel import Session
 
 from app.domain.entities.company import Company
 from app.domain.entities.customer import Customer
-from app.domain.entities.invoice import Invoice, InvoiceUpdate
-from app.domain.entities.invoice_detail import InvoiceDetail
 from app.domain.entities.user import User
 from app.infrastructure.repositories.company_repostiory_impl import (
     CompanyRepositoryImpl,
@@ -17,13 +15,13 @@ from app.infrastructure.repositories.company_repostiory_impl import (
 from app.infrastructure.repositories.customer_repository_impl import (
     CustomerRepositoryImpl,
 )
-from app.infrastructure.repositories.invoice_repository_impl import (
-    InvoiceRepositoryImpl,
-)
 from app.internal.accounts.account_respository_impl import (
     AccountRepositoryImpl,
 )
-from app.schemas.invoice_schema import InvoiceRowSchema
+from app.internal.invoices.invoice_detail_entity import InvoiceDetail
+from app.internal.invoices.invoice_entity import Invoice, InvoiceUpdate
+from app.internal.invoices.invoice_repository_impl import InvoiceRepositoryImpl
+from app.internal.invoices.invoice_schema import InvoiceRowSchema
 from app.utils.dates import normalize_datetime
 
 logger = logging.getLogger(__name__)
@@ -373,4 +371,6 @@ class InvoiceService:
                 detail="Account not exists",
             )
 
-        print("db_account", db_account)
+        invoice_data = invoice.model_dump(exclude_unset=True)
+        db_invoice.sqlmodel_update(invoice_data)
+        return self.invoice_repo.update_by_id(db_invoice)
