@@ -19,6 +19,8 @@ class JournalEntryBase(SQLModel):
     debit: float = Field(default=0)
     credit: float = Field(default=0)
 
+    description: str
+
 
 class JournalEntryCreate(JournalEntryBase):
     """
