@@ -112,6 +112,3 @@ The application loads environment variables in the following order:
 The application validates required environment variables at startup. If required variables are missing, the application will fail to start with a clear error message.
 
 See `app/core/config.py` for the validation logic.
-
-
-

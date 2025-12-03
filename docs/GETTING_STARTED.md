@@ -272,7 +272,7 @@ Pre-commit hooks will run automatically. CI/CD runs on push.
 1. **Create schema** in `app/schemas/your_resource_schema.py`:
    ```python
    from pydantic import BaseModel
-   
+
    class YourResourceResponse(BaseModel):
        id: int
        name: str
@@ -295,7 +295,7 @@ Pre-commit hooks will run automatically. CI/CD runs on push.
    class YourService:
        def __init__(self, repo: YourRepository):
            self.repo = repo
-       
+
        def do_something(self, data):
            return self.repo.do_something(data)
    ```
@@ -307,7 +307,7 @@ Pre-commit hooks will run automatically. CI/CD runs on push.
 1. **Create entity** in `app/domain/entities/your_entity.py`:
    ```python
    from sqlmodel import SQLModel, Field
-   
+
    class YourEntity(SQLModel, table=True):
        id: int = Field(primary_key=True)
        name: str
@@ -514,6 +514,3 @@ For questions, refer to the documentation files or check the code examples in `t
 ---
 
 *Last Updated: October 14, 2025*
-
-
-
