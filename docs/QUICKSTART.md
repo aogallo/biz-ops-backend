@@ -241,7 +241,7 @@ kill -9 <PID>
 2. **Check logs**:
    ```bash
    # Local development logs are in terminal
-   
+
    # Docker logs
    docker-compose logs app
    ```
@@ -265,6 +265,3 @@ kill -9 <PID>
 **You're ready to develop! 🚀**
 
 For detailed information, see [README.md](README.md)
-
-
-
