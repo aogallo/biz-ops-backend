@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.internal.customer.entity import Customer
+from app.internal.company.entity import Company
 from app.internal.invoice.entity import Invoice
 
 
@@ -16,7 +16,7 @@ class JournalEntryBase(SQLModel):
     debit: float = Field(default=0)
     credit: float = Field(default=0)
 
-    company: Customer = Relationship(back_populates="customer")
+    company: Company = Relationship(back_populates="company")
     invoice: Invoice = Relationship(back_populates="invoice")
 
 
