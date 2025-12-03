@@ -42,11 +42,13 @@ class AccountRepositoryImpl(AccountRepository):
         """Get an account by id"""
         return self.db.get(Account, id)
 
-    def get_iva_credito_fiscal_account(self) -> Account | None:
+    def get_iva_credito_fiscal_account(self) -> int | None:
         """Get iva account"""
-        return self.db.exec(
-            select(Account).where(Account.name == "CREDITO IMPUESTOS")
-        ).first()
+        statement = select(Account.id).where(
+            Account.name == "CREDITO IMPUESTOS"
+        )
+        account_id: int | None = self.db.exec(statement).one_or_none()
+        return account_id if account_id else None
 
     def get_default_account_payable(self) -> int | None:
         """Get default account payable"""

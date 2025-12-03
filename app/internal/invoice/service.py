@@ -6,16 +6,21 @@ import pandas as pd
 from fastapi import HTTPException, status
 from sqlmodel import Session
 
+from app.internal.account.entity import Account
 from app.internal.account.respository_impl import AccountRepositoryImpl
 from app.internal.company.entity import Company
 from app.internal.company.repostiory_impl import CompanyRepositoryImpl
 from app.internal.customer.entity import Customer
 from app.internal.customer.repository_impl import CustomerRepositoryImpl
-from app.internal.invoice.entity import Invoice, InvoiceUpdate
-from app.internal.invoice.invoice_detail_entity import InvoiceDetail
-from app.internal.invoice.invoice_repository_impl import InvoiceRepositoryImpl
+from app.internal.invoice.entity import (
+    Invoice,
+    InvoiceDetail,
+    InvoiceUpdate,
+    InvoiceUpdateAccount,
+)
+from app.internal.invoice.repository_impl import InvoiceRepositoryImpl
 from app.internal.invoice.schema import InvoiceRowSchema
-from app.internal.journal.entity import JournalEntryCreate
+from app.internal.journal.entity import JournalEntry, JournalEntryCreate
 from app.internal.journal.repository_impl import JournalEntryRepositoryImpl
 from app.internal.user.entity import User
 from app.utils.dates import normalize_datetime
@@ -363,36 +368,149 @@ class InvoiceService:
                 detail="Invoice not exist",
             )
 
-        if invoice.account_id is not None:
-            db_account = self.accont_repo.get_by_id(id=invoice.account_id)
-
-            if db_account is None:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Account does not exist",
-                )
-
-            if db_invoice.id is not None and db_account.id is not None:
-                db_journal_entry = self.journal_entry_repo.get_by_invoice_id(
-                    id=db_invoice.id
-                )
-
-                if db_journal_entry is None:
-                    new_journal_entry = JournalEntryCreate(
-                        company_id=db_invoice.company_id,
-                        account_id=db_account.id,
-                        invoice_id=db_invoice.id,
-                        debit=0,
-                        credit=0,
-                    )
-                    db_journal_entry = self.journal_entry_repo.create(
-                        new_journal_entry
-                    )
-                else:
-                    print("updated journal entry")
-                    # db_journal_entry = self.journal_entry_repo.update()
-
         invoice_data = invoice.model_dump(exclude_unset=True)
         db_invoice.sqlmodel_update(invoice_data)
 
         return self.invoice_repo.update_by_id(db_invoice)
+
+    def _create_income_journal_entry(self, invoice: Invoice, account: Account):
+        """Create a journal entry for income"""
+        debit = 0
+        credit = invoice.subtotal
+
+        if invoice.id is None:
+            raise ValueError(
+                "Invoice must be saved to database before "
+                "creating journal entry"
+            )
+        if account.id is None:
+            raise ValueError(
+                "Account must be saved to database before "
+                "creating journal entry"
+            )
+        journal_entry = JournalEntryCreate(
+            company_id=invoice.company_id,
+            account_id=account.id,
+            invoice_id=invoice.id,
+            debit=debit,
+            credit=credit,
+            description=f"Expense - {invoice.customer.name}",
+        )
+
+        journal_entry_data = journal_entry.model_dump()
+        journal_entry_data["created_by"] = self.current_user.auth_id
+
+        JournalEntry(**journal_entry_data)
+
+    def update_account_invoice(self, id: int, invoice: InvoiceUpdateAccount):
+        db_invoice = self.invoice_repo.get_invoice_by_id(id)
+        if db_invoice is None or db_invoice.id is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Invoice not exist",
+            )
+
+        db_account = self.accont_repo.get_by_id(id=invoice.account_id)
+        if db_account is None or db_account.id is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Account does not exist",
+            )
+
+        db_journal_entry = self.journal_entry_repo.get_by_invoice_id(
+            id == db_invoice.id
+        )
+
+        if db_journal_entry is None:
+            logger.info(
+                "Creating the journal entry for the invoice: %s with the account: %s",
+                db_invoice.id,
+                db_account.id,
+            )
+            db_journal_entry = self._create_expenses_journal_entry(
+                invoice=db_invoice,
+                account=db_account,
+            )
+        else:
+            logger.info(
+                "Updating the journal entry for the invoice: %s with the account: %s",
+                db_invoice.id,
+                db_account.id,
+            )
+            # db_journal_entry = self.journal_entry_repo.update()
+        return True
+
+    def _create_expenses_journal_entry(
+        self, invoice: Invoice, account: Account
+    ):
+        """Create a journal entry for expenses"""
+        entries = []
+        debit = invoice.subtotal
+        credit = 0
+
+        if invoice.id is None:
+            raise ValueError(
+                "Invoice must be exist before " "creating journal entry"
+            )
+
+        if account.id is None:
+            raise ValueError(
+                "Account must be saved exist before " "creating journal entry"
+            )
+
+        # 1. DEBIT: Expense account (subtotal without IVA)
+        new_journal_entry = JournalEntry(
+            company_id=invoice.company_id,
+            account_id=account.id,
+            invoice_id=invoice.id,
+            debit=debit,
+            credit=credit,
+            description=f"Expense - {invoice.customer.name}",
+            created_by=self.current_user.auth_id,
+        )
+
+        entries.append(new_journal_entry)
+
+        # 2. DEBIT: IVA Credito Fiscal (recoverable VAT)
+        iva_account_id = self.accont_repo.get_iva_credito_fiscal_account()
+
+        if iva_account_id is None:
+            raise ValueError("IVA account not found")
+
+        if invoice.details[0].iva is None:
+            raise ValueError("The invoice iva value is incorrect")
+
+        # create iva journal entry
+        new_iva_journal_entry = JournalEntry(
+            company_id=invoice.company_id,
+            account_id=iva_account_id,
+            invoice_id=invoice.id,
+            debit=invoice.details[0].iva,
+            credit=0,
+            description=f"IVA - {invoice.authorization_number}",
+            created_by=self.current_user.auth_id,
+        )
+
+        entries.append(new_iva_journal_entry)
+
+        # 3. CREDIT: Accounts Payable or Cash
+        credit_account_id = self.accont_repo.get_default_account_payable()
+
+        if credit_account_id is None:
+            raise ValueError(
+                "Credit Account must be created creating journal entry"
+            )
+
+        credit_jorunal_entry = JournalEntry(
+            company_id=invoice.company_id,
+            account_id=credit_account_id,
+            invoice_id=invoice.id,
+            debit=0,
+            credit=invoice.total_amount,
+            description=f"Payable - {invoice.customer.name}",
+            created_by=self.current_user.auth_id,
+        )
+
+        entries.append(credit_jorunal_entry)
+
+        self.journal_entry_repo.add_bulk(entries)

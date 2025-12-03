@@ -3,8 +3,7 @@ from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, select
 
-from app.internal.invoice.entity import Invoice
-from app.internal.invoice.invoice_detail_entity import InvoiceDetail
+from app.internal.invoice.entity import Invoice, InvoiceDetail
 from app.internal.invoice.repository import InvoiceRepository
 from app.internal.invoice.schema import InvoiceCreate
 
