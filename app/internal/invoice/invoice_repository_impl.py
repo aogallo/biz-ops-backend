@@ -80,7 +80,7 @@ class InvoiceRepositoryImpl(InvoiceRepository):
         return invoices
 
     def get_invoice_by_serie_and_dte(
-        self, serie: str, dte_number: int
+        self, serie: str, dte_number: str
     ) -> Invoice | None:
         """Get invoice by serie and dte number"""
         statement = select(Invoice).where(

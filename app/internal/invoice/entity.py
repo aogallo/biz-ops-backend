@@ -104,7 +104,7 @@ class Invoice(InvoiceBase, table=True):
         sa_relationship_kwargs={"foreign_keys": "[Invoice.customer_id]"}
     )
 
-    # Relationship with accoutn
+    # Relationship with account
     account_id: int | None = Field(
         foreign_key="account.id", index=True, default=None
     )

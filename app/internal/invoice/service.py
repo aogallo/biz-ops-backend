@@ -15,6 +15,8 @@ from app.internal.invoice.entity import Invoice, InvoiceUpdate
 from app.internal.invoice.invoice_detail_entity import InvoiceDetail
 from app.internal.invoice.invoice_repository_impl import InvoiceRepositoryImpl
 from app.internal.invoice.schema import InvoiceRowSchema
+from app.internal.journal.entity import JournalEntryCreate
+from app.internal.journal.repository_impl import JournalEntryRepositoryImpl
 from app.internal.user.entity import User
 from app.utils.dates import normalize_datetime
 
@@ -30,6 +32,9 @@ class InvoiceService:
         self.invoice_repo = InvoiceRepositoryImpl(session)
         self.accont_repo = AccountRepositoryImpl(
             session=session, current_user=current_user
+        )
+        self.journal_entry_repo = JournalEntryRepositoryImpl(
+            session, current_user
         )
         self.errors: list[dict] = []
         self.current_user = current_user
@@ -100,9 +105,10 @@ class InvoiceService:
             return response
 
         except Exception as e:
+            logger.error("Error to proccessing file %s", str(e))
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=str(e),
+                detail="Error when proccessing file",
             ) from e
 
     def _validate_chunk(self, chunk: pd.DataFrame, offset: int):
@@ -365,6 +371,26 @@ class InvoiceService:
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Account does not exist",
                 )
+
+            if db_invoice.id is not None and db_account.id is not None:
+                db_journal_entry = self.journal_entry_repo.get_by_invoice_id(
+                    id=db_invoice.id
+                )
+
+                if db_journal_entry is None:
+                    new_journal_entry = JournalEntryCreate(
+                        company_id=db_invoice.company_id,
+                        account_id=db_account.id,
+                        invoice_id=db_invoice.id,
+                        debit=0,
+                        credit=0,
+                    )
+                    db_journal_entry = self.journal_entry_repo.create(
+                        new_journal_entry
+                    )
+                else:
+                    print("updated journal entry")
+                    # db_journal_entry = self.journal_entry_repo.update()
 
         invoice_data = invoice.model_dump(exclude_unset=True)
         db_invoice.sqlmodel_update(invoice_data)

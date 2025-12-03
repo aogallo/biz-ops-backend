@@ -91,7 +91,7 @@ class InvoiceRowSchema(SQLModel):
     authorization_number: str
     dte_type: str
     serie: str
-    dte_number: int
+    dte_number: str
     exportation: bool
     company_nit: str
     company_name: str
@@ -147,6 +147,12 @@ class InvoiceRowSchema(SQLModel):
     @classmethod
     def transform_company_nit(cls, value: str):
         """Transform company_nit to string."""
+        return str(value)
+
+    @field_validator("dte_number", mode="before")
+    @classmethod
+    def transform_dte_number(cls, value: str):
+        """Transform dte_number to string."""
         return str(value)
 
 
