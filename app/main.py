@@ -23,7 +23,7 @@ from app.internal.category import routes as category_routes
 from app.internal.company import routes as company_routes
 from app.internal.customer import routes as customer_routes
 from app.internal.invoice import routes as invoice_routes
-from app.internal.invoice import routes as product_routes
+from app.internal.product import routes as product_routes
 from app.schemas.common import HealthResponse
 
 # Setup logging
