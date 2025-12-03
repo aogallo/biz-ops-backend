@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
+from app.database import get_session
 from app.dependencies import verify_token
-from app.infrastructure.database import get_session
 from app.internal.category.entity import CategoryCreate
 from app.internal.category.service import CategoryService
 

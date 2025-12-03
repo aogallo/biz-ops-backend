@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.domain.entities.customer import Customer
+from app.internal.customer.entity import Customer
 
 
 class AccountReceivableBase(SQLModel):

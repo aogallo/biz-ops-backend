@@ -17,7 +17,7 @@ from app.core.exceptions import (
     NotFoundError,
 )
 from app.core.logging_config import setup_logging
-from app.infrastructure.database import create_db_and_tables, engine
+from app.database import create_db_and_tables, engine
 from app.internal.account import routes as account_routes
 from app.internal.category import routes as category_routes
 from app.internal.company import routes as company_routes

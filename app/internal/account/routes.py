@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 
+from app.database import get_session
 from app.dependencies import get_current_user, verify_token
-from app.infrastructure.database import get_session
 from app.internal.account.entity import AccountCreate as AccountCreateEntity
 from app.internal.account.service import AccountService
 from app.schemas.account_schema import AccountCreate, AccountResponse
