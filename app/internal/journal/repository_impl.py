@@ -21,7 +21,7 @@ class JournalEntryRepositoryImpl(JournalEntryRepository):
         self.db.commit()
         self.db.refresh(new_journal_entry)
 
-    def get_by_invoice_id(self, id: int) -> list[JournalEntry]:
+    def get_by_id(self, id: int) -> list[JournalEntry]:
         """Get a journal entry by invoice id"""
         statement = select(JournalEntry).where(JournalEntry.invoice_id == id)
         result: list[JournalEntry] = self.db.exec(statement)._allrows()
@@ -34,3 +34,24 @@ class JournalEntryRepositoryImpl(JournalEntryRepository):
         for journal_entry in journal_entries:
             self.db.refresh(journal_entry)
         return journal_entries
+
+    def get_by_debit_invoice_id(self, id: int, debit: float):
+        """Get a journal entry by debit and invoice id"""
+        statement = select(JournalEntry).where(
+            JournalEntry.invoice_id == id, JournalEntry.debit == debit
+        )
+        result: JournalEntry = self.db.exec(statement).one()
+        return result
+
+    def get_by_credit_invoice_id(self, id: int, credit: float):
+        """Get a journal entry by credit and invoice id"""
+        statement = select(JournalEntry).where(
+            JournalEntry.invoice_id == id, JournalEntry.debit == credit
+        )
+        result: JournalEntry = self.db.exec(statement).one()
+        return result
+
+    def update_by_id(self, journal_entry: JournalEntry):
+        self.db.add(journal_entry)
+        self.db.commit()
+        self.db.refresh(journal_entry)
