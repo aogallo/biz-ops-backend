@@ -76,7 +76,7 @@ def get_invoice(
 @router.post("/upload")
 async def upload_file(
     file: UploadFile,
-    invoice_type: InvoiceType = Form(...),
+    invoiceType: InvoiceType = Form(...),
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
 ):
@@ -84,7 +84,7 @@ async def upload_file(
 
     service = InvoiceService(session, current_user)
 
-    service.process_file(file_bytes, invoice_type)
+    service.process_file(file_bytes, invoiceType)
 
     return Response(status_code=200)
 

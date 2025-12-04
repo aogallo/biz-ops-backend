@@ -253,5 +253,5 @@ class InvoiceUpdateAccount(CamelCaseSchema):
 
 
 class InvoiceType(str, Enum):
-    EXPENSES = "EXPENSES"
-    INCOMES = "INCOMES"
+    EXPENSES = "expenses"
+    INCOMES = "incomes"

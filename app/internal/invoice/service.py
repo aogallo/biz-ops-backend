@@ -496,7 +496,7 @@ class InvoiceService:
 
             # 1. DEBIT: Expense account (subtotal without IVA)
             new_journal_entry = JournalEntry(
-                company_id=invoice.company_id,
+                company_id=invoice.customer_id,
                 account_id=account.id,
                 invoice_id=invoice.id,
                 debit=debit,
@@ -518,7 +518,7 @@ class InvoiceService:
 
             # create iva journal entry
             new_iva_journal_entry = JournalEntry(
-                company_id=invoice.company_id,
+                company_id=invoice.customer_id,
                 account_id=iva_account_id,
                 invoice_id=invoice.id,
                 debit=invoice.details[0].iva,
@@ -538,7 +538,7 @@ class InvoiceService:
                 )
 
             credit_jorunal_entry = JournalEntry(
-                company_id=invoice.company_id,
+                company_id=invoice.customer_id,
                 account_id=credit_account_id,
                 invoice_id=invoice.id,
                 debit=0,
