@@ -14,11 +14,11 @@ from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session, SQLModel
+from sqlmodel import Session, SQLModel, StaticPool, create_engine
 
-from app.domain.entities.product import Product
-from app.domain.entities.user import User
-from app.infrastructure.database import get_session
+from app.database import get_session
+from app.internal.product.entity import Product
+from app.internal.user.entity import User
 from app.main import app
 
 
@@ -30,14 +30,18 @@ def engine_fixture():
     This ensures data consistency and avoids PostgreSQL connection attempts.
     """
     # Import here to ensure engine is created with test environment variables
-    from app.infrastructure import database as db_module
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
 
     # The app's engine is already created with our test DATABASE_URI
     # Just ensure tables are created
-    SQLModel.metadata.create_all(db_module.engine)
+    SQLModel.metadata.create_all(engine)
 
     # Return the app's engine so fixtures use the same engine
-    return db_module.engine
+    return engine
 
 
 @pytest.fixture(name="session")

@@ -3,7 +3,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app.domain.entities.product import Product
+from app.internal.product.entity import Product
 
 
 @pytest.mark.integration
@@ -79,6 +79,7 @@ class TestProductRoutes:
             )
             session.add(product)
             session.commit()
+            session.refresh(product)
 
         # Now read products via API
         response = authenticated_client.get(f"{self.API_PREFIX}/products")

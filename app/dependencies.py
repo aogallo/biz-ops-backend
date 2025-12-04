@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.config import settings
-from app.domain.entities.user import User
+from app.internal.user.entity import User
 
 logger = logging.getLogger(__name__)
 oauth2_scheme = HTTPBearer()

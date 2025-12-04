@@ -17,15 +17,13 @@ from app.core.exceptions import (
     NotFoundError,
 )
 from app.core.logging_config import setup_logging
-from app.infrastructure.database import create_db_and_tables, engine
-from app.internal.accounts import account_routes
-from app.internal.invoices import invoice_routes
-from app.routes import (
-    category_routes,
-    company_routes,
-    customer_routes,
-    product_routes,
-)
+from app.database import create_db_and_tables, engine
+from app.internal.account import routes as account_routes
+from app.internal.category import routes as category_routes
+from app.internal.company import routes as company_routes
+from app.internal.customer import routes as customer_routes
+from app.internal.invoice import routes as invoice_routes
+from app.internal.product import routes as product_routes
 from app.schemas.common import HealthResponse
 
 # Setup logging

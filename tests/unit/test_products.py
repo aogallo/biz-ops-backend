@@ -5,9 +5,9 @@ from unittest.mock import Mock
 import pytest
 from fastapi import HTTPException
 
-from app.domain.entities.product import Product, ProductCreate
-from app.domain.entities.user import User
-from app.services.product_service import ProductService
+from app.internal.product.entity import Product, ProductCreate
+from app.internal.product.service import ProductService
+from app.internal.user.entity import User
 
 
 class TestProductService:
