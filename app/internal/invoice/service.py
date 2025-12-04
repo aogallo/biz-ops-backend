@@ -19,7 +19,7 @@ from app.internal.invoice.entity import (
     InvoiceUpdateAccount,
 )
 from app.internal.invoice.repository_impl import InvoiceRepositoryImpl
-from app.internal.invoice.schema import InvoiceRowSchema
+from app.internal.invoice.schema import InvoiceRowSchema, InvoiceType
 from app.internal.journal.entity import JournalEntry, JournalEntryCreate
 from app.internal.journal.repository_impl import JournalEntryRepositoryImpl
 from app.internal.user.entity import User
@@ -47,7 +47,7 @@ class InvoiceService:
     def list_all_invoices(self):
         return self.invoice_repo.get_all()
 
-    def process_file(self, file_bytes: bytes):
+    def process_file(self, file_bytes: bytes, invoice_type: InvoiceType):
         try:
             df = pd.read_excel(BytesIO(file_bytes))
             df.rename(
@@ -105,7 +105,9 @@ class InvoiceService:
                 validated_rows = self._validate_chunk(chunk, chunk_start)
 
                 if validated_rows:
-                    response = self._process_validated_rows(validated_rows)
+                    response = self._process_validated_rows(
+                        validated_rows, invoice_type
+                    )
 
             return response
 
@@ -224,7 +226,11 @@ class InvoiceService:
 
         return existing_customers + new_customers
 
-    def _process_validated_rows(self, rows: list[InvoiceRowSchema]):
+    def _process_validated_rows(
+        self,
+        rows: list[InvoiceRowSchema],
+        invoice_type: InvoiceType,
+    ):
         """Process validated rows: companies, invoices, details."""
         existing_companies = self._create_missing_companies(rows)
         customers = self._create_missing_customers(rows)
@@ -276,7 +282,6 @@ class InvoiceService:
             invoice_date = normalize_datetime(row.date)
 
             # Create invoice header
-            # TODO: create the invoice_type base on the uploaded file
             invoice = Invoice(
                 date=invoice_date,
                 authorization_number=row.authorization_number,
@@ -294,6 +299,7 @@ class InvoiceService:
                     else None
                 ),
                 created_by=self.current_user.auth_id,
+                invoice_type=invoice_type,
             )
 
             # Create invoice detail (one per row based on file structure)

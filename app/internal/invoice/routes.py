@@ -3,6 +3,7 @@ import logging
 from fastapi import (
     APIRouter,
     Depends,
+    Form,
     HTTPException,
     Response,
     UploadFile,
@@ -19,6 +20,7 @@ from app.internal.invoice.entity import (
 from app.internal.invoice.schema import (
     InvoiceDetailResponse,
     InvoiceResponse,
+    InvoiceType,
     InvoiceUpdate,
     InvoiceUpdateAccount,
 )
@@ -74,6 +76,7 @@ def get_invoice(
 @router.post("/upload")
 async def upload_file(
     file: UploadFile,
+    invoice_type: InvoiceType = Form(...),
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
 ):
@@ -81,7 +84,7 @@ async def upload_file(
 
     service = InvoiceService(session, current_user)
 
-    service.process_file(file_bytes)
+    service.process_file(file_bytes, invoice_type)
 
     return Response(status_code=200)
 
