@@ -243,3 +243,9 @@ class InvoiceDetailUpdate(CamelCaseSchema):
     cemento: float | None = None
     bebidas_no_alcoholicas: float | None = None
     tarifa_portuaria: float | None = None
+
+
+class InvoiceUpdateAccount(CamelCaseSchema):
+    """Schema for updating an invoice account."""
+
+    account_id: int

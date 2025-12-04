@@ -24,7 +24,7 @@ class InvoiceBase(SQLModel):
 
     # income
     # expenses
-    invoiceType: str = "expenses"
+    invoice_type: str = "expenses"
 
     company_id: int
     customer_id: int

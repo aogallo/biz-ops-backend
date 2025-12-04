@@ -66,6 +66,7 @@ class InvoiceRepositoryImpl(InvoiceRepository):
 
     def get_all(self) -> list[Invoice]:
         """Get all invoices"""
+        # TODO: sort by date
         statement = select(Invoice)
         result: list[Invoice] = self.db.exec(statement)._allrows()
         return result

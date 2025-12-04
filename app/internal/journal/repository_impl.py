@@ -21,12 +21,10 @@ class JournalEntryRepositoryImpl(JournalEntryRepository):
         self.db.commit()
         self.db.refresh(new_journal_entry)
 
-    def get_by_invoice_id(self, invoice_id: int) -> JournalEntry | None:
+    def get_by_invoice_id(self, id: int) -> list[JournalEntry]:
         """Get a journal entry by invoice id"""
-        statement = select(JournalEntry).where(
-            JournalEntry.invoice_id == invoice_id
-        )
-        result: JournalEntry | None = self.db.exec(statement).one_or_none()
+        statement = select(JournalEntry).where(JournalEntry.invoice_id == id)
+        result: list[JournalEntry] = self.db.exec(statement)._allrows()
         return result
 
     def add_bulk(self, journal_entries: list[JournalEntry]):
