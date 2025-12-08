@@ -411,7 +411,7 @@ class InvoiceService:
             db_journal_entry = self.journal_entry_repo.get_by_id(db_invoice.id)
 
             if db_invoice.invoice_type == "expenses":
-                if len(db_journal_entry) > 0:
+                if len(db_journal_entry) == 0:
                     self._create_expenses_journal_entry(
                         invoice=db_invoice,
                         account=db_account,
@@ -423,7 +423,7 @@ class InvoiceService:
                         debit=db_invoice.subtotal,
                     )
             else:
-                if len(db_journal_entry) > 0:
+                if len(db_journal_entry) == 0:
                     self._create_income_journal_entry(
                         invoice=db_invoice,
                         account=db_account,

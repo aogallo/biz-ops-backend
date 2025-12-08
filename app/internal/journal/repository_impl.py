@@ -1,4 +1,4 @@
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from app.internal.journal.entity import JournalEntry, JournalEntryCreate
 from app.internal.journal.repository import JournalEntryRepository
@@ -52,6 +52,16 @@ class JournalEntryRepositoryImpl(JournalEntryRepository):
         return result
 
     def update_by_id(self, journal_entry: JournalEntry):
+        """Update a journal entry"""
         self.db.add(journal_entry)
         self.db.commit()
         self.db.refresh(journal_entry)
+
+    def count_journal_entries_by_id(self, id: int):
+        """Get count of a journal entry"""
+        statement = (
+            select(func.count())
+            .select_from(JournalEntry)
+            .where(JournalEntry.id == id)
+        )
+        return self.db.exec(statement)
