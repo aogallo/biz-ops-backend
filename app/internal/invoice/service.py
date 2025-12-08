@@ -411,11 +411,6 @@ class InvoiceService:
             db_journal_entry = self.journal_entry_repo.get_by_id(db_invoice.id)
 
             if db_invoice.invoice_type == "expenses":
-                logger.info(
-                    "Creating the expense journal entry for the invoice: %s with the account: %s",
-                    db_invoice.id,
-                    db_account.id,
-                )
                 if len(db_journal_entry) > 0:
                     self._create_expenses_journal_entry(
                         invoice=db_invoice,
@@ -428,11 +423,6 @@ class InvoiceService:
                         debit=db_invoice.subtotal,
                     )
             else:
-                logger.info(
-                    "Creating the income journal entry for the invoice: %s with the account: %s",
-                    db_invoice.id,
-                    db_account.id,
-                )
                 if len(db_journal_entry) > 0:
                     self._create_income_journal_entry(
                         invoice=db_invoice,
@@ -461,6 +451,13 @@ class InvoiceService:
     def _update_expense_journal_account(
         self, invoice_id: int, account_id: int, debit: float
     ):
+        """Updating the account for the expense journal entry"""
+        logger.info(
+            "Updating the expense journal entry for the invoice: %s with the account: %s",
+            invoice_id,
+            account_id,
+        )
+
         db_journal_entry = self.journal_entry_repo.get_by_debit_invoice_id(
             id=invoice_id, debit=debit
         )
@@ -472,6 +469,7 @@ class InvoiceService:
     def _update_income_journal_account(
         self, invoice_id: int, account_id: int, credit: float
     ):
+        """Updating the account for the income journal entry"""
         db_journal_entry = self.journal_entry_repo.get_by_credit_invoice_id(
             id=invoice_id, credit=credit
         )
@@ -484,6 +482,12 @@ class InvoiceService:
         self, invoice: Invoice, account: Account
     ):
         """Create a journal entry for expenses"""
+        logger.info(
+            "Creating the expense journal entry for the invoice: %s with the account: %s",
+            invoice.id,
+            account.id,
+        )
+
         try:
             entries = []
             debit = invoice.subtotal
@@ -563,11 +567,17 @@ class InvoiceService:
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Error when creating the journal entry for the ",
+                detail=f"Error when creating the journal entry for the {invoice.id}",
             ) from e
 
     def _create_income_journal_entry(self, invoice: Invoice, account: Account):
         """Creates journal entries for an income/sales invoice"""
+        logger.info(
+            "Creating the income journal entry for the invoice: %s with the account: %s",
+            invoice.id,
+            account.id,
+        )
+
         try:
             entries = []
 
