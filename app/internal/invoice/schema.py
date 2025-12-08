@@ -2,6 +2,7 @@
 
 import math
 from datetime import datetime
+from enum import Enum
 from typing import Literal
 
 from pydantic import Field, field_validator
@@ -249,3 +250,8 @@ class InvoiceUpdateAccount(CamelCaseSchema):
     """Schema for updating an invoice account."""
 
     account_id: int
+
+
+class InvoiceType(str, Enum):
+    EXPENSES = "expenses"
+    INCOMES = "incomes"

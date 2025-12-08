@@ -19,8 +19,8 @@ from app.internal.invoice.entity import (
     InvoiceUpdateAccount,
 )
 from app.internal.invoice.repository_impl import InvoiceRepositoryImpl
-from app.internal.invoice.schema import InvoiceRowSchema
-from app.internal.journal.entity import JournalEntry, JournalEntryCreate
+from app.internal.invoice.schema import InvoiceRowSchema, InvoiceType
+from app.internal.journal.entity import JournalEntry
 from app.internal.journal.repository_impl import JournalEntryRepositoryImpl
 from app.internal.user.entity import User
 from app.utils.dates import normalize_datetime
@@ -47,7 +47,7 @@ class InvoiceService:
     def list_all_invoices(self):
         return self.invoice_repo.get_all()
 
-    def process_file(self, file_bytes: bytes):
+    def process_file(self, file_bytes: bytes, invoice_type: InvoiceType):
         try:
             df = pd.read_excel(BytesIO(file_bytes))
             df.rename(
@@ -105,7 +105,9 @@ class InvoiceService:
                 validated_rows = self._validate_chunk(chunk, chunk_start)
 
                 if validated_rows:
-                    response = self._process_validated_rows(validated_rows)
+                    response = self._process_validated_rows(
+                        validated_rows, invoice_type
+                    )
 
             return response
 
@@ -224,7 +226,11 @@ class InvoiceService:
 
         return existing_customers + new_customers
 
-    def _process_validated_rows(self, rows: list[InvoiceRowSchema]):
+    def _process_validated_rows(
+        self,
+        rows: list[InvoiceRowSchema],
+        invoice_type: InvoiceType,
+    ):
         """Process validated rows: companies, invoices, details."""
         existing_companies = self._create_missing_companies(rows)
         customers = self._create_missing_customers(rows)
@@ -276,7 +282,6 @@ class InvoiceService:
             invoice_date = normalize_datetime(row.date)
 
             # Create invoice header
-            # TODO: create the invoice_type base on the uploaded file
             invoice = Invoice(
                 date=invoice_date,
                 authorization_number=row.authorization_number,
@@ -294,6 +299,7 @@ class InvoiceService:
                     else None
                 ),
                 created_by=self.current_user.auth_id,
+                invoice_type=invoice_type,
             )
 
             # Create invoice detail (one per row based on file structure)
@@ -374,35 +380,6 @@ class InvoiceService:
 
         return self.invoice_repo.update_by_id(db_invoice)
 
-    def _create_income_journal_entry(self, invoice: Invoice, account: Account):
-        """Create a journal entry for income"""
-        debit = 0
-        credit = invoice.subtotal
-
-        if invoice.id is None:
-            raise ValueError(
-                "Invoice must be saved to database before "
-                "creating journal entry"
-            )
-        if account.id is None:
-            raise ValueError(
-                "Account must be saved to database before "
-                "creating journal entry"
-            )
-        journal_entry = JournalEntryCreate(
-            company_id=invoice.company_id,
-            account_id=account.id,
-            invoice_id=invoice.id,
-            debit=debit,
-            credit=credit,
-            description=f"Expense - {invoice.customer.name}",
-        )
-
-        journal_entry_data = journal_entry.model_dump()
-        journal_entry_data["created_by"] = self.current_user.auth_id
-
-        JournalEntry(**journal_entry_data)
-
     def update_account_invoice(self, id: int, invoice: InvoiceUpdateAccount):
         """
         Update the account of an invoice
@@ -431,29 +408,32 @@ class InvoiceService:
                     detail="Account does not exist",
                 )
 
-            db_journal_entry = self.journal_entry_repo.get_by_invoice_id(
-                db_invoice.id
-            )
+            db_journal_entry = self.journal_entry_repo.get_by_id(db_invoice.id)
 
-            logger.warning(db_journal_entry)
-
-            if len(db_journal_entry) == 0:
-                logger.info(
-                    "Creating the journal entry for the invoice: %s with the account: %s",
-                    db_invoice.id,
-                    db_account.id,
-                )
-                self._create_expenses_journal_entry(
-                    invoice=db_invoice,
-                    account=db_account,
-                )
+            if db_invoice.invoice_type == "expenses":
+                if len(db_journal_entry) == 0:
+                    self._create_expenses_journal_entry(
+                        invoice=db_invoice,
+                        account=db_account,
+                    )
+                else:
+                    self._update_expense_journal_account(
+                        invoice_id=db_invoice.id,
+                        account_id=db_account.id,
+                        debit=db_invoice.subtotal,
+                    )
             else:
-                logger.info(
-                    "Updating the journal entry for the invoice: %s with the account: %s",
-                    db_invoice.id,
-                    db_account.id,
-                )
-                # db_journal_entry = self.journal_entry_repo.update()
+                if len(db_journal_entry) == 0:
+                    self._create_income_journal_entry(
+                        invoice=db_invoice,
+                        account=db_account,
+                    )
+                else:
+                    self._update_income_journal_account(
+                        invoice_id=db_invoice.id,
+                        account_id=db_account.id,
+                        credit=db_invoice.subtotal,
+                    )
 
             logger.info("Journal entries are successfully created or updated")
             db_invoice.sqlmodel_update({"account_id": invoice.account_id})
@@ -468,10 +448,46 @@ class InvoiceService:
                 detail="Error when creating the journal entry for the ",
             ) from e
 
+    def _update_expense_journal_account(
+        self, invoice_id: int, account_id: int, debit: float
+    ):
+        """Updating the account for the expense journal entry"""
+        logger.info(
+            "Updating the expense journal entry for the invoice: %s with the account: %s",
+            invoice_id,
+            account_id,
+        )
+
+        db_journal_entry = self.journal_entry_repo.get_by_debit_invoice_id(
+            id=invoice_id, debit=debit
+        )
+
+        db_journal_entry.sqlmodel_update({"account_id": account_id})
+
+        self.journal_entry_repo.update_by_id(db_journal_entry)
+
+    def _update_income_journal_account(
+        self, invoice_id: int, account_id: int, credit: float
+    ):
+        """Updating the account for the income journal entry"""
+        db_journal_entry = self.journal_entry_repo.get_by_credit_invoice_id(
+            id=invoice_id, credit=credit
+        )
+
+        db_journal_entry.sqlmodel_update({"account_id": account_id})
+
+        self.journal_entry_repo.update_by_id(db_journal_entry)
+
     def _create_expenses_journal_entry(
         self, invoice: Invoice, account: Account
     ):
         """Create a journal entry for expenses"""
+        logger.info(
+            "Creating the expense journal entry for the invoice: %s with the account: %s",
+            invoice.id,
+            account.id,
+        )
+
         try:
             entries = []
             debit = invoice.subtotal
@@ -490,7 +506,7 @@ class InvoiceService:
 
             # 1. DEBIT: Expense account (subtotal without IVA)
             new_journal_entry = JournalEntry(
-                company_id=invoice.company_id,
+                company_id=invoice.customer_id,
                 account_id=account.id,
                 invoice_id=invoice.id,
                 debit=debit,
@@ -502,7 +518,7 @@ class InvoiceService:
             entries.append(new_journal_entry)
 
             # 2. DEBIT: IVA Credito Fiscal (recoverable VAT)
-            iva_account_id = self.accont_repo.get_iva_credito_fiscal_account()
+            iva_account_id = self.accont_repo.get_iva_credit_account()
 
             if iva_account_id is None:
                 raise ValueError("IVA account not found")
@@ -512,7 +528,7 @@ class InvoiceService:
 
             # create iva journal entry
             new_iva_journal_entry = JournalEntry(
-                company_id=invoice.company_id,
+                company_id=invoice.customer_id,
                 account_id=iva_account_id,
                 invoice_id=invoice.id,
                 debit=invoice.details[0].iva,
@@ -524,7 +540,7 @@ class InvoiceService:
             entries.append(new_iva_journal_entry)
 
             # 3. CREDIT: Accounts Payable or Cash
-            credit_account_id = self.accont_repo.get_default_account_payable()
+            credit_account_id = self.accont_repo.get_default_payable_account()
 
             if credit_account_id is None:
                 raise ValueError(
@@ -532,7 +548,7 @@ class InvoiceService:
                 )
 
             credit_jorunal_entry = JournalEntry(
-                company_id=invoice.company_id,
+                company_id=invoice.customer_id,
                 account_id=credit_account_id,
                 invoice_id=invoice.id,
                 debit=0,
@@ -551,5 +567,90 @@ class InvoiceService:
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Error when creating the journal entry for the ",
+                detail=f"Error when creating the journal entry for the {invoice.id}",
+            ) from e
+
+    def _create_income_journal_entry(self, invoice: Invoice, account: Account):
+        """Creates journal entries for an income/sales invoice"""
+        logger.info(
+            "Creating the income journal entry for the invoice: %s with the account: %s",
+            invoice.id,
+            account.id,
+        )
+
+        try:
+            entries = []
+
+            # 1. DEBIT: Accounts Receivable or Cash/Bank
+            debit_account_receivable = (
+                self.accont_repo.get_default_receivable_account()
+            )
+
+            iva_account_id = self.accont_repo.get_iva_debit_account()
+
+            if invoice.id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="The invoice is not found",
+                )
+
+            if account.id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="The account was selected is not found",
+                )
+
+            if debit_account_receivable is None:
+                raise ValueError("Debit account is not configured yet")
+
+            if iva_account_id is None:
+                raise ValueError("IVA account is not configured yet")
+
+            debit_journal_entry = JournalEntry(
+                company_id=invoice.company_id,
+                account_id=debit_account_receivable,
+                invoice_id=invoice.id,
+                debit=invoice.total_amount,
+                credit=0,
+                description=f"Sale on Credit - {invoice.customer.name}",
+                created_by=self.current_user.auth_id,
+            )
+
+            entries.append(debit_journal_entry)
+
+            # 2. CREDIT: Revenue/Sales account (subtotal without IVA)
+            revenue_journal_entry = JournalEntry(
+                company_id=invoice.company_id,
+                account_id=account.id,
+                invoice_id=invoice.id,
+                debit=0,
+                credit=invoice.subtotal,
+                description=f"Revenue - {invoice.customer.name}",
+                created_by=self.current_user.auth_id,
+            )
+
+            entries.append(revenue_journal_entry)
+
+            # 3. CREDIT: IVA Debito Fiscal (VAT collected)
+            iva_journal_entry = JournalEntry(
+                company_id=invoice.company_id,
+                account_id=iva_account_id,
+                invoice_id=invoice.id,
+                debit=0,
+                credit=invoice.details[0].iva or 0.00,
+                description=f"IVA Collected - {invoice.id} - {invoice.authorization_number}",
+                created_by=self.current_user.auth_id,
+            )
+
+            entries.append(iva_journal_entry)
+            self.journal_entry_repo.add_bulk(entries)
+        except Exception as e:
+            logger.error(
+                "Error when creating the income journal entry for invoice_id: %d, invoice_serie: %s",
+                invoice.id,
+                invoice.serie,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error when creating the icome journal entry for the invoice id: {invoice.id}",
             ) from e
