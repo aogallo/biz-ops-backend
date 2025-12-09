@@ -12,6 +12,8 @@ Business Operations Backend API built with FastAPI and PostgreSQL. This is an ac
 - PostgreSQL (primary database)
 - Auth0 (authentication with JWT)
 - Python 3.12+
+- uv (fast Python package installer)
+- Ruff (fast Python linter and formatter)
 
 ## Essential Commands
 
@@ -20,6 +22,10 @@ Business Operations Backend API built with FastAPI and PostgreSQL. This is an ac
 ```bash
 # Activate virtual environment (always do this first)
 source .venv/bin/activate
+
+# Install/update dependencies (use uv, not pip!)
+uv pip install -r requirements.txt
+uv pip install -r requirements-dev.txt
 
 # Run development server
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --log-level debug
@@ -44,24 +50,29 @@ pytest tests/integration/
 ### Code Quality
 
 ```bash
+# Format code (Ruff format replaces Black - faster and compatible)
+ruff format app/ tests/
+
+# Check formatting without modifying files
+ruff format --check app/
+
 # Lint code (must pass before commits)
 ruff check app/
 
 # Auto-fix linting issues
 ruff check app/ --fix
 
-# Format code
-black app/
-
 # Type checking
 mypy app/
 
 # Run all quality checks
-ruff check app/ && black --check app/ && mypy app/
+ruff format --check app/ && ruff check app/ && mypy app/
 
 # Pre-commit hooks (runs automatically on commit)
 pre-commit run --all-files
 ```
+
+**Important:** This project uses **Ruff format** instead of Black. Ruff is a modern, faster alternative that's fully compatible with Black's formatting style.
 
 ### Database
 
@@ -294,6 +305,84 @@ CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 
 Configuration loaded via Pydantic Settings in `app/core/config.py`.
 
+## Modern Tooling Stack
+
+This project uses modern Python tooling for improved performance and developer experience:
+
+### uv - Fast Package Installer
+
+**Why uv instead of pip?**
+- 10-100x faster than pip
+- More reliable dependency resolution
+- Built-in virtual environment support
+- Better caching and parallel downloads
+
+**Usage:**
+```bash
+# Install packages
+uv pip install package-name
+
+# Install from requirements
+uv pip install -r requirements.txt
+
+# Sync dependencies (installs all + dev)
+uv sync --all-extras
+```
+
+**Important:** The virtual environment (`.venv`) is managed by uv. Always use `uv pip` instead of `pip` for consistency.
+
+### Ruff - Fast Python Linter and Formatter
+
+**Why Ruff instead of Black/Flake8/isort?**
+- 10-100x faster than Black
+- Replaces multiple tools (Black, Flake8, isort, pyupgrade)
+- Fully compatible with Black's formatting style
+- Written in Rust for maximum performance
+- Single tool for linting and formatting
+
+**Configuration:**
+- Line length: 79 (configured in `pyproject.toml`)
+- Target version: Python 3.12
+- Linting rules: pycodestyle, pyflakes, isort, flake8-bugbear
+
+**When to use what:**
+- `ruff format`: Format code (replaces `black`)
+- `ruff check`: Lint code (replaces `flake8`, `isort`, etc.)
+- `ruff check --fix`: Auto-fix linting issues
+
+### CI/CD Integration
+
+The GitHub Actions workflow (`.github/workflows/ci.yml`) uses these tools:
+1. Installs dependencies from `requirements-dev.txt` (ensures version consistency)
+2. Runs Ruff linting with GitHub annotations
+3. Runs Ruff format check (replaces Black check)
+4. Runs MyPy type checking
+
+**Key difference from old setup:**
+- ❌ Old: `pip install black ruff mypy` (installs latest versions, inconsistent)
+- ✅ New: `pip install -r requirements-dev.txt` (uses pinned versions, consistent)
+
+### Pre-commit Hooks
+
+Pre-commit automatically runs quality checks before each commit:
+- File cleanup (trailing whitespace, end-of-file)
+- Config validation (YAML, JSON, TOML)
+- Ruff linting (with auto-fix)
+- Ruff formatting
+- MyPy type checking
+
+**Setup:**
+```bash
+# Install pre-commit hooks (one-time setup)
+pre-commit install
+
+# Run manually
+pre-commit run --all-files
+
+# Update hook versions
+pre-commit autoupdate
+```
+
 ## Common Gotchas
 
 1. **Always inherit from `CamelCaseSchema`** for API schemas, not `BaseModel` or `SQLModel`
@@ -311,6 +400,10 @@ Configuration loaded via Pydantic Settings in `app/core/config.py`.
 7. **Mypy errors on entities**: `table=True` syntax causes mypy warnings - disabled in pyproject.toml for entity files
 
 8. **Type annotations**: Use Python 3.12+ union syntax (`str | None`) not `Optional[str]`
+
+9. **Package management**: Always use `uv pip install` instead of `pip install` for faster, more reliable package installation. The virtual environment is managed by uv.
+
+10. **Code formatting**: Use `ruff format` instead of `black`. Ruff is faster and maintains Black compatibility while providing additional features.
 
 ## Key Files to Reference
 
@@ -332,7 +425,7 @@ Configuration loaded via Pydantic Settings in `app/core/config.py`.
 - Trailing whitespace removal
 - YAML/JSON validation
 - Ruff linting
-- Black formatting
+- Ruff formatting (replaces Black)
 - Mypy type checking
 
 ## API Documentation
