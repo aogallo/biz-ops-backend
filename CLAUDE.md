@@ -95,7 +95,7 @@ The codebase uses a **modular domain-driven design**. Each business domain lives
 ```
 app/internal/{domain}/
 ├── entity.py          # SQLModel database models (snake_case)
-├── schema.py          # Pydantic API schemas (camelCase via CamelCaseSchema)
+├── schema.py          # Pydantic API schemas (camelCase via Field serialization_alias)
 ├── repository.py      # Abstract repository interface
 ├── repository_impl.py # Concrete repository implementation
 ├── service.py         # Business logic layer

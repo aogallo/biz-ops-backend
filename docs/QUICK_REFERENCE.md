@@ -5,7 +5,7 @@
 When creating a new API endpoint that accepts camelCase JSON:
 
 1. **Define fields in snake_case** in schemas
-2. **Use `CamelCaseSchema`** as base class for schemas
+2. **Use `BaseModel`** with `model_config` and `Field(serialization_alias="...")`
 3. **Always separate** Schema (API layer) from Entity (domain layer)
 4. **Use `model_dump()`** to convert between types
 5. **Set `response_model`** on all endpoints
@@ -67,26 +67,30 @@ class Resource(ResourceBase, table=True):
 
 ```python
 from datetime import datetime
-from app.schemas.base import CamelCaseSchema
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class ResourceCreate(CamelCaseSchema):
+class ResourceCreate(BaseModel):
     """Schema for creating resource"""
-    field_one: str
-    field_two: int
-    optional_field: str | None = None
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    field_one: str = Field(serialization_alias="fieldOne")
+    field_two: int = Field(serialization_alias="fieldTwo")
+    optional_field: str | None = Field(default=None, serialization_alias="optionalField")
 
 
-class ResourceResponse(CamelCaseSchema):
+class ResourceResponse(BaseModel):
     """Schema for resource response"""
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
     id: int
-    field_one: str
-    field_two: int
-    optional_field: str | None
-    created_by: str
-    created_at: datetime
-    updated_by: str | None
-    updated_at: datetime | None
+    field_one: str = Field(serialization_alias="fieldOne")
+    field_two: int = Field(serialization_alias="fieldTwo")
+    optional_field: str | None = Field(serialization_alias="optionalField")
+    created_by: str = Field(serialization_alias="createdBy")
+    created_at: datetime = Field(serialization_alias="createdAt")
+    updated_by: str | None = Field(serialization_alias="updatedBy")
+    updated_at: datetime | None = Field(serialization_alias="updatedAt")
 ```
 
 ### Repository Template (`app/infrastructure/repositories/resource_repository_impl.py`)
@@ -198,15 +202,17 @@ def list_resources(current_user=Depends(get_current_user)):
 ### CamelCase Conversion
 
 ```python
-# ✅ CORRECT: Define fields in snake_case
-class CustomerCreate(CamelCaseSchema):
-    phone_number: str  # API accepts "phoneNumber"
-    email_address: str  # API accepts "emailAddress"
+# ✅ CORRECT: Define fields in snake_case with serialization_alias
+class CustomerCreate(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-# ❌ WRONG: Don't use camelCase in schema
-class CustomerCreate(CamelCaseSchema):
-    phoneNumber: str  # Wrong!
-    emailAddress: str  # Wrong!
+    phone_number: str = Field(serialization_alias="phoneNumber")  # API accepts "phoneNumber"
+    email_address: str = Field(serialization_alias="emailAddress")  # API accepts "emailAddress"
+
+# ❌ WRONG: Don't use camelCase in field names
+class CustomerCreate(BaseModel):
+    phoneNumber: str  # Wrong! Use snake_case
+    emailAddress: str  # Wrong! Use snake_case
 ```
 
 ### model_dump() Usage
@@ -299,12 +305,13 @@ def update_resource(
 
 ```python
 # WRONG
-class ResourceCreate(CamelCaseSchema):
-    phoneNumber: str  # ❌
+class ResourceCreate(BaseModel):
+    phoneNumber: str  # ❌ Should be snake_case
 
 # CORRECT
-class ResourceCreate(CamelCaseSchema):
-    phone_number: str  # ✅
+class ResourceCreate(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    phone_number: str = Field(serialization_alias="phoneNumber")  # ✅
 ```
 
 ### ❌ Mistake 2: Passing schema to repository
@@ -430,10 +437,11 @@ For detailed explanations, complete examples, and architectural decisions, see:
 ## 💡 Tips
 
 1. **Always use snake_case** in Python code (fields, variables, functions)
-2. **CamelCaseSchema handles conversion** automatically
-3. **Use type hints** everywhere for better IDE support
-4. **Check existing code** (Product, Account) for working examples
-5. **Run linters** before committing: `ruff check app/ && black app/`
+2. **Use `Field(serialization_alias="...")` for camelCase conversion** in responses
+3. **Add `model_config` to all schemas** for proper validation and conversion
+4. **Use type hints** everywhere for better IDE support
+5. **Check existing code** (Product, Invoice) for working examples
+6. **Run linters** before committing: `ruff check app/ && ruff format app/`
 
 ---
 
