@@ -114,7 +114,8 @@ app/internal/{domain}/
 
 **2. Schema Layer** (`schema.py`)
 - Pydantic models for API requests/responses
-- **MUST inherit from `CamelCaseSchema`** for automatic camelCase conversion
+- **Use explicit `Field(serialization_alias="...")` for camelCase conversion**
+- All schemas inherit from `BaseModel` with explicit field aliases
 - Frontend sends camelCase JSON → automatically converted to snake_case
 - Pattern: `{Domain}Create`, `{Domain}Update`, `{Domain}Response`
 
@@ -145,21 +146,64 @@ app/internal/{domain}/
 # Entity saves:      first_name="John", last_name="Doe"
 # Database column:   first_name, last_name
 # Response returns:  {"firstName": "John", "lastName": "Doe"}
+
+# Schema definition using explicit serialization_alias:
+from pydantic import BaseModel, ConfigDict, Field
+
+class PersonResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    first_name: str = Field(serialization_alias="firstName")
+    last_name: str = Field(serialization_alias="lastName")
+```
+
+**Complete Schema Example:**
+```python
+"""Product API schemas for requests and responses."""
+from datetime import datetime
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class ProductCreate(BaseModel):
+    """Schema for creating a new product."""
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    name: str
+    description: str | None = None
+    price: float
+    stock: int = 0
+
+
+class ProductResponse(BaseModel):
+    """Schema for product response."""
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    id: int
+    name: str
+    description: str | None
+    price: float
+    stock: int
+    created_by: str = Field(serialization_alias="createdBy")
+    created_at: datetime = Field(serialization_alias="createdAt")
+    updated_by: str | None = Field(serialization_alias="updatedBy")
+    updated_at: datetime | None = Field(serialization_alias="updatedAt")
 ```
 
 **Schema ↔ Entity Conversion:**
 ```python
 # Schema → Entity (use model_dump())
-from app.schemas.customer_schema import CustomerCreate
-from app.domain.entities.customer import CustomerCreate as CustomerEntityCreate
+from app.internal.product.schema import ProductCreate
+from app.internal.product.entity import ProductCreate as ProductEntityCreate
 
-schema_data = CustomerCreate(first_name="John", last_name="Doe")
-entity_data = CustomerEntityCreate(**schema_data.model_dump())
+schema_data = ProductCreate(name="Laptop", price=999.99)
+entity_data = ProductEntityCreate(**schema_data.model_dump())
 
 # Entity → Schema (from_attributes=True handles this)
-from app.schemas.customer_schema import CustomerResponse
-customer_entity = repository.get_by_id(1)
-response = CustomerResponse.model_validate(customer_entity)
+from app.internal.product.schema import ProductResponse
+product_entity = repository.get_by_id(1)
+response = ProductResponse.model_validate(product_entity)
 ```
 
 **Authentication Flow:**
@@ -221,7 +265,9 @@ Use these from `app.core.exceptions` in service layer.
    - Create `{Domain}` with `table=True`
 
 3. **Define schema** (see `app/internal/product/schema.py` for reference)
-   - **MUST inherit from `CamelCaseSchema`**
+   - **MUST inherit from `BaseModel`** with explicit serialization aliases
+   - Add `model_config = ConfigDict(from_attributes=True, populate_by_name=True)`
+   - Use `Field(serialization_alias="camelCase")` for snake_case fields
    - Define `{Domain}Create`, `{Domain}Response`
 
 4. **Implement repository** (see `app/internal/product/repository_impl.py`)
@@ -385,7 +431,7 @@ pre-commit autoupdate
 
 ## Common Gotchas
 
-1. **Always inherit from `CamelCaseSchema`** for API schemas, not `BaseModel` or `SQLModel`
+1. **Always use explicit `Field(serialization_alias="...")` for snake_case fields** in API schemas. Don't rely on CamelCaseSchema inheritance.
 
 2. **Use `model_dump()` not `dict()`** when converting Pydantic models to dicts
 
@@ -405,15 +451,67 @@ pre-commit autoupdate
 
 10. **Code formatting**: Use `ruff format` instead of `black`. Ruff is faster and maintains Black compatibility while providing additional features.
 
+11. **Schema serialization**: Always use explicit `Field(serialization_alias="camelCase")` instead of relying on `CamelCaseSchema` base class. This makes field naming explicit and follows Pydantic v2 best practices.
+
+## Schema Best Practices
+
+### Creating a New Schema
+
+**Template for a basic schema:**
+```python
+from datetime import datetime
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class ResourceCreate(BaseModel):
+    """Schema for creating a new resource."""
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    # Simple fields (no snake_case, no alias needed)
+    name: str
+    description: str | None = None
+
+    # Snake_case fields (need serialization_alias)
+    some_field: str = Field(serialization_alias="someField")
+
+
+class ResourceResponse(BaseModel):
+    """Schema for resource response."""
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    id: int
+    name: str
+    description: str | None
+    some_field: str = Field(serialization_alias="someField")
+
+    # Standard audit fields (always use these aliases)
+    created_by: str = Field(serialization_alias="createdBy")
+    created_at: datetime = Field(serialization_alias="createdAt")
+    updated_by: str | None = Field(serialization_alias="updatedBy")
+    updated_at: datetime | None = Field(serialization_alias="updatedAt")
+```
+
+### When to Use serialization_alias
+
+**Use `Field(serialization_alias="...")` when:**
+- Field name contains underscore (snake_case) like `created_by`, `date_birth`, `account_number`
+- You need the API to return camelCase but store as snake_case
+
+**Don't use serialization_alias when:**
+- Field name is already camelCase or single word (e.g., `name`, `email`, `id`)
+- Field doesn't need different naming in API vs database
+
 ## Key Files to Reference
 
 - `docs/API_SCHEMA_ENTITY_GUIDE.md` - Comprehensive guide for creating endpoints
 - `docs/QUICK_REFERENCE.md` - Quick templates and patterns
-- `app/schemas/base.py` - CamelCaseSchema base class
 - `app/dependencies.py` - Auth0 JWT verification and user extraction
 - `app/database.py` - Database engine and session management
-- `app/internal/invoice/` - Complex domain example with nested entities
-- `app/internal/report/` - PDF report generation example
+- `app/internal/product/schema.py` - Simple, clean schema example
+- `app/internal/invoice/schema.py` - Complex domain example with nested entities
+- `app/internal/report/schemas.py` - Reference implementation for serialization pattern
 
 ## Git Workflow
 
