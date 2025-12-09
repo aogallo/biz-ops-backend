@@ -5,103 +5,138 @@ from datetime import datetime
 from enum import Enum
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlmodel import SQLModel
 
 from app.internal.account.entity import Account
 from app.internal.company.schema import CompanyResponse
 from app.internal.customer.schema import CustomerResponse
-from app.schemas.base import CamelCaseSchema
 
 InvoiceState = Literal["draft", "open", "paid", "void", "Vigente"]
 
 
-class InvoiceDetailResponse(CamelCaseSchema):
+class InvoiceDetailResponse(BaseModel):
     """Schema for invoice detail response."""
 
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
     id: int
-    invoice_id: int
-    product_code: str | None
-    product_name: str
+    invoice_id: int = Field(serialization_alias="invoiceId")
+    product_code: str | None = Field(serialization_alias="productCode")
+    product_name: str = Field(serialization_alias="productName")
     description: str | None
     quantity: float
-    unit_price: float
+    unit_price: float = Field(serialization_alias="unitPrice")
 
     # Tax details
     iva: float | None
     petroleo: float | None
-    turismo_hospedaje: float | None
-    turismo_pasajes: float | None
-    timbre_prensa: float | None
+    turismo_hospedaje: float | None = Field(
+        serialization_alias="turismoHospedaje"
+    )
+    turismo_pasajes: float | None = Field(serialization_alias="turismoPasajes")
+    timbre_prensa: float | None = Field(serialization_alias="timbrePrensa")
     bomberos: float | None
-    tasa_municipal: float | None
-    bebidas_alcoholicas: float | None
+    tasa_municipal: float | None = Field(serialization_alias="tasaMunicipal")
+    bebidas_alcoholicas: float | None = Field(
+        serialization_alias="bebidasAlcoholicas"
+    )
     tabaco: float | None
     cemento: float | None
-    bebidas_no_alcoholicas: float | None
-    tarifa_portuaria: float | None
+    bebidas_no_alcoholicas: float | None = Field(
+        serialization_alias="bebidasNoAlcoholicas"
+    )
+    tarifa_portuaria: float | None = Field(
+        serialization_alias="tarifaPortuaria"
+    )
 
     # Calculated fields
     subtotal: float
-    total_taxes: float
+    total_taxes: float = Field(serialization_alias="totalTaxes")
     total: float
 
-    created_by: str
-    created_at: datetime
-    updated_by: str | None
-    updated_at: datetime | None
+    created_by: str = Field(serialization_alias="createdBy")
+    created_at: datetime = Field(serialization_alias="createdAt")
+    updated_by: str | None = Field(serialization_alias="updatedBy")
+    updated_at: datetime | None = Field(serialization_alias="updatedAt")
 
 
-class InvoiceCreate(CamelCaseSchema):
+class InvoiceCreate(BaseModel):
     """Schema for creating a new invoice."""
 
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
     date: datetime
-    authorization_number: str
-    dte_type: str
+    authorization_number: str = Field(
+        serialization_alias="authorizationNumber"
+    )
+    dte_type: str = Field(serialization_alias="dteType")
     serie: str
-    dte_number: str
-    company_id: int
-    customer_id: int
+    dte_number: str = Field(serialization_alias="dteNumber")
+    company_id: int = Field(serialization_alias="companyId")
+    customer_id: int = Field(serialization_alias="customerId")
     currency: str = "GTQ"
     state: InvoiceState = "draft"
 
 
-class InvoiceUpdate(CamelCaseSchema):
+class InvoiceUpdate(BaseModel):
     """Schema for updating an invoice."""
 
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
     date: datetime | None = None
-    authorization_number: str | None = None
-    dte_type: str | None = None
+    authorization_number: str | None = Field(
+        default=None, serialization_alias="authorizationNumber"
+    )
+    dte_type: str | None = Field(default=None, serialization_alias="dteType")
     serie: str | None = None
-    dte_number: str | None = None
-    company_id: int | None = None
-    customer_id: int | None = None
+    dte_number: str | None = Field(
+        default=None, serialization_alias="dteNumber"
+    )
+    company_id: int | None = Field(
+        default=None, serialization_alias="companyId"
+    )
+    customer_id: int | None = Field(
+        default=None, serialization_alias="customerId"
+    )
     currency: str | None = None
     state: str | None = None
-    is_cancelled: bool | None = None
-    cancelled_date: datetime | None = None
-    account_id: int | None = None
+    is_cancelled: bool | None = Field(
+        default=None, serialization_alias="isCancelled"
+    )
+    cancelled_date: datetime | None = Field(
+        default=None, serialization_alias="cancelledDate"
+    )
+    account_id: int | None = Field(
+        default=None, serialization_alias="accountId"
+    )
 
 
-class InvoiceResponse(CamelCaseSchema):
+class InvoiceResponse(BaseModel):
     """Schema for invoice response."""
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: int
     date: datetime
-    authorization_number: str
-    dte_type: str
+    authorization_number: str = Field(
+        serialization_alias="authorizationNumber"
+    )
+    dte_type: str = Field(serialization_alias="dteType")
     serie: str
-    dte_number: str
+    dte_number: str = Field(serialization_alias="dteNumber")
     currency: str
     subtotal: float
-    total_taxes: float
-    total_amount: float
+    total_taxes: float = Field(serialization_alias="totalTaxes")
+    total_amount: float = Field(serialization_alias="totalAmount")
     state: InvoiceState
-    is_cancelled: bool | None
-    cancelled_date: datetime | None
-    created_at: datetime
-    updated_at: datetime | None
-    invoice_type: str
+    is_cancelled: bool | None = Field(serialization_alias="isCancelled")
+    cancelled_date: datetime | None = Field(
+        serialization_alias="cancelledDate"
+    )
+    created_at: datetime = Field(serialization_alias="createdAt")
+    updated_at: datetime | None = Field(serialization_alias="updatedAt")
+    invoice_type: str = Field(serialization_alias="invoiceType")
 
     # Optional nested details
     details: list[InvoiceDetailResponse] | None = None
@@ -113,8 +148,10 @@ class InvoiceResponse(CamelCaseSchema):
     account: Account | None = None
 
 
-class InvoiceListResponse(CamelCaseSchema):
+class InvoiceListResponse(BaseModel):
     """Schema for list of invoices response."""
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     invoices: list[InvoiceResponse]
     total: int = Field(description="Total number of invoices")
@@ -192,64 +229,108 @@ class InvoiceRowSchema(SQLModel):
         return str(value)
 
 
-class UniqueCustomers(CamelCaseSchema):
+class UniqueCustomers(BaseModel):
     """Schema for unique customers."""
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     name: str
     nit: str
 
 
-class InvoiceDetailCreate(CamelCaseSchema):
+class InvoiceDetailCreate(BaseModel):
     """Schema for creating a new invoice detail."""
 
-    invoice_id: int
-    product_code: str | None = None
-    product_name: str
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    invoice_id: int = Field(serialization_alias="invoiceId")
+    product_code: str | None = Field(
+        default=None, serialization_alias="productCode"
+    )
+    product_name: str = Field(serialization_alias="productName")
     description: str | None = None
     quantity: float
-    unit_price: float
+    unit_price: float = Field(serialization_alias="unitPrice")
 
     # Tax details
     iva: float | None = 0.0
     petroleo: float | None = 0.0
-    turismo_hospedaje: float | None = 0.0
-    turismo_pasajes: float | None = 0.0
-    timbre_prensa: float | None = 0.0
+    turismo_hospedaje: float | None = Field(
+        default=0.0, serialization_alias="turismoHospedaje"
+    )
+    turismo_pasajes: float | None = Field(
+        default=0.0, serialization_alias="turismoPasajes"
+    )
+    timbre_prensa: float | None = Field(
+        default=0.0, serialization_alias="timbrePrensa"
+    )
     bomberos: float | None = 0.0
-    tasa_municipal: float | None = 0.0
-    bebidas_alcoholicas: float | None = 0.0
+    tasa_municipal: float | None = Field(
+        default=0.0, serialization_alias="tasaMunicipal"
+    )
+    bebidas_alcoholicas: float | None = Field(
+        default=0.0, serialization_alias="bebidasAlcoholicas"
+    )
     tabaco: float | None = 0.0
     cemento: float | None = 0.0
-    bebidas_no_alcoholicas: float | None = 0.0
-    tarifa_portuaria: float | None = 0.0
+    bebidas_no_alcoholicas: float | None = Field(
+        default=0.0, serialization_alias="bebidasNoAlcoholicas"
+    )
+    tarifa_portuaria: float | None = Field(
+        default=0.0, serialization_alias="tarifaPortuaria"
+    )
 
 
-class InvoiceDetailUpdate(CamelCaseSchema):
+class InvoiceDetailUpdate(BaseModel):
     """Schema for updating an invoice detail."""
 
-    product_code: str | None = None
-    product_name: str | None = None
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    product_code: str | None = Field(
+        default=None, serialization_alias="productCode"
+    )
+    product_name: str | None = Field(
+        default=None, serialization_alias="productName"
+    )
     description: str | None = None
     quantity: float | None = None
-    unit_price: float | None = None
+    unit_price: float | None = Field(
+        default=None, serialization_alias="unitPrice"
+    )
     iva: float | None = None
     petroleo: float | None = None
-    turismo_hospedaje: float | None = None
-    turismo_pasajes: float | None = None
-    timbre_prensa: float | None = None
+    turismo_hospedaje: float | None = Field(
+        default=None, serialization_alias="turismoHospedaje"
+    )
+    turismo_pasajes: float | None = Field(
+        default=None, serialization_alias="turismoPasajes"
+    )
+    timbre_prensa: float | None = Field(
+        default=None, serialization_alias="timbrePrensa"
+    )
     bomberos: float | None = None
-    tasa_municipal: float | None = None
-    bebidas_alcoholicas: float | None = None
+    tasa_municipal: float | None = Field(
+        default=None, serialization_alias="tasaMunicipal"
+    )
+    bebidas_alcoholicas: float | None = Field(
+        default=None, serialization_alias="bebidasAlcoholicas"
+    )
     tabaco: float | None = None
     cemento: float | None = None
-    bebidas_no_alcoholicas: float | None = None
-    tarifa_portuaria: float | None = None
+    bebidas_no_alcoholicas: float | None = Field(
+        default=None, serialization_alias="bebidasNoAlcoholicas"
+    )
+    tarifa_portuaria: float | None = Field(
+        default=None, serialization_alias="tarifaPortuaria"
+    )
 
 
-class InvoiceUpdateAccount(CamelCaseSchema):
+class InvoiceUpdateAccount(BaseModel):
     """Schema for updating an invoice account."""
 
-    account_id: int
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    account_id: int = Field(serialization_alias="accountId")
 
 
 class InvoiceType(str, Enum):
