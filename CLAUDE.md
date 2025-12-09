@@ -2,47 +2,52 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Commands
+## Project Overview
 
-### Development
+Business Operations Backend API built with FastAPI and PostgreSQL. This is an accounting/business operations system handling invoices, customers, products, journal entries, and financial reports.
+
+**Key Technologies:**
+- FastAPI 0.115+ (async Python web framework)
+- SQLModel/SQLAlchemy (ORM)
+- PostgreSQL (primary database)
+- Auth0 (authentication with JWT)
+- Python 3.12+
+
+## Essential Commands
+
+### Development Workflow
+
 ```bash
-# Start development server with hot reload
-./run_dev.sh
-# Or manually:
+# Activate virtual environment (always do this first)
+source .venv/bin/activate
+
+# Run development server
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --log-level debug
 
-# Start with Docker Compose (includes PostgreSQL)
-docker-compose up
-```
+# Run all tests
+pytest
 
-### Production
-```bash
-# Start production server with gunicorn + uvicorn workers
-./run_prod.sh
-# Or manually:
-gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
-```
-
-### Testing
-```bash
-# Run all tests with coverage
+# Run tests with coverage report
 pytest --cov=app --cov-report=html --cov-report=term-missing
 
-# Run specific test types
-pytest tests/unit/          # Unit tests only
-pytest tests/integration/   # Integration tests only
+# Run specific test file
+pytest tests/unit/test_products.py
 
-# Run single test file or function
-pytest tests/unit/test_user_service.py
-pytest tests/unit/test_user_service.py::TestUserService::test_register_user
+# Run specific test function
+pytest tests/unit/test_products.py::TestProductService::test_create_product
 
-# Test with Docker
-docker-compose -f docker-compose.test.yml up --abort-on-container-exit
+# Run only unit or integration tests
+pytest tests/unit/
+pytest tests/integration/
 ```
 
 ### Code Quality
+
 ```bash
-# Lint and auto-fix issues
+# Lint code (must pass before commits)
+ruff check app/
+
+# Auto-fix linting issues
 ruff check app/ --fix
 
 # Format code
@@ -58,63 +63,281 @@ ruff check app/ && black --check app/ && mypy app/
 pre-commit run --all-files
 ```
 
+### Database
+
+```bash
+# Create database (PostgreSQL must be running)
+createdb bizops_dev
+
+# Check database connection
+psql postgresql://postgres:123@localhost:5432/bizops_dev
+
+# Tables are auto-created on application startup via SQLModel.metadata.create_all()
+```
+
 ## Architecture
 
-This is a FastAPI backend using **Domain-Driven Design (DDD)** with clear separation of concerns:
+### Module Structure Pattern
 
-### Core Architecture Layers
-- **Domain Layer** (`app/domain/`): Business entities and repository interfaces (ABC)
-  - `entities/`: SQLModel database models with relationships
-  - `repositories/`: Abstract repository interfaces
-  - `builders/`: Entity builders for complex object construction
+The codebase uses a **modular domain-driven design**. Each business domain lives in `app/internal/{domain}/` with this structure:
 
-- **Infrastructure Layer** (`app/infrastructure/`): Data access implementations
-  - `repositories/`: Concrete repository implementations inheriting from domain interfaces
-  - `database.py`: SQLModel/SQLAlchemy database setup and session management
+```
+app/internal/{domain}/
+├── entity.py          # SQLModel database models (snake_case)
+├── schema.py          # Pydantic API schemas (camelCase via CamelCaseSchema)
+├── repository.py      # Abstract repository interface
+├── repository_impl.py # Concrete repository implementation
+├── service.py         # Business logic layer
+└── routes.py          # FastAPI route handlers
+```
 
-- **Application Layer** (`app/services/`): Business logic and orchestration
-  - Services coordinate between repositories and implement business rules
-  - RBAC service handles role-based access control
+**Current domains:** account, category, company, customer, invoice, journal, product, report, user
 
-- **Presentation Layer** (`app/routes/`): FastAPI route handlers
-  - Route handlers are thin, delegating to services
-  - Use Pydantic schemas for request/response validation
+### Layer Responsibilities
 
-### Key Patterns
+**1. Entity Layer** (`entity.py`)
+- SQLModel classes for database tables
+- Use snake_case field names (PostgreSQL convention)
+- Pattern: `{Domain}Base`, `{Domain}Create`, `{Domain}` (table=True)
+- Includes relationships between entities
 
-**Repository Pattern**: All data access goes through repository interfaces defined in domain layer, implemented in infrastructure layer. Repositories use dependency injection and require a database session.
+**2. Schema Layer** (`schema.py`)
+- Pydantic models for API requests/responses
+- **MUST inherit from `CamelCaseSchema`** for automatic camelCase conversion
+- Frontend sends camelCase JSON → automatically converted to snake_case
+- Pattern: `{Domain}Create`, `{Domain}Update`, `{Domain}Response`
 
-**Builder Pattern**: Complex entity construction uses builders (e.g., `InvoiceBuilder`, `VendorBuilder`) for clean object creation.
+**3. Repository Layer** (`repository.py` + `repository_impl.py`)
+- Abstract base defines interface, implementation handles DB operations
+- Uses SQLModel/SQLAlchemy queries
+- Takes `Session` and `User` in constructor
+- All creates/updates automatically set `created_by`/`updated_by` from `current_user.auth_id`
 
-**Authentication & Authorization**:
-- Auth0 JWT tokens for authentication via `verify_token()` dependency
-- RBAC system with users, roles, and permissions
-- Permission checking via `check_permission(resource, action)` decorator
-- User auto-creation disabled (see `dependencies.py:144-153`)
+**4. Service Layer** (`service.py`)
+- Business logic and validation
+- Orchestrates repository calls
+- Handles complex operations (e.g., invoice creation with journal entries)
+- Raises domain exceptions from `app.core.exceptions`
 
-**Entity Relationships**: Entities use SQLModel relationships with proper back_populates. All entities have standardized datetime fields (`created_at`, `updated_at`, `created_by`, `updated_by`).
+**5. Routes Layer** (`routes.py`)
+- FastAPI route definitions
+- Uses dependency injection: `SessionDep`, `get_current_user`
+- **Always set `response_model`** for automatic schema validation
+- Routes registered in `app/main.py` with `/api/v1` prefix
 
-### Configuration
-- Environment-based configuration using Pydantic Settings (`app/core/config.py`)
-- Required environment variables: `AUTH0_DOMAIN`, `AUTH0_AUDIENCE`, `AUTH0_ISSUER`
-- Database connection via `DATABASE_URI` with PostgreSQL + psycopg2
+### Critical Patterns
 
-### Database
-- PostgreSQL with SQLModel ORM (built on SQLAlchemy)
-- Auto-creates tables on startup via `create_db_and_tables()`
-- Session management through `SessionDep` dependency injection
-- Connection health checks in health endpoints
+**CamelCase Conversion Flow:**
+```python
+# Frontend sends:    {"firstName": "John", "lastName": "Doe"}
+# Schema receives:   first_name="John", last_name="Doe"
+# Entity saves:      first_name="John", last_name="Doe"
+# Database column:   first_name, last_name
+# Response returns:  {"firstName": "John", "lastName": "Doe"}
+```
 
-### Testing Strategy
-- Unit tests for services and repositories in `tests/unit/`
-- Integration tests for routes in `tests/integration/`
-- Test configuration in `pyproject.toml` with coverage reporting
-- `conftest.py` provides shared fixtures for database and authentication
+**Schema ↔ Entity Conversion:**
+```python
+# Schema → Entity (use model_dump())
+from app.schemas.customer_schema import CustomerCreate
+from app.domain.entities.customer import CustomerCreate as CustomerEntityCreate
 
-### Type Annotation Standards
-IMPORTANT: Use Modern Type Syntax
-NEVER use Optional[T] - always use X | None instead
+schema_data = CustomerCreate(first_name="John", last_name="Doe")
+entity_data = CustomerEntityCreate(**schema_data.model_dump())
 
-# Workflow
-- Be sure to typecheck when you’re done making a series of code changes
-- Prefer running single tests, and not the whole test suite, for performance
+# Entity → Schema (from_attributes=True handles this)
+from app.schemas.customer_schema import CustomerResponse
+customer_entity = repository.get_by_id(1)
+response = CustomerResponse.model_validate(customer_entity)
+```
+
+**Authentication Flow:**
+```python
+# Routes must use these dependencies for protected endpoints
+from app.database import SessionDep
+from app.dependencies import get_current_user
+from app.internal.user.entity import User
+
+@router.post("/resource")
+async def create_resource(
+    session: SessionDep,
+    current_user: Annotated[User, Depends(get_current_user)],
+    data: ResourceCreate,
+):
+    # current_user.auth_id is the Auth0 sub claim
+    # current_user.permissions is list of Auth0 permissions
+    ...
+```
+
+### Database Session Management
+
+- **SessionDep**: Type alias for `Annotated[Session, Depends(get_session)]`
+- Use in route parameters for automatic session injection
+- Sessions auto-commit/rollback in dependency
+- Connection pooling configured (pool_size=10, max_overflow=20)
+
+### Exception Handling
+
+Global exception handlers defined in `app/main.py`:
+- `AppException` → 400 Bad Request
+- `NotFoundError` → 404 Not Found
+- `AuthenticationError` → 401 Unauthorized
+- `AuthorizationError` → 403 Forbidden
+- `RequestValidationError` → 422 Unprocessable Entity
+- `SQLAlchemyError` → 500 Internal Server Error
+
+Use these from `app.core.exceptions` in service layer.
+
+## Adding New Features
+
+### Creating a New Domain Module
+
+1. **Create directory structure:**
+   ```bash
+   mkdir app/internal/{domain}
+   touch app/internal/{domain}/__init__.py
+   touch app/internal/{domain}/entity.py
+   touch app/internal/{domain}/schema.py
+   touch app/internal/{domain}/repository.py
+   touch app/internal/{domain}/repository_impl.py
+   touch app/internal/{domain}/service.py
+   touch app/internal/{domain}/routes.py
+   ```
+
+2. **Define entity** (see `app/internal/product/entity.py` for reference)
+   - Create `{Domain}Base` with shared fields
+   - Create `{Domain}Create` (excludes id, timestamps)
+   - Create `{Domain}` with `table=True`
+
+3. **Define schema** (see `app/internal/product/schema.py` for reference)
+   - **MUST inherit from `CamelCaseSchema`**
+   - Define `{Domain}Create`, `{Domain}Response`
+
+4. **Implement repository** (see `app/internal/product/repository_impl.py`)
+   - Implement abstract methods from base repository
+   - Use `self.current_user.auth_id` for audit fields
+
+5. **Implement service** (see `app/internal/product/service.py`)
+   - Business logic, validation, exception handling
+
+6. **Create routes** (see `app/internal/product/routes.py`)
+   - Define APIRouter with tags
+   - Use `SessionDep` and `get_current_user` dependencies
+   - Set `response_model` on all endpoints
+
+7. **Register routes** in `app/main.py`:
+   ```python
+   from app.internal.{domain} import routes as {domain}_routes
+   app.include_router(router={domain}_routes.router, prefix=API_V1_PREFIX)
+   ```
+
+### Important Implementation Notes
+
+**For complex domain models (e.g., Invoice with InvoiceDetails):**
+- See `app/internal/invoice/` for reference implementation
+- Handle nested creates in service layer
+- Use transactions for multi-table operations
+- Consider using `relationship()` for SQLModel relationships
+
+**For reports/PDF generation:**
+- See `app/internal/report/` module
+- Uses ReportLab for PDF generation
+- Service layer handles data aggregation
+- Routes return FileResponse with appropriate headers
+
+**For journal entries (accounting):**
+- Double-entry bookkeeping: debits = credits
+- Automatically created from invoice operations
+- See `app/internal/invoice/service.py` for integration
+
+## Testing
+
+**Test Structure:**
+- Unit tests: `tests/unit/` (test services, business logic)
+- Integration tests: `tests/integration/` (test API endpoints)
+- Fixtures in `tests/conftest.py`
+
+**Key fixtures:**
+- `client`: TestClient for API testing
+- `session`: Database session
+- `mock_user`: User for authentication bypass
+
+**Testing authenticated endpoints:**
+```python
+# Patch get_current_user dependency
+from app.dependencies import get_current_user
+from app.internal.user.entity import User
+
+def override_get_current_user():
+    return User(auth_id="test_user", permissions=[])
+
+app.dependency_overrides[get_current_user] = override_get_current_user
+```
+
+## Environment Configuration
+
+**Required variables** (in `.env`):
+```bash
+DATABASE_URI=postgresql://user:pass@localhost:5432/bizops_dev
+AUTH0_DOMAIN=your-tenant.auth0.com
+AUTH0_AUDIENCE=https://your-api-audience
+AUTH0_ISSUER=https://your-tenant.auth0.com/
+```
+
+**Optional variables:**
+```bash
+DEBUG=true
+LOG_LEVEL=DEBUG
+USE_MOCK_AUTH=false  # Set to true to bypass Auth0 validation
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+```
+
+Configuration loaded via Pydantic Settings in `app/core/config.py`.
+
+## Common Gotchas
+
+1. **Always inherit from `CamelCaseSchema`** for API schemas, not `BaseModel` or `SQLModel`
+
+2. **Use `model_dump()` not `dict()`** when converting Pydantic models to dicts
+
+3. **Repository constructors take `Session` and `User`** - pass `current_user` from route dependency
+
+4. **Audit fields** (`created_by`, `updated_by`) are automatically set by repositories from `current_user.auth_id`
+
+5. **All API routes use `/api/v1` prefix** - registered in main.py
+
+6. **PostgreSQL vs SQLite**: The engine configuration auto-detects database type. Use PostgreSQL for production.
+
+7. **Mypy errors on entities**: `table=True` syntax causes mypy warnings - disabled in pyproject.toml for entity files
+
+8. **Type annotations**: Use Python 3.12+ union syntax (`str | None`) not `Optional[str]`
+
+## Key Files to Reference
+
+- `docs/API_SCHEMA_ENTITY_GUIDE.md` - Comprehensive guide for creating endpoints
+- `docs/QUICK_REFERENCE.md` - Quick templates and patterns
+- `app/schemas/base.py` - CamelCaseSchema base class
+- `app/dependencies.py` - Auth0 JWT verification and user extraction
+- `app/database.py` - Database engine and session management
+- `app/internal/invoice/` - Complex domain example with nested entities
+- `app/internal/report/` - PDF report generation example
+
+## Git Workflow
+
+**Main branches:**
+- `develop` - main development branch (use for PRs)
+- `main` - production branch
+
+**Pre-commit hooks** automatically run:
+- Trailing whitespace removal
+- YAML/JSON validation
+- Ruff linting
+- Black formatting
+- Mypy type checking
+
+## API Documentation
+
+When server is running:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+- Health check: http://localhost:8000/health
