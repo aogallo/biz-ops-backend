@@ -3,8 +3,8 @@
 [![CI/CD](https://github.com/aogallo/biz-ops-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/aogallo/biz-ops-backend/actions)
 [![Python Version](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Linting: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A modern, production-ready FastAPI application for business operations management with PostgreSQL database, Auth0 authentication, and comprehensive RBAC (Role-Based Access Control).
@@ -37,7 +37,8 @@ A modern, production-ready FastAPI application for business operations managemen
 - **Database**: PostgreSQL with psycopg2
 - **Authentication**: Auth0 + PyJWT
 - **Testing**: pytest, pytest-asyncio, httpx
-- **Code Quality**: ruff, black, mypy
+- **Code Quality**: Ruff (linting + formatting), mypy (type checking)
+- **Package Manager**: uv (fast Python package installer)
 - **Development**: uvicorn, gunicorn
 - **Containerization**: Docker, Docker Compose
 
@@ -88,8 +89,13 @@ cd biz-ops-backend
 ### 2. Set Up Virtual Environment
 
 ```bash
-# Create virtual environment
-python3 -m venv .venv
+# Install uv (fast Python package installer)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# or on macOS: brew install uv
+# or with pip: pip install uv
+
+# Create virtual environment with uv
+uv venv
 
 # Activate virtual environment
 source .venv/bin/activate  # On Unix/macOS
@@ -100,12 +106,16 @@ source .venv/bin/activate  # On Unix/macOS
 ### 3. Install Dependencies
 
 ```bash
-# Install production dependencies
-pip install -r requirements.txt
+# Install all dependencies with uv (recommended - much faster than pip)
+uv pip install -r requirements.txt
+uv pip install -r requirements-dev.txt
 
-# Install development dependencies (for testing and code quality)
-pip install -r requirements-dev.txt
+# Or use traditional pip (slower)
+# pip install -r requirements.txt
+# pip install -r requirements-dev.txt
 ```
+
+**Note:** This project uses `uv` for package management. It's 10-100x faster than pip and provides better dependency resolution.
 
 ### 4. Configure Environment Variables
 
@@ -238,24 +248,26 @@ docker-compose -f docker-compose.test.yml up --abort-on-container-exit
 
 ## 🎨 Code Quality
 
-### Linting
-
-```bash
-# Run ruff (fast Python linter)
-ruff check app/
-
-# Auto-fix issues
-ruff check app/ --fix
-```
+This project uses **Ruff** for both linting and formatting (replacing Black, Flake8, and isort with a single fast tool).
 
 ### Formatting
 
 ```bash
-# Check formatting
-black --check app/
+# Format code with Ruff (replaces Black)
+ruff format app/ tests/
 
-# Format code
-black app/
+# Check formatting without making changes
+ruff format --check app/
+```
+
+### Linting
+
+```bash
+# Run ruff linter
+ruff check app/
+
+# Auto-fix issues
+ruff check app/ --fix
 ```
 
 ### Type Checking
@@ -269,7 +281,7 @@ mypy app/
 
 ```bash
 # Run all quality checks
-ruff check app/ && black --check app/ && mypy app/
+ruff format --check app/ && ruff check app/ && mypy app/
 ```
 
 ### Pre-commit Hooks
@@ -288,9 +300,52 @@ The hooks will automatically:
 
 - Fix trailing whitespace
 - Check YAML/JSON syntax
-- Run ruff linter
-- Format code with black
+- Run Ruff linter with auto-fix
+- Format code with Ruff (replaces Black)
 - Run type checking with mypy
+
+## ⚡ Modern Tooling Benefits
+
+### Why Ruff over Black/Flake8/isort?
+
+This project uses **Ruff** for both linting and formatting:
+
+- **10-100x faster** than Black and other Python tools
+- **Single tool** replaces Black, Flake8, isort, and pyupgrade
+- **Fully compatible** with Black's formatting style
+- **Written in Rust** for maximum performance
+- **Better error messages** with more context
+
+### Why uv over pip?
+
+This project uses **uv** for package management:
+
+- **10-100x faster** than pip for installation
+- **Better dependency resolution** - more reliable and consistent
+- **Built-in virtual environment** support
+- **Parallel downloads** and intelligent caching
+- **Drop-in replacement** for pip (same commands)
+
+**Example speed comparison:**
+```bash
+# Traditional pip (slow)
+pip install -r requirements.txt  # ~60 seconds
+
+# Modern uv (fast)
+uv pip install -r requirements.txt  # ~3 seconds
+```
+
+### Migration from Old Tools
+
+If you're used to the old toolchain:
+
+| Old Command | New Command | Notes |
+|-------------|-------------|-------|
+| `pip install package` | `uv pip install package` | Much faster |
+| `black app/` | `ruff format app/` | Same style, faster |
+| `black --check app/` | `ruff format --check app/` | Check without changes |
+| `flake8 app/` | `ruff check app/` | More rules, faster |
+| `isort app/` | `ruff check app/ --select I` | Integrated into Ruff |
 
 ## 📚 API Documentation
 
@@ -403,8 +458,8 @@ docker run -d \
 
    ```bash
    pytest
-   ruff check app/
-   black app/
+   ruff format app/ tests/
+   ruff check app/ --fix
    mypy app/
    ```
 4. Commit your changes
@@ -474,8 +529,10 @@ psql -U your_user -d bizops_dev
 # Make sure you're in the virtual environment
 source .venv/bin/activate
 
-# Reinstall dependencies
-pip install -r requirements.txt
+# Reinstall dependencies (use uv for faster installation)
+uv pip install -r requirements.txt
+# or use pip if uv is not available
+# pip install -r requirements.txt
 ```
 
 ### Auth0 Token Issues
