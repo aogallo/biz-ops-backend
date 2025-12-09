@@ -86,7 +86,8 @@ class GeneralJournalPDFGenerator:
                 textColor=colors.grey,
             )
             no_data_para = Paragraph(
-                "<i>No se encontraron registros para el período seleccionado.</i>",
+                """<i>No se encontraron registros
+                para el período seleccionado.</i>""",
                 no_data_style,
             )
             elements.append(no_data_para)
