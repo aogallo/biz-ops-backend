@@ -28,8 +28,8 @@ jobs:
       - name: Run Ruff (Linter)
         run: ruff check app/ --output-format=github
 
-      - name: Check code formatting with Black
-        run: black --check app/
+      - name: Check code formatting with Ruff
+        run: ruff format --check app/
 
       - name: Run MyPy (Type Checker)
         run: mypy app/ --ignore-missing-imports

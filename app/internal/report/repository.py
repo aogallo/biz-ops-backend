@@ -1,4 +1,5 @@
 """Repository interface for report data access."""
+
 from abc import ABC, abstractmethod
 from datetime import datetime
 

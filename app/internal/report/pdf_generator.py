@@ -1,4 +1,5 @@
 """PDF generation utilities for reports."""
+
 from datetime import UTC, datetime
 from io import BytesIO
 

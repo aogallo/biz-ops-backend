@@ -32,6 +32,3 @@ services:
       test-db:
         condition: service_healthy
     command: pytest tests/ -v --cov=app --cov-report=term-missing
-
-
-

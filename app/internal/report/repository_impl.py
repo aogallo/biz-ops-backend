@@ -1,4 +1,5 @@
 """Implementation of report repository."""
+
 from datetime import datetime
 
 from sqlmodel import Session, col, select

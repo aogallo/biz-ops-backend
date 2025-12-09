@@ -1,4 +1,5 @@
 """Service for generating reports."""
+
 from datetime import datetime
 
 from fastapi import HTTPException

@@ -1,4 +1,5 @@
 """API routes for reports."""
+
 import os
 import tempfile
 from datetime import datetime
@@ -24,10 +25,12 @@ def get_general_journal_report(
     company_id: int = Query(
         ..., description="Company ID to generate report for"
     ),
-    start_date: datetime
-    | None = Query(None, description="Start date for the report (ISO format)"),
-    end_date: datetime
-    | None = Query(None, description="End date for the report (ISO format)"),
+    start_date: datetime | None = Query(
+        None, description="Start date for the report (ISO format)"
+    ),
+    end_date: datetime | None = Query(
+        None, description="End date for the report (ISO format)"
+    ),
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
 ):
@@ -56,10 +59,12 @@ def download_general_journal_pdf(
     company_id: int = Query(
         ..., description="Company ID to generate report for"
     ),
-    start_date: datetime
-    | None = Query(None, description="Start date for the report (ISO format)"),
-    end_date: datetime
-    | None = Query(None, description="End date for the report (ISO format)"),
+    start_date: datetime | None = Query(
+        None, description="Start date for the report (ISO format)"
+    ),
+    end_date: datetime | None = Query(
+        None, description="End date for the report (ISO format)"
+    ),
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
     background_tasks: BackgroundTasks = BackgroundTasks(),

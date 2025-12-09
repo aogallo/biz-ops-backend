@@ -495,13 +495,12 @@ class InvoiceService:
 
             if invoice.id is None:
                 raise ValueError(
-                    "Invoice must be exist before " "creating journal entry"
+                    "Invoice must be exist before creating journal entry"
                 )
 
             if account.id is None:
                 raise ValueError(
-                    "Account must be saved exist before "
-                    "creating journal entry"
+                    "Account must be saved exist before creating journal entry"
                 )
 
             # 1. DEBIT: Expense account (subtotal without IVA)

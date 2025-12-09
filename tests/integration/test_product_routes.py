@@ -95,16 +95,16 @@ class TestProductRoutes:
         data = response.json()
 
         # The response is wrapped in ProductListResponse
-        assert (
-            "products" in data
-        ), f"Expected 'products' key in response: {data}"
+        assert "products" in data, (
+            f"Expected 'products' key in response: {data}"
+        )
         assert "total" in data, f"Expected 'total' key in response: {data}"
 
         products = data["products"]
         assert isinstance(products, list)
-        assert (
-            len(products) >= 1
-        ), f"Expected at least 1 product, got {len(products)}"
+        assert len(products) >= 1, (
+            f"Expected at least 1 product, got {len(products)}"
+        )
         assert data["total"] >= 1
 
         # Verify product structure (check any product in the list)
