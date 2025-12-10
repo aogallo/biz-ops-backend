@@ -684,6 +684,7 @@ class ResourceResponse(BaseModel):
 
 **Pre-commit hooks** automatically run:
 - Trailing whitespace removal
+- Gitlint for commit message validation
 - YAML/JSON validation
 - Ruff linting
 - Ruff formatting (replaces Black)
