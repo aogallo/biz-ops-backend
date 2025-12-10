@@ -3,12 +3,8 @@ from sqlmodel import Session
 
 from app.database import get_session
 from app.dependencies import get_current_user, verify_token
-from app.internal.company.entity import (
-    Company,
-)
-from app.internal.company.entity import (
-    CompanyCreate as CompanyCreateEntity,
-)
+from app.internal.company.entity import Company
+from app.internal.company.entity import CompanyCreate as CompanyCreateEntity
 from app.internal.company.schema import (
     CompaniesResponse,
     CompanyCreate,
@@ -102,3 +98,7 @@ def update_company(
         return CompanyResponse.model_validate(updated_company)
     except HTTPException as e:
         raise e
+
+
+# @router.get("/{company_id}", response_model=CompanyResponse)
+# def

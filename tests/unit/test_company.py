@@ -291,3 +291,36 @@ class TestCompanyService:
         assert result["count"] == 0
         assert len(result["data"]) == 0
         mock_repository.get_by_managed_status.assert_called_once_with(True)
+
+    def test_get_company_by_id(self, service, mock_repository):
+        """Test getting the company by id."""
+        existing_company = Company(
+            id=2,
+            name="Unmanaged Company",
+            nit="444444444",
+            email="c@unmanaged.com",
+            address="Address C",
+            managed_by_accountant=False,
+            created_by="user2",
+        )
+
+        mock_repository.get_by_id.return_value = existing_company
+
+        result = service.get_by_id(2)
+
+        assert result.id == 2
+        assert result.managed_by_accountant is False
+
+    def test_get_company_by_id_not_found(self, service, mock_repository):
+        """Test that getting non-existent company raises 404 error."""
+        # Arrange
+        company_id = 999
+        mock_repository.get_by_id.return_value = None
+
+        # Act & Assert
+        with pytest.raises(HTTPException) as exc_info:
+            service.get_by_id(id=company_id)
+
+        # Verify error details
+        assert exc_info.value.status_code == 404
+        assert "not found" in str(exc_info.value.detail).lower()

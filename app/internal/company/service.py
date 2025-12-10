@@ -47,3 +47,14 @@ class CompanyService:
             companies = self.repository.get_all()
 
         return {"count": count, "data": companies}
+
+    def get_by_id(self, id: int):
+        """Get company by id"""
+        existing_company = self.repository.get_by_id(id)
+        if existing_company is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Company not found",
+            )
+
+        return existing_company
