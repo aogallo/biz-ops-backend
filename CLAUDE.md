@@ -451,6 +451,25 @@ def test_list_products_filtered_by_status(authenticated_client, engine):
    app.include_router(router={domain}_routes.router, prefix=API_V1_PREFIX)
    ```
 
+9. **Verify TDD completion (Green Phase & Coverage):**
+   ```bash
+   # Run all tests for the new domain
+   pytest tests/unit/test_{domain}.py tests/integration/test_{domain}_routes.py -v
+
+   # Verify 100% coverage
+   pytest tests/unit/test_{domain}.py tests/integration/test_{domain}_routes.py \
+     --cov=app.internal.{domain} --cov-report=term-missing
+
+   # Run all tests to ensure no regressions
+   pytest
+   ```
+
+   **Before committing:**
+   - ✅ All tests pass
+   - ✅ 100% coverage on new code
+   - ✅ No regressions in existing tests
+   - ✅ Pre-commit hooks pass
+
 ### Important Implementation Notes
 
 **For complex domain models (e.g., Invoice with InvoiceDetails):**
