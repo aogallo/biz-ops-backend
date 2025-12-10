@@ -243,9 +243,162 @@ Global exception handlers defined in `app/main.py`:
 
 Use these from `app.core.exceptions` in service layer.
 
+## Test-Driven Development (TDD)
+
+**CRITICAL REQUIREMENT:** This project follows Test-Driven Development practices. All new features and updates to existing features MUST follow TDD workflow.
+
+### TDD Workflow
+
+When implementing a new feature or updating an existing feature, follow this strict workflow:
+
+1. **Write Tests First**
+   - Write unit tests for the service layer before implementing the business logic
+   - Write integration tests for the routes before implementing the endpoints
+   - Tests should cover all expected behaviors, edge cases, and error conditions
+   - Aim for 100% code coverage of new implementation
+
+2. **Run Tests (They Should Fail)**
+   - Execute the tests to verify they fail (red phase)
+   - Failing tests confirm that tests are actually testing new functionality
+
+3. **Implement Minimum Code**
+   - Write the minimum amount of code needed to make the tests pass
+   - Focus on making tests green, not on perfect implementation
+
+4. **Run Tests Again (They Should Pass)**
+   - Execute tests to verify they now pass (green phase)
+   - All tests must pass before proceeding
+
+5. **Refactor**
+   - Improve code quality while keeping tests green
+   - Apply design patterns, remove duplication, improve readability
+   - Re-run tests after each refactoring step
+
+6. **Verify Coverage**
+   - Run coverage report: `pytest --cov=app --cov-report=term-missing`
+   - Ensure 100% coverage of new/modified lines
+   - Add tests for any uncovered lines
+
+### Coverage Requirements
+
+**MANDATORY:** Each new implementation or feature update must have:
+- **100% unit test coverage** for all new lines in service layer
+- **100% integration test coverage** for all new/modified API endpoints
+- Tests for success cases, error cases, and edge cases
+- Tests for validation logic and business rules
+
+**Example TDD Flow:**
+```bash
+# 1. Create test file first
+touch tests/unit/test_new_feature.py
+touch tests/integration/test_new_feature_routes.py
+
+# 2. Write failing tests
+# Edit test files with expected behavior
+
+# 3. Run tests (should fail)
+pytest tests/unit/test_new_feature.py -v
+# Expected: FAILED (tests fail because implementation doesn't exist)
+
+# 4. Implement feature
+# Edit service.py, routes.py, etc.
+
+# 5. Run tests again (should pass)
+pytest tests/unit/test_new_feature.py -v
+# Expected: PASSED
+
+# 6. Check coverage
+pytest tests/unit/test_new_feature.py --cov=app.internal.feature.service --cov-report=term-missing
+# Expected: 100% coverage
+
+# 7. Run all tests to ensure no regressions
+pytest
+```
+
+### Testing Standards
+
+**Unit Tests (`tests/unit/`):**
+- Test business logic in isolation
+- Mock external dependencies (database, repositories, external services)
+- Focus on service layer methods
+- Test all code paths (if/else, try/except, loops)
+- Test validation logic and error handling
+- Naming: `test_{method_name}_{scenario}` (e.g., `test_create_product_success`, `test_create_product_duplicate_name`)
+
+**Integration Tests (`tests/integration/`):**
+- Test API endpoints end-to-end
+- Use test database (SQLite in-memory)
+- Test HTTP status codes, response schemas, error responses
+- Test authentication/authorization
+- Test query parameters and filters
+- Naming: `test_{endpoint}_{scenario}` (e.g., `test_create_company_success`, `test_list_companies_filtered_by_managed_status`)
+
+**Before Committing:**
+- ✅ All tests must pass: `pytest`
+- ✅ Coverage must be 100% for new code: `pytest --cov=app --cov-report=term-missing`
+- ✅ Pre-commit hooks must pass (includes ruff format, ruff check, mypy)
+
+### Example: Adding a New Feature with TDD
+
+**Scenario: Add filtering by status to products endpoint**
+
+```python
+# Step 1: Write unit test first (tests/unit/test_products.py)
+def test_list_products_filtered_by_status_active(service, mock_repository):
+    """Test listing products filtered by active status."""
+    active_products = [
+        Product(id=1, name="Active Product", status="active"),
+    ]
+    mock_repository.get_by_status.return_value = active_products
+
+    result = service.list_products(status="active")
+
+    assert len(result) == 1
+    assert result[0].status == "active"
+    mock_repository.get_by_status.assert_called_once_with("active")
+
+# Step 2: Run test (it fails - method doesn't exist)
+# $ pytest tests/unit/test_products.py::test_list_products_filtered_by_status_active
+# FAILED - AttributeError: 'ProductService' has no attribute 'list_products'
+
+# Step 3: Implement minimum code in service.py
+def list_products(self, status: str | None = None):
+    if status:
+        return self.repository.get_by_status(status)
+    return self.repository.get_all()
+
+# Step 4: Run test again (it passes)
+# $ pytest tests/unit/test_products.py::test_list_products_filtered_by_status_active
+# PASSED
+
+# Step 5: Add integration test
+# tests/integration/test_product_routes.py
+def test_list_products_filtered_by_status(authenticated_client, engine):
+    # ... create test data ...
+    response = authenticated_client.get("/api/v1/products?status=active")
+    assert response.status_code == 200
+    assert all(p["status"] == "active" for p in response.json()["products"])
+
+# Step 6: Verify coverage
+# $ pytest tests/unit/test_products.py --cov=app.internal.product.service --cov-report=term-missing
+# Coverage: 100%
+```
+
+**NO EXCEPTIONS:** Do not commit code without tests. Do not implement features before writing tests.
+
 ## Adding New Features
 
+**⚠️ IMPORTANT:** Before adding any new feature, review the [Test-Driven Development (TDD)](#test-driven-development-tdd) section above. All feature development MUST follow TDD workflow: write tests first, then implement.
+
 ### Creating a New Domain Module
+
+**Follow TDD Workflow:**
+1. Create test files first (`tests/unit/test_{domain}.py`, `tests/integration/test_{domain}_routes.py`)
+2. Write failing tests for expected behavior
+3. Implement features to make tests pass
+4. Verify 100% test coverage
+
+**Implementation Steps:**
 
 1. **Create directory structure:**
    ```bash
@@ -257,32 +410,42 @@ Use these from `app.core.exceptions` in service layer.
    touch app/internal/{domain}/repository_impl.py
    touch app/internal/{domain}/service.py
    touch app/internal/{domain}/routes.py
+   # CREATE TESTS FIRST (TDD)
+   touch tests/unit/test_{domain}.py
+   touch tests/integration/test_{domain}_routes.py
    ```
 
-2. **Define entity** (see `app/internal/product/entity.py` for reference)
+2. **Write tests first (TDD Red Phase)**
+   - Write unit tests in `tests/unit/test_{domain}.py`
+   - Write integration tests in `tests/integration/test_{domain}_routes.py`
+   - Run tests to verify they fail
+
+3. **Define entity** (see `app/internal/product/entity.py` for reference)
    - Create `{Domain}Base` with shared fields
    - Create `{Domain}Create` (excludes id, timestamps)
    - Create `{Domain}` with `table=True`
 
-3. **Define schema** (see `app/internal/product/schema.py` for reference)
+4. **Define schema** (see `app/internal/product/schema.py` for reference)
    - **MUST inherit from `BaseModel`** with explicit serialization aliases
    - Add `model_config = ConfigDict(from_attributes=True, populate_by_name=True)`
-   - Use `Field(serialization_alias="camelCase")` for snake_case fields
-   - Define `{Domain}Create`, `{Domain}Response`
+   - Use `Field(alias="camelCase", serialization_alias="camelCase")` for snake_case fields
+   - Define `{Domain}Create`, `{Domain}Update`, `{Domain}Response`
 
-4. **Implement repository** (see `app/internal/product/repository_impl.py`)
+5. **Implement repository** (see `app/internal/product/repository_impl.py`)
    - Implement abstract methods from base repository
    - Use `self.current_user.auth_id` for audit fields
 
-5. **Implement service** (see `app/internal/product/service.py`)
+6. **Implement service** (see `app/internal/product/service.py`)
    - Business logic, validation, exception handling
+   - Run unit tests after each method implementation
 
-6. **Create routes** (see `app/internal/product/routes.py`)
+7. **Create routes** (see `app/internal/product/routes.py`)
    - Define APIRouter with tags
    - Use `SessionDep` and `get_current_user` dependencies
-   - Set `response_model` on all endpoints
+   - Set `response_model` and appropriate `status_code` on all endpoints
+   - Run integration tests after each endpoint implementation
 
-7. **Register routes** in `app/main.py`:
+8. **Register routes** in `app/main.py`:
    ```python
    from app.internal.{domain} import routes as {domain}_routes
    app.include_router(router={domain}_routes.router, prefix=API_V1_PREFIX)
