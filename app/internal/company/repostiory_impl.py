@@ -114,3 +114,13 @@ class CompanyRepositoryImpl(CompanyRepository):
         self.db.commit()
         for company in companies:
             self.db.refresh(company)
+
+    def get_by_managed_status(
+        self, managed_by_accountant: bool
+    ) -> list[Company]:
+        """Get companies by managed_by_accountant status"""
+        statement = select(Company).where(
+            Company.managed_by_accountant == managed_by_accountant
+        )
+        result: list[Company] = list(self.db.exec(statement))
+        return result

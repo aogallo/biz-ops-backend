@@ -13,13 +13,20 @@ class CompanyCreate(BaseModel):
     name: str
     nit: str
     date_birth: str | None = Field(
-        default=None, serialization_alias="dateBirth"
+        default=None, alias="dateBirth", serialization_alias="dateBirth"
     )
     commercial_activity: str | None = Field(
-        default=None, serialization_alias="commercialActivity"
+        default=None,
+        alias="commercialActivity",
+        serialization_alias="commercialActivity",
     )
     email: EmailStr
     address: str | None = None
+    managed_by_accountant: bool = Field(
+        default=False,
+        alias="managedByAccountant",
+        serialization_alias="managedByAccountant",
+    )
 
 
 class CompanyUpdate(BaseModel):
@@ -30,13 +37,20 @@ class CompanyUpdate(BaseModel):
     name: str | None = None
     nit: str | None = None
     date_birth: str | None = Field(
-        default=None, serialization_alias="dateBirth"
+        default=None, alias="dateBirth", serialization_alias="dateBirth"
     )
     commercial_activity: str | None = Field(
-        default=None, serialization_alias="commercialActivity"
+        default=None,
+        alias="commercialActivity",
+        serialization_alias="commercialActivity",
     )
     email: EmailStr | None = None
     address: str | None = None
+    managed_by_accountant: bool | None = Field(
+        default=None,
+        alias="managedByAccountant",
+        serialization_alias="managedByAccountant",
+    )
 
 
 class CompanyResponse(BaseModel):
@@ -53,6 +67,9 @@ class CompanyResponse(BaseModel):
     )
     email: EmailStr
     address: str | None
+    managed_by_accountant: bool = Field(
+        serialization_alias="managedByAccountant"
+    )
     created_at: datetime = Field(serialization_alias="createdAt")
     updated_at: datetime | None = Field(serialization_alias="updatedAt")
 

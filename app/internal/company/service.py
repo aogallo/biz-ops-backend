@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from sqlmodel import Session
 
-from app.internal.company.entity import CompanyCreate
+from app.internal.company.entity import Company, CompanyCreate
 from app.internal.company.repostiory_impl import CompanyRepositoryImpl
 from app.internal.user.entity import User
 
@@ -23,7 +23,27 @@ class CompanyService:
 
         return self.repository.create(company=company)
 
-    def list_all_companies(self):
-        count = self.repository.get_count()
-        companies = self.repository.get_all()
+    def update_company(self, company_id: int, company_update: Company):
+        """Update a company by ID."""
+        existing_company = self.repository.get_by_id(company_id)
+
+        if existing_company is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Company not found",
+            )
+
+        return self.repository.update(id=company_id, model=company_update)
+
+    def list_all_companies(self, managed_by_accountant: bool | None = None):
+        """List all companies, optionally filtered by managed_by_accountant."""
+        if managed_by_accountant is not None:
+            companies = self.repository.get_by_managed_status(
+                managed_by_accountant
+            )
+            count = len(companies)
+        else:
+            count = self.repository.get_count()
+            companies = self.repository.get_all()
+
         return {"count": count, "data": companies}

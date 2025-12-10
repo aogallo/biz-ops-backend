@@ -163,4 +163,12 @@ def clean_database(engine):
         products = session.exec(select(Product)).all()
         for product in products:
             session.delete(product)
+
+        # Delete all companies
+        from app.internal.company.entity import Company
+
+        companies = session.exec(select(Company)).all()
+        for company in companies:
+            session.delete(company)
+
         session.commit()

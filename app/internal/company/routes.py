@@ -3,11 +3,17 @@ from sqlmodel import Session
 
 from app.database import get_session
 from app.dependencies import get_current_user, verify_token
-from app.internal.company.entity import CompanyCreate as CompanyCreateEntity
+from app.internal.company.entity import (
+    Company,
+)
+from app.internal.company.entity import (
+    CompanyCreate as CompanyCreateEntity,
+)
 from app.internal.company.schema import (
     CompaniesResponse,
     CompanyCreate,
     CompanyResponse,
+    CompanyUpdate,
 )
 from app.internal.company.service import CompanyService
 
@@ -20,7 +26,9 @@ router = APIRouter(
 )
 
 
-@router.post("", response_model=CompanyResponse)
+@router.post(
+    "", response_model=CompanyResponse, status_code=status.HTTP_201_CREATED
+)
 def create_company(
     company: CompanyCreate,
     session: Session = Depends(get_session),
@@ -39,25 +47,28 @@ def create_company(
         created_company = service.create_company(company=company_entity)
         return CompanyResponse.model_validate(created_company)
     except HTTPException as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise e
 
 
 @router.get("", response_model=CompaniesResponse)
 def list_companies(
+    managed_by_accountant: bool | None = None,
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
 ):
     """
     Get all companies.
 
+    Optionally filter by managed_by_accountant status.
+
     Returns a list of all companies.
     """
 
     try:
         service = CompanyService(session, current_user)
-        result = service.list_all_companies()
+        result = service.list_all_companies(
+            managed_by_accountant=managed_by_accountant
+        )
         return CompaniesResponse(
             count=result["count"],
             data=[CompanyResponse.model_validate(c) for c in result["data"]],
@@ -66,3 +77,28 @@ def list_companies(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
         ) from e
+
+
+@router.put("/{company_id}", response_model=CompanyResponse)
+def update_company(
+    company_id: int,
+    company: CompanyUpdate,
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+):
+    """
+    Update a company by ID.
+
+    Returns the updated company.
+    """
+
+    try:
+        service = CompanyService(session, current_user)
+        # Convert schema to entity
+        company_entity = Company(**company.model_dump(exclude_unset=True))
+        updated_company = service.update_company(
+            company_id=company_id, company_update=company_entity
+        )
+        return CompanyResponse.model_validate(updated_company)
+    except HTTPException as e:
+        raise e

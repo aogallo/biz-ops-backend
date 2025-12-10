@@ -13,6 +13,7 @@ class CompanyBase(SQLModel):
         default="no-email@example.com", nullable=True
     )
     address: str | None = Field(default=None)
+    managed_by_accountant: bool = Field(default=False, index=True)
 
 
 class Company(CompanyBase, table=True):
