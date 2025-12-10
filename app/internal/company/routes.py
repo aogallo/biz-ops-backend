@@ -100,5 +100,20 @@ def update_company(
         raise e
 
 
-# @router.get("/{company_id}", response_model=CompanyResponse)
-# def
+@router.get("/{company_id}", response_model=CompanyResponse)
+def get_company_by_id(
+    company_id: int,
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+):
+    """
+    Get a company by ID.
+
+    Returns a company
+    """
+    try:
+        service = CompanyService(session, current_user)
+        existing_company = service.get_by_id(id=company_id)
+        return CompaniesResponse.model_validate(existing_company)
+    except HTTPException as e:
+        raise e
