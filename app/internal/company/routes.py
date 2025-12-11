@@ -75,7 +75,7 @@ def list_companies(
         ) from e
 
 
-@router.put("/{company_id}", response_model=CompanyResponse)
+@router.patch("/{company_id}", response_model=CompanyResponse)
 def update_company(
     company_id: int,
     company: CompanyUpdate,
@@ -114,6 +114,7 @@ def get_company_by_id(
     try:
         service = CompanyService(session, current_user)
         existing_company = service.get_by_id(id=company_id)
-        return CompaniesResponse.model_validate(existing_company)
+        print(existing_company)
+        return CompanyResponse.model_validate(existing_company)
     except HTTPException as e:
         raise e

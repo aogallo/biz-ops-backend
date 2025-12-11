@@ -65,7 +65,7 @@ class CompanyResponse(BaseModel):
     commercial_activity: str | None = Field(
         serialization_alias="commercialActivity"
     )
-    email: EmailStr
+    email: str | None
     address: str | None
     managed_by_accountant: bool = Field(
         serialization_alias="managedByAccountant"
