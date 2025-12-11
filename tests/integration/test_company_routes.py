@@ -266,7 +266,7 @@ class TestCompanyRoutes:
             "managedByAccountant": True,
         }
 
-        response = authenticated_client.put(
+        response = authenticated_client.patch(
             f"{self.API_PREFIX}/companies/{company_id}",
             json=update_data,
         )
@@ -295,7 +295,7 @@ class TestCompanyRoutes:
             "name": "Updated Name",
         }
 
-        response = authenticated_client.put(
+        response = authenticated_client.patch(
             f"{self.API_PREFIX}/companies/99999",
             json=update_data,
         )
@@ -336,7 +336,7 @@ class TestCompanyRoutes:
             "managedByAccountant": True,
         }
 
-        response = authenticated_client.put(
+        response = authenticated_client.patch(
             f"{self.API_PREFIX}/companies/{company_id}",
             json=update_data,
         )
