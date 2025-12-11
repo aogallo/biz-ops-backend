@@ -11,6 +11,7 @@ from sqlmodel import SQLModel
 from app.internal.account.entity import Account
 from app.internal.company.schema import CompanyResponse
 from app.internal.customer.schema import CustomerResponse
+from app.schemas.common import PaginationResponse
 
 InvoiceState = Literal["draft", "open", "paid", "void", "Vigente"]
 
@@ -336,3 +337,10 @@ class InvoiceUpdateAccount(BaseModel):
 class InvoiceType(str, Enum):
     EXPENSES = "expenses"
     INCOMES = "incomes"
+
+
+class InvoicePaginationResponse(BaseModel):
+    """Schema for pagination response."""
+
+    data: list[InvoiceResponse]
+    pagination: PaginationResponse

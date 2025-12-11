@@ -19,12 +19,14 @@ from app.internal.invoice.entity import (
 )
 from app.internal.invoice.schema import (
     InvoiceDetailResponse,
+    InvoicePaginationResponse,
     InvoiceResponse,
     InvoiceType,
     InvoiceUpdate,
     InvoiceUpdateAccount,
 )
 from app.internal.invoice.service import InvoiceService
+from app.schemas.common import PaginationResponse
 
 logger = logging.getLogger(__name__)
 
@@ -38,15 +40,26 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=list[InvoiceResponse])
+@router.get("", response_model=InvoicePaginationResponse)
 def list_invoices(
+    page: int = 1,
+    limit: int = 10,
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
 ):
     """List all invoices."""
     service = InvoiceService(session, current_user)
-    invoices = service.list_all_invoices()
-    return invoices
+    offset = page - 1
+    if offset > 0:
+        offset = offset * 10
+    result = service.list_all_invoices(offset, limit)
+    pagination = PaginationResponse(
+        total=result["count"], page_index=offset, page_size=limit
+    )
+    return InvoicePaginationResponse(
+        data=result["data"],
+        pagination=pagination,
+    )
 
 
 @router.get("/{id}/details", response_model=list[InvoiceDetailResponse])

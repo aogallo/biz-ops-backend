@@ -36,3 +36,13 @@ class MessageResponse(BaseModel):
 
     message: str
     data: Any | None = None
+
+
+class PaginationResponse(BaseModel):
+    """Generic pagination"""
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    total: int
+    page_index: int = Field(serialization_alias="pageIndex")
+    page_size: int = Field(serialization_alias="pageSize")

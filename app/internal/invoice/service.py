@@ -44,8 +44,11 @@ class InvoiceService:
         self.errors: list[dict] = []
         self.current_user = current_user
 
-    def list_all_invoices(self):
-        return self.invoice_repo.get_all()
+    def list_all_invoices(self, offset: int, limit: int = 10):
+        """List all invoices"""
+        count = self.invoice_repo.get_count()
+        invoices = self.invoice_repo.get_all(offset, limit)
+        return {"count": count, "data": invoices}
 
     def process_file(self, file_bytes: bytes, invoice_type: InvoiceType):
         try:
