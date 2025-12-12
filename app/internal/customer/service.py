@@ -27,6 +27,6 @@ class CustomerService:
 
         return self.repository.create(customer)
 
-    def list_all_customers(self):
+    def list_all_customers(self, offset: int, limit: int):
         """List all customers."""
-        return self.repository.get_all_customers()
+        return self.repository.get_all_customers(offset=offset, limit=limit)

@@ -35,16 +35,23 @@ class CompanyService:
 
         return self.repository.update(id=company_id, model=company_update)
 
-    def list_all_companies(self, managed_by_accountant: bool | None = None):
+    def list_all_companies(
+        self,
+        offset: int,
+        limit: int,
+        managed_by_accountant: bool | None = None,
+    ):
         """List all companies, optionally filtered by managed_by_accountant."""
         if managed_by_accountant is not None:
             companies = self.repository.get_by_managed_status(
-                managed_by_accountant
+                managed_by_accountant=managed_by_accountant,
+                offset=offset,
+                limit=limit,
             )
             count = len(companies)
         else:
             count = self.repository.get_count()
-            companies = self.repository.get_all()
+            companies = self.repository.get_all(offset, limit)
 
         return {"count": count, "data": companies}
 

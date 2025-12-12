@@ -48,6 +48,8 @@ def create_company(
 
 @router.get("", response_model=CompaniesResponse)
 def list_companies(
+    page: int = 1,
+    limit: int = 10,
     managed_by_accountant: bool | None = None,
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
@@ -61,9 +63,15 @@ def list_companies(
     """
 
     try:
+        offset = page - 1
+        if offset > 0:
+            offset = offset * 10
+
         service = CompanyService(session, current_user)
         result = service.list_all_companies(
-            managed_by_accountant=managed_by_accountant
+            managed_by_accountant=managed_by_accountant,
+            offset=offset,
+            limit=limit,
         )
         return CompaniesResponse(
             count=result["count"],

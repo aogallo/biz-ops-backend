@@ -50,6 +50,8 @@ def create_product(
 
 @router.get("", response_model=ProductListResponse)
 def list_products(
+    page: int = 1,
+    limit: int = 10,
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
 ):
@@ -58,8 +60,11 @@ def list_products(
 
     Returns a list of all products in the system.
     """
+    offset = page - 1
+    if offset > 0:
+        offset *= 10
     service = ProductService(session, current_user)
-    products = service.list_all_products()
+    products = service.list_all_products(offset=offset, limit=limit)
     return ProductListResponse(
         products=[ProductResponse.model_validate(p) for p in products],
         total=len(products),

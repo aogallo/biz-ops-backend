@@ -50,7 +50,9 @@ class ProductRepositoryImpl(ProductRepository):
         return True
 
     @override
-    def get_all(self) -> list[Product]:
+    def get_all(self, offset: int, limit: int) -> list[Product]:
         """Get all products"""
-        products: list[Product] = list(self.db.exec(select(Product)))
+        products: list[Product] = list(
+            self.db.exec(select(Product).offset(offset).limit(limit))
+        )
         return products

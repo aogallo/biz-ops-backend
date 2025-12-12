@@ -21,8 +21,8 @@ class CustomerRepositoryImpl(CustomerRepository):
         self.db.refresh(customer)
         return customer
 
-    def get_all_customers(self) -> list[Customer]:
-        statement = select(Customer)
+    def get_all_customers(self, offset: int, limit: int) -> list[Customer]:
+        statement = select(Customer).offset(offset).limit(limit)
         result: list[Customer] = list(self.db.exec(statement))
         return result
 

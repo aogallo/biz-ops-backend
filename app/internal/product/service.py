@@ -31,6 +31,6 @@ class ProductService:
         # Create the new product
         return self.repository.create(product=product_request)
 
-    def list_all_products(self) -> list[Product]:
+    def list_all_products(self, offset: int, limit: int) -> list[Product]:
         """Get all products."""
-        return self.repository.get_all()
+        return self.repository.get_all(offset=offset, limit=limit)

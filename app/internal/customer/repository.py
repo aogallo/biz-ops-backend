@@ -23,7 +23,7 @@ class CustomerRepository(ABC):
         pass
 
     @abstractmethod
-    def get_all_customers(self) -> list[Customer]:
+    def get_all_customers(self, offset: int, limit: int) -> list[Customer]:
         """
         Get all customers
         """
