@@ -4,6 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.common import PaginationResponse
+
 
 class ProductCreate(BaseModel):
     """Schema for creating a new product."""
@@ -49,4 +51,4 @@ class ProductListResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     products: list[ProductResponse]
-    total: int = Field(description="Total number of products")
+    pagination: PaginationResponse

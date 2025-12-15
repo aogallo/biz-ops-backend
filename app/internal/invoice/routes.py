@@ -19,7 +19,7 @@ from app.internal.invoice.entity import (
 )
 from app.internal.invoice.schema import (
     InvoiceDetailResponse,
-    InvoicePaginationResponse,
+    InvoiceListResponse,
     InvoiceResponse,
     InvoiceType,
     InvoiceUpdate,
@@ -27,6 +27,7 @@ from app.internal.invoice.schema import (
 )
 from app.internal.invoice.service import InvoiceService
 from app.schemas.common import PaginationResponse
+from app.utils.pagination import calculate_offset
 
 logger = logging.getLogger(__name__)
 
@@ -40,24 +41,32 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=InvoicePaginationResponse)
+@router.get("", response_model=InvoiceListResponse)
 def list_invoices(
     page: int = 1,
     limit: int = 10,
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
 ):
-    """List all invoices."""
+    """List all invoices with pagination."""
+    offset = calculate_offset(page=page, page_size=limit)
+
     service = InvoiceService(session, current_user)
-    offset = page - 1
-    if offset > 0:
-        offset = offset * 10
     result = service.list_all_invoices(offset, limit)
+
     pagination = PaginationResponse(
-        total=result["count"], page_index=offset, page_size=limit
+        total=result.count,
+        page_index=page - 1,
+        page_size=limit,
     )
-    return InvoicePaginationResponse(
-        data=result["data"],
+
+    # Convert entities to response schemas
+    invoices_response = [
+        InvoiceResponse.model_validate(invoice) for invoice in result.invoices
+    ]
+
+    return InvoiceListResponse(
+        invoices=invoices_response,
         pagination=pagination,
     )
 

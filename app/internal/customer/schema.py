@@ -4,6 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from app.schemas.common import PaginationResponse
+
 
 class CustomerCreate(BaseModel):
     """Schema for creating a new customer."""
@@ -63,4 +65,4 @@ class CustomerListResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     customers: list[CustomerResponse]
-    total: int = Field(description="Total number of customers")
+    pagination: PaginationResponse

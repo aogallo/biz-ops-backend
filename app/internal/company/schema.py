@@ -4,6 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from app.schemas.common import PaginationResponse
+
 
 class CompanyCreate(BaseModel):
     """Schema for creating a new company."""
@@ -74,10 +76,10 @@ class CompanyResponse(BaseModel):
     updated_at: datetime | None = Field(serialization_alias="updatedAt")
 
 
-class CompaniesResponse(BaseModel):
+class CompanyListResponse(BaseModel):
     """Schema for list of companies response."""
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    count: int
-    data: list[CompanyResponse]
+    companies: list[CompanyResponse]
+    pagination: PaginationResponse

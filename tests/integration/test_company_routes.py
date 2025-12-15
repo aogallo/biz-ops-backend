@@ -105,16 +105,21 @@ class TestCompanyRoutes:
 
         data = response.json()
 
-        # The response is wrapped in CompaniesResponse
-        assert "data" in data, f"Expected 'data' key in response: {data}"
-        assert "count" in data, f"Expected 'count' key in response: {data}"
+        # The response is wrapped in CompanyListResponse
+        assert "companies" in data, (
+            f"Expected 'companies' key in response: {data}"
+        )
+        assert "pagination" in data, (
+            f"Expected 'pagination' key in response: {data}"
+        )
 
-        companies = data["data"]
+        companies = data["companies"]
+        pagination = data["pagination"]
         assert isinstance(companies, list)
         assert len(companies) >= 2, (
             f"Expected at least 2 companies, got {len(companies)}"
         )
-        assert data["count"] >= 2
+        assert pagination["total"] >= 2
 
         # Verify company structure (check any company in the list)
         first_company = companies[0]
@@ -174,10 +179,11 @@ class TestCompanyRoutes:
         assert response.status_code == 200
 
         data = response.json()
-        companies = data["data"]
+        companies = data["companies"]
+        pagination = data["pagination"]
 
         # Should only return managed companies
-        assert data["count"] == 2
+        assert pagination["total"] == 2
         assert len(companies) == 2
         assert all(c["managedByAccountant"] is True for c in companies)
 
@@ -230,10 +236,11 @@ class TestCompanyRoutes:
         assert response.status_code == 200
 
         data = response.json()
-        companies = data["data"]
+        companies = data["companies"]
+        pagination = data["pagination"]
 
         # Should only return unmanaged companies
-        assert data["count"] == 2
+        assert pagination["total"] == 2
         assert len(companies) == 2
         assert all(c["managedByAccountant"] is False for c in companies)
 

@@ -197,15 +197,15 @@ class TestCompanyService:
         mock_repository.get_all.return_value = expected_companies
 
         # Act
-        result = service.list_all_companies()
+        result = service.list_all_companies(offset=0, limit=10)
 
         # Assert
-        assert result["count"] == 2
-        assert len(result["data"]) == 2
-        assert result["data"][0].name == "Company A"
-        assert result["data"][1].name == "Company B"
+        assert result.count == 2
+        assert len(result.companies) == 2
+        assert result.companies[0].name == "Company A"
+        assert result.companies[1].name == "Company B"
         mock_repository.get_count.assert_called_once()
-        mock_repository.get_all.assert_called_once()
+        mock_repository.get_all.assert_called_once_with(0, 10)
         mock_repository.get_by_managed_status.assert_not_called()
 
     def test_list_companies_filtered_by_managed_status_true(
@@ -236,13 +236,17 @@ class TestCompanyService:
         mock_repository.get_by_managed_status.return_value = managed_companies
 
         # Act
-        result = service.list_all_companies(managed_by_accountant=True)
+        result = service.list_all_companies(
+            managed_by_accountant=True, offset=0, limit=10
+        )
 
         # Assert
-        assert result["count"] == 2
-        assert len(result["data"]) == 2
-        assert all(c.managed_by_accountant is True for c in result["data"])
-        mock_repository.get_by_managed_status.assert_called_once_with(True)
+        assert result.count == 2
+        assert len(result.companies) == 2
+        assert all(c.managed_by_accountant is True for c in result.companies)
+        mock_repository.get_by_managed_status.assert_called_once_with(
+            managed_by_accountant=True, offset=0, limit=10
+        )
         mock_repository.get_count.assert_not_called()
         mock_repository.get_all.assert_not_called()
 
@@ -267,13 +271,17 @@ class TestCompanyService:
         )
 
         # Act
-        result = service.list_all_companies(managed_by_accountant=False)
+        result = service.list_all_companies(
+            managed_by_accountant=False, offset=0, limit=10
+        )
 
         # Assert
-        assert result["count"] == 1
-        assert len(result["data"]) == 1
-        assert result["data"][0].managed_by_accountant is False
-        mock_repository.get_by_managed_status.assert_called_once_with(False)
+        assert result.count == 1
+        assert len(result.companies) == 1
+        assert result.companies[0].managed_by_accountant is False
+        mock_repository.get_by_managed_status.assert_called_once_with(
+            managed_by_accountant=False, offset=0, limit=10
+        )
         mock_repository.get_count.assert_not_called()
         mock_repository.get_all.assert_not_called()
 
@@ -285,12 +293,16 @@ class TestCompanyService:
         mock_repository.get_by_managed_status.return_value = []
 
         # Act
-        result = service.list_all_companies(managed_by_accountant=True)
+        result = service.list_all_companies(
+            managed_by_accountant=True, offset=0, limit=10
+        )
 
         # Assert
-        assert result["count"] == 0
-        assert len(result["data"]) == 0
-        mock_repository.get_by_managed_status.assert_called_once_with(True)
+        assert result.count == 0
+        assert len(result.companies) == 0
+        mock_repository.get_by_managed_status.assert_called_once_with(
+            managed_by_accountant=True, offset=0, limit=10
+        )
 
     def test_get_company_by_id(self, service, mock_repository):
         """Test getting the company by id."""

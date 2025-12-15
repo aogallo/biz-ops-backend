@@ -6,12 +6,14 @@ from app.dependencies import get_current_user, verify_token
 from app.internal.company.entity import Company
 from app.internal.company.entity import CompanyCreate as CompanyCreateEntity
 from app.internal.company.schema import (
-    CompaniesResponse,
     CompanyCreate,
+    CompanyListResponse,
     CompanyResponse,
     CompanyUpdate,
 )
 from app.internal.company.service import CompanyService
+from app.schemas.common import PaginationResponse
+from app.utils.pagination import calculate_offset
 
 router = APIRouter(
     prefix="/companies",
@@ -46,7 +48,7 @@ def create_company(
         raise e
 
 
-@router.get("", response_model=CompaniesResponse)
+@router.get("", response_model=CompanyListResponse)
 def list_companies(
     page: int = 1,
     limit: int = 10,
@@ -54,18 +56,9 @@ def list_companies(
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
 ):
-    """
-    Get all companies.
-
-    Optionally filter by managed_by_accountant status.
-
-    Returns a list of all companies.
-    """
-
+    """List all companies with pagination and optional filtering."""
     try:
-        offset = page - 1
-        if offset > 0:
-            offset = offset * 10
+        offset = calculate_offset(page=page, page_size=limit)
 
         service = CompanyService(session, current_user)
         result = service.list_all_companies(
@@ -73,9 +66,21 @@ def list_companies(
             offset=offset,
             limit=limit,
         )
-        return CompaniesResponse(
-            count=result["count"],
-            data=[CompanyResponse.model_validate(c) for c in result["data"]],
+
+        pagination = PaginationResponse(
+            total=result.count,
+            page_size=limit,
+            page_index=page - 1,
+        )
+
+        # Convert entities to response schemas
+        companies_response = [
+            CompanyResponse.model_validate(company)
+            for company in result.companies
+        ]
+
+        return CompanyListResponse(
+            companies=companies_response, pagination=pagination
         )
     except HTTPException as e:
         raise HTTPException(

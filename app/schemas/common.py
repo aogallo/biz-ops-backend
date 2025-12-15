@@ -46,3 +46,10 @@ class PaginationResponse(BaseModel):
     total: int
     page_index: int = Field(serialization_alias="pageIndex")
     page_size: int = Field(serialization_alias="pageSize")
+
+
+class CommonList(BaseModel):
+    """Generic common list response"""
+
+    data: list
+    count: int

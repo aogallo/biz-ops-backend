@@ -3,6 +3,7 @@ from sqlmodel import Session
 
 from app.internal.company.entity import Company, CompanyCreate
 from app.internal.company.repostiory_impl import CompanyRepositoryImpl
+from app.internal.company.service_schemas import CompanyListServiceResponse
 from app.internal.user.entity import User
 
 
@@ -40,8 +41,19 @@ class CompanyService:
         offset: int,
         limit: int,
         managed_by_accountant: bool | None = None,
-    ):
-        """List all companies, optionally filtered by managed_by_accountant."""
+    ) -> CompanyListServiceResponse:
+        """
+        List all companies with pagination.
+
+        Args:
+            offset: Number of records to skip
+            limit: Maximum number of records to return
+            managed_by_accountant: Optional filter by managed status
+
+        Returns:
+            CompanyListServiceResponse: Validated response with count and
+                companies
+        """
         if managed_by_accountant is not None:
             companies = self.repository.get_by_managed_status(
                 managed_by_accountant=managed_by_accountant,
@@ -53,7 +65,7 @@ class CompanyService:
             count = self.repository.get_count()
             companies = self.repository.get_all(offset, limit)
 
-        return {"count": count, "data": companies}
+        return CompanyListServiceResponse(count=count, companies=companies)
 
     def get_by_id(self, id: int):
         """Get company by id"""

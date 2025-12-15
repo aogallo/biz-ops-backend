@@ -149,15 +149,6 @@ class InvoiceResponse(BaseModel):
     account: Account | None = None
 
 
-class InvoiceListResponse(BaseModel):
-    """Schema for list of invoices response."""
-
-    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
-
-    invoices: list[InvoiceResponse]
-    total: int = Field(description="Total number of invoices")
-
-
 class InvoiceRowSchema(SQLModel):
     """Schema for invoice row."""
 
@@ -339,8 +330,8 @@ class InvoiceType(str, Enum):
     INCOMES = "incomes"
 
 
-class InvoicePaginationResponse(BaseModel):
-    """Schema for pagination response."""
+class InvoiceListResponse(BaseModel):
+    """Schema for list of invoices response."""
 
-    data: list[InvoiceResponse]
+    invoices: list[InvoiceResponse]
     pagination: PaginationResponse

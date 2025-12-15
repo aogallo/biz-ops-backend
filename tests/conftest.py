@@ -171,4 +171,11 @@ def clean_database(engine):
         for company in companies:
             session.delete(company)
 
+        # Delete all customers
+        from app.internal.customer.entity import Customer
+
+        customers = session.exec(select(Customer)).all()
+        for customer in customers:
+            session.delete(customer)
+
         session.commit()

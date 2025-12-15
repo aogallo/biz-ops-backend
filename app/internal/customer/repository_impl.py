@@ -1,4 +1,4 @@
-from sqlmodel import Session, col, select
+from sqlmodel import Session, col, func, select
 
 from app.internal.customer.entity import Customer, CustomerCreate
 from app.internal.customer.repository import CustomerRepository
@@ -67,3 +67,9 @@ class CustomerRepositoryImpl(CustomerRepository):
         statement = select(Customer).where(Customer.nit == nit)
         result: Customer | None = self.db.exec(statement).one_or_none()
         return result
+
+    def get_count(self) -> int:
+        """Get count of customers"""
+        count_statement = select(func.count()).select_from(Customer)
+        count: int = self.db.exec(count_statement).one()
+        return count

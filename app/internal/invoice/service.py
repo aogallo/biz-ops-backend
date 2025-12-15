@@ -20,6 +20,7 @@ from app.internal.invoice.entity import (
 )
 from app.internal.invoice.repository_impl import InvoiceRepositoryImpl
 from app.internal.invoice.schema import InvoiceRowSchema, InvoiceType
+from app.internal.invoice.service_schemas import InvoiceListServiceResponse
 from app.internal.journal.entity import JournalEntry
 from app.internal.journal.repository_impl import JournalEntryRepositoryImpl
 from app.internal.user.entity import User
@@ -44,11 +45,23 @@ class InvoiceService:
         self.errors: list[dict] = []
         self.current_user = current_user
 
-    def list_all_invoices(self, offset: int, limit: int = 10):
-        """List all invoices"""
+    def list_all_invoices(
+        self, offset: int, limit: int = 10
+    ) -> InvoiceListServiceResponse:
+        """
+        List all invoices with pagination.
+
+        Args:
+            offset: Number of records to skip
+            limit: Maximum number of records to return
+
+        Returns:
+            InvoiceListServiceResponse: Validated response with count and
+                invoices
+        """
         count = self.invoice_repo.get_count()
         invoices = self.invoice_repo.get_all(offset, limit)
-        return {"count": count, "data": invoices}
+        return InvoiceListServiceResponse(count=count, invoices=invoices)
 
     def process_file(self, file_bytes: bytes, invoice_type: InvoiceType):
         try:
