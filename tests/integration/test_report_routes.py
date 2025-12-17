@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.internal.account.entity import Account
 from app.internal.company.entity import Company
@@ -206,6 +206,12 @@ class TestReportRoutes:
         """Test getting general journal with date filters."""
         # Create test data with different dates
         with Session(engine) as session:
+            # clean database
+            journal_entries = session.exec(select(JournalEntry)).all()
+            for journal_entry in journal_entries:
+                session.delete(journal_entry)
+            session.commit()
+
             company = Company(
                 name="Test Company 3",
                 nit="44444444",
