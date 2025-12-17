@@ -2,6 +2,8 @@
 
 import os
 
+from app.internal.journal.entity import JournalEntry
+
 # CRITICAL: Set test environment variables BEFORE any app imports
 # This ensures the app uses SQLite instead of PostgreSQL
 os.environ["DATABASE_URI"] = "sqlite:///:memory:"
@@ -177,5 +179,9 @@ def clean_database(engine):
         customers = session.exec(select(Customer)).all()
         for customer in customers:
             session.delete(customer)
+
+        journal_entries = session.exec(select(JournalEntry)).all()
+        for journal_entry in journal_entries:
+            session.delete(journal_entry)
 
         session.commit()
