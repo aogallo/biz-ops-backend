@@ -66,7 +66,7 @@ def list_invoices(
     ]
 
     return InvoiceListResponse(
-        invoices=invoices_response,
+        data=invoices_response,
         pagination=pagination,
     )
 

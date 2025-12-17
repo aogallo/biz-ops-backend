@@ -333,5 +333,5 @@ class InvoiceType(str, Enum):
 class InvoiceListResponse(BaseModel):
     """Schema for list of invoices response."""
 
-    invoices: list[InvoiceResponse]
+    data: list[InvoiceResponse]
     pagination: PaginationResponse
