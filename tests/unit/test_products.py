@@ -126,12 +126,15 @@ class TestProductService:
             ),
         ]
         mock_repository.get_all.return_value = expected_products
+        mock_repository.get_count.return_value = 2
 
         # Act
-        result = service.list_all_products()
+        result = service.list_all_products(offset=0, limit=10)
 
         # Assert
-        assert len(result) == 2
-        assert result[0].name == "Product A"
-        assert result[1].name == "Product B"
-        mock_repository.get_all.assert_called_once()
+        assert result.count == 2
+        assert len(result.products) == 2
+        assert result.products[0].name == "Product A"
+        assert result.products[1].name == "Product B"
+        mock_repository.get_all.assert_called_once_with(offset=0, limit=10)
+        mock_repository.get_count.assert_called_once()

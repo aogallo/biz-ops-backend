@@ -47,8 +47,8 @@ Our backend uses a layered architecture with clear separation of concerns:
 
 ### 1. **Schema Layer** (`app/schemas/`)
 - **Purpose**: Define API contracts (request/response formats)
-- **Naming**: Uses `CamelCaseSchema` base class
-- **Convention**: Inherits from `CamelCaseSchema` for automatic camelCase conversion
+- **Naming**: Uses Pydantic `BaseModel` with explicit field aliases
+- **Convention**: Uses `Field(serialization_alias="...")` for camelCase conversion
 - **Location**: `app/schemas/{resource}_schema.py`
 
 **Types of Schemas:**
@@ -140,13 +140,13 @@ class Customer(CustomerBase, table=True):
 """Customer API schemas for requests and responses."""
 
 from datetime import datetime
-from app.schemas.base import CamelCaseSchema
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class CustomerCreate(CamelCaseSchema):
+class CustomerCreate(BaseModel):
     """
     Schema for creating a new customer.
-    API accepts camelCase, internally converts to snake_case.
+    API accepts camelCase, internally uses snake_case.
 
     Example Request:
     {
@@ -156,27 +156,31 @@ class CustomerCreate(CamelCaseSchema):
         "address": "123 Main St"
     }
     """
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
     name: str
     email: str
-    phone_number: str | None = None  # Defined as snake_case
+    phone_number: str | None = Field(default=None, serialization_alias="phoneNumber")
     address: str | None = None
 
 
-class CustomerUpdate(CamelCaseSchema):
+class CustomerUpdate(BaseModel):
     """
     Schema for updating a customer.
     All fields optional to allow partial updates.
     """
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
     name: str | None = None
     email: str | None = None
-    phone_number: str | None = None
+    phone_number: str | None = Field(default=None, serialization_alias="phoneNumber")
     address: str | None = None
 
 
-class CustomerResponse(CamelCaseSchema):
+class CustomerResponse(BaseModel):
     """
     Schema for customer response.
-    Automatically converts snake_case to camelCase in JSON.
+    Uses serialization_alias to convert snake_case to camelCase in JSON.
 
     Example Response:
     {
@@ -189,26 +193,31 @@ class CustomerResponse(CamelCaseSchema):
         "createdAt": "2024-01-01T00:00:00Z"
     }
     """
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
     id: int
     name: str
     email: str
-    phone_number: str | None
+    phone_number: str | None = Field(serialization_alias="phoneNumber")
     address: str | None
-    created_by: str
-    created_at: datetime
-    updated_by: str | None
-    updated_at: datetime | None
+    created_by: str = Field(serialization_alias="createdBy")
+    created_at: datetime = Field(serialization_alias="createdAt")
+    updated_by: str | None = Field(serialization_alias="updatedBy")
+    updated_at: datetime | None = Field(serialization_alias="updatedAt")
 
 
-class CustomerListResponse(CamelCaseSchema):
+class CustomerListResponse(BaseModel):
     """Schema for list of customers response."""
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
     customers: list[CustomerResponse]
     total: int
 ```
 
 **Key Points:**
 - ✅ Define fields in snake_case (e.g., `phone_number`)
-- ✅ `CamelCaseSchema` automatically converts to camelCase in JSON (e.g., `phoneNumber`)
+- ✅ Use `Field(serialization_alias="phoneNumber")` for camelCase conversion in responses
+- ✅ Add `model_config = ConfigDict(from_attributes=True, populate_by_name=True)` to all schemas
 - ✅ Create separate schemas for Create, Update, Response, and List operations
 - ✅ Add docstrings with example JSON for clarity
 
@@ -443,9 +452,9 @@ Frontend sends:                    Backend receives:
 
 **How it works:**
 1. FastAPI receives JSON with camelCase keys: `{"phoneNumber": "555-0100"}`
-2. `CamelCaseSchema` automatically maps camelCase → snake_case
+2. Pydantic uses `populate_by_name=True` to accept both camelCase and snake_case
 3. Pydantic creates `CustomerCreate` instance with snake_case attributes
-4. Validation errors show camelCase field names in error messages
+4. Validation errors show the field names as defined in the schema
 
 ### Response Flow (Backend → Frontend)
 
@@ -462,8 +471,8 @@ customer: Customer(                {
 **How it works:**
 1. Repository returns `Customer` entity (SQLModel) with snake_case
 2. Route converts to `CustomerResponse` using `model_validate()`
-3. `CamelCaseSchema` automatically converts snake_case → camelCase
-4. FastAPI serializes to JSON with camelCase keys
+3. Pydantic uses `serialization_alias` to convert snake_case → camelCase
+4. FastAPI serializes to JSON with camelCase keys from the aliases
 
 ---
 
@@ -617,7 +626,7 @@ created_by
 
 3. **Add docstrings with examples:**
    ```python
-   class CustomerCreate(CamelCaseSchema):
+   class CustomerCreate(BaseModel):
        """
        Schema for creating a new customer.
 
@@ -627,6 +636,7 @@ created_by
            "email": "john@example.com"
        }
        """
+       model_config = ConfigDict(from_attributes=True, populate_by_name=True)
    ```
 
 4. **Use type hints everywhere:**
@@ -678,15 +688,15 @@ created_by
    return CustomerResponse.model_validate(created_customer)
    ```
 
-4. **Don't define fields in camelCase:**
+4. **Don't forget serialization_alias for snake_case fields:**
    ```python
    # Bad
-   class CustomerCreate(CamelCaseSchema):
-       phoneNumber: str  # ❌ Should be snake_case
+   class CustomerResponse(BaseModel):
+       phone_number: str  # ❌ Will return as "phone_number" in JSON
 
    # Good
-   class CustomerCreate(CamelCaseSchema):
-       phone_number: str  # ✅ CamelCaseSchema converts it
+   class CustomerResponse(BaseModel):
+       phone_number: str = Field(serialization_alias="phoneNumber")  # ✅ Returns as "phoneNumber"
    ```
 
 ---
@@ -789,9 +799,10 @@ When creating a new API endpoint, follow these steps:
   - [ ] `{Resource}` - full table model
 
 - [ ] Create schemas in `app/schemas/{resource}_schema.py`
-  - [ ] `{Resource}Create` - inherits `CamelCaseSchema`
-  - [ ] `{Resource}Update` - inherits `CamelCaseSchema`
-  - [ ] `{Resource}Response` - inherits `CamelCaseSchema`
+  - [ ] `{Resource}Create` - inherits `BaseModel` with `model_config`
+  - [ ] `{Resource}Update` - inherits `BaseModel` with `model_config`
+  - [ ] `{Resource}Response` - inherits `BaseModel` with `model_config`
+  - [ ] Add `Field(serialization_alias="...")` for all snake_case fields
   - [ ] Add docstrings with JSON examples
 
 - [ ] Create repository in `app/infrastructure/repositories/{resource}_repository_impl.py`

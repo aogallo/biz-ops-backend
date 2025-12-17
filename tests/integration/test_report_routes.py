@@ -206,6 +206,8 @@ class TestReportRoutes:
         """Test getting general journal with date filters."""
         # Create test data with different dates
         with Session(engine) as session:
+            # clean database
+
             company = Company(
                 name="Test Company 3",
                 nit="44444444",

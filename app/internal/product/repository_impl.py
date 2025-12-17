@@ -1,6 +1,6 @@
 from typing import override
 
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from app.internal.product.entity import Product, ProductCreate
 from app.internal.product.respository import ProductRepository
@@ -50,7 +50,15 @@ class ProductRepositoryImpl(ProductRepository):
         return True
 
     @override
-    def get_all(self) -> list[Product]:
+    def get_all(self, offset: int, limit: int) -> list[Product]:
         """Get all products"""
-        products: list[Product] = list(self.db.exec(select(Product)))
+        products: list[Product] = list(
+            self.db.exec(select(Product).offset(offset).limit(limit))
+        )
         return products
+
+    def get_count(self) -> int:
+        """Get count of products."""
+        count_statement = select(func.count()).select_from(Product)
+        count: int = self.db.exec(count_statement).one()
+        return count

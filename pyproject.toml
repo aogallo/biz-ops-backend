@@ -9,35 +9,13 @@ description = "Business Operations Backend API"
 requires-python = ">=3.12"
 dependencies = [
     "debugpy>=1.8.17",
+    "gitlint>=0.19.1",
     "openpyxl>=3.1.5",
     "pandas>=2.3.3",
     "pyarrow>=22.0.0",
     "reportlab>=4.4.5",
     "xlrd>=2.0.2",
 ]
-
-# ==============================================================================
-# BLACK - CODE FORMATTER
-# ==============================================================================
-# Black is an opinionated code formatter that enforces consistent style
-# Configuration: line length, Python version, and exclusion patterns
-[tool.black]
-line-length = 79
-target-version = ['py312']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
 
 # ==============================================================================
 # RUFF - FAST PYTHON LINTER
@@ -73,6 +51,10 @@ ignore = [
 # Import sorting configuration (isort replacement)
 [tool.ruff.lint.isort]
 known-third-party = ["fastapi", "pydantic", "sqlmodel", "sqlalchemy"]
+
+[tool.ruff.format]
+# Enable reformatting of code snippets in docstrings.
+docstring-code-format = true
 
 # ==============================================================================
 # PYTEST - TESTING FRAMEWORK

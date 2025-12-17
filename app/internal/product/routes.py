@@ -10,6 +10,8 @@ from app.internal.product.schema import (
     ProductResponse,
 )
 from app.internal.product.service import ProductService
+from app.schemas.common import PaginationResponse
+from app.utils.pagination import calculate_offset
 
 router = APIRouter(
     prefix="/products",
@@ -50,17 +52,28 @@ def create_product(
 
 @router.get("", response_model=ProductListResponse)
 def list_products(
+    page: int = 1,
+    limit: int = 10,
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
 ):
-    """
-    Get all products.
+    """List all products with pagination."""
+    offset = calculate_offset(page=page, page_size=limit)
 
-    Returns a list of all products in the system.
-    """
     service = ProductService(session, current_user)
-    products = service.list_all_products()
+    result = service.list_all_products(offset=offset, limit=limit)
+
+    pagination = PaginationResponse(
+        total=result.count,
+        page_size=limit,
+        page_index=page - 1,
+    )
+
+    # Convert entities to response schemas
+    products_response = [
+        ProductResponse.model_validate(product) for product in result.products
+    ]
+
     return ProductListResponse(
-        products=[ProductResponse.model_validate(p) for p in products],
-        total=len(products),
+        products=products_response, pagination=pagination
     )

@@ -3,6 +3,7 @@ from sqlmodel import Session
 
 from app.internal.product.entity import Product, ProductCreate
 from app.internal.product.repository_impl import ProductRepositoryImpl
+from app.internal.product.service_schemas import ProductListServiceResponse
 from app.internal.user.entity import User
 
 
@@ -31,6 +32,21 @@ class ProductService:
         # Create the new product
         return self.repository.create(product=product_request)
 
-    def list_all_products(self) -> list[Product]:
-        """Get all products."""
-        return self.repository.get_all()
+    def list_all_products(
+        self, offset: int, limit: int
+    ) -> ProductListServiceResponse:
+        """
+        List all products with pagination.
+
+        Args:
+            offset: Number of records to skip
+            limit: Maximum number of records to return
+
+        Returns:
+            ProductListServiceResponse: Validated response with count and
+                products
+        """
+        products = self.repository.get_all(offset=offset, limit=limit)
+        count = self.repository.get_count()
+
+        return ProductListServiceResponse(count=count, products=products)

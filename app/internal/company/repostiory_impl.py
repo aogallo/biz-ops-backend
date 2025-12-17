@@ -33,9 +33,9 @@ class CompanyRepositoryImpl(CompanyRepository):
         count: int = self.db.exec(count_statement).one()
         return count
 
-    def get_all(self, skip: int = 0, limit: int = 100) -> list[Company]:
+    def get_all(self, offset: int = 0, limit: int = 100) -> list[Company]:
         """Get all companies"""
-        statement = select(Company).offset(skip).limit(limit)
+        statement = select(Company).offset(offset).limit(limit)
         result: list[Company] = list(self.db.exec(statement))
         return list(result)
 
@@ -114,3 +114,23 @@ class CompanyRepositoryImpl(CompanyRepository):
         self.db.commit()
         for company in companies:
             self.db.refresh(company)
+
+    def get_by_managed_status(
+        self, managed_by_accountant: bool, offset: int, limit: int
+    ) -> list[Company]:
+        """Get companies by managed_by_accountant status"""
+        statement = (
+            select(Company)
+            .offset(offset)
+            .limit(limit)
+            .where(Company.managed_by_accountant == managed_by_accountant)
+        )
+        result: list[Company] = list(self.db.exec(statement))
+        return result
+
+    def get_client_companies(self) -> list[Company]:
+        """Get companies are managed by the accountant"""
+        statement = select(Company).where(Company.managed_by_accountant)
+
+        result: list[Company] = self.db.exec(statement)._allrows()
+        return result

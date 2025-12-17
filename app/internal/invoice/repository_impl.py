@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from app.internal.invoice.entity import Invoice, InvoiceDetail
 from app.internal.invoice.repository import InvoiceRepository
@@ -64,10 +64,10 @@ class InvoiceRepositoryImpl(InvoiceRepository):
             return True
         return False
 
-    def get_all(self) -> list[Invoice]:
+    def get_all(self, offset: int, limit: int) -> list[Invoice]:
         """Get all invoices"""
         # TODO: sort by date
-        statement = select(Invoice)
+        statement = select(Invoice).offset(offset).limit(limit)
         result: list[Invoice] = self.db.exec(statement)._allrows()
         return result
 
@@ -109,3 +109,9 @@ class InvoiceRepositoryImpl(InvoiceRepository):
             return True
         except SQLAlchemyError:
             return False
+
+    def get_count(self) -> int:
+        """Get count of invoices"""
+        count_statement = select(func.count()).select_from(Invoice)
+        count: int = self.db.exec(count_statement).one()
+        return count

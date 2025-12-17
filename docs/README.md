@@ -75,9 +75,9 @@ Frontend sends/receives camelCase, backend uses snake_case internally:
 
 ```
 Frontend: {"phoneNumber": "555-0100"}
-    ↓ (CamelCaseSchema)
+    ↓ (Field serialization_alias)
 Backend: phone_number = "555-0100"
-    ↓ (CamelCaseSchema)
+    ↓ (Field serialization_alias)
 Frontend: {"phoneNumber": "555-0100"}
 ```
 

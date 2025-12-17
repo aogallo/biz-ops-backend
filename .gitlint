@@ -1,0 +1,2 @@
+[general]
+ignore=T1,body-min-length,B6
