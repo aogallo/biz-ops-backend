@@ -8,6 +8,7 @@ from app.internal.company.entity import CompanyCreate as CompanyCreateEntity
 from app.internal.company.schema import (
     CompanyCreate,
     CompanyListResponse,
+    CompanyMinimalResponse,
     CompanyResponse,
     CompanyUpdate,
 )
@@ -86,6 +87,26 @@ def list_companies(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
         ) from e
+
+
+# /companies
+@router.get(
+    "/managed-by-accountant",
+    response_model=list[CompanyMinimalResponse],
+)
+def list_companies_that_are_clients(
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+):
+    """
+    Get companies are clients
+    """
+    try:
+        service = CompanyService(session, current_user)
+        data = service.get_client_companies()
+        return data
+    except HTTPException as e:
+        raise e
 
 
 @router.patch("/{company_id}", response_model=CompanyResponse)

@@ -77,3 +77,10 @@ class CompanyService:
             )
 
         return existing_company
+
+    def get_client_companies(self):
+        """
+        Get companies are clients
+        Managed by the accountant
+        """
+        return self.repository.get_client_companies()

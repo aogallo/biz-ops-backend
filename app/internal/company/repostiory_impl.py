@@ -127,3 +127,10 @@ class CompanyRepositoryImpl(CompanyRepository):
         )
         result: list[Company] = list(self.db.exec(statement))
         return result
+
+    def get_client_companies(self) -> list[Company]:
+        """Get companies are managed by the accountant"""
+        statement = select(Company).where(Company.managed_by_accountant)
+
+        result: list[Company] = self.db.exec(statement)._allrows()
+        return result

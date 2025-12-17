@@ -83,3 +83,14 @@ class CompanyListResponse(BaseModel):
 
     companies: list[CompanyResponse]
     pagination: PaginationResponse
+
+
+class CompanyMinimalResponse(BaseModel):
+    """Schema for company response."""
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    id: int
+    name: str
+    email: str | None
+    nit: str
