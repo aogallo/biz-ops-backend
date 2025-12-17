@@ -87,30 +87,20 @@ class InvoiceUpdate(BaseModel):
 
     date: datetime | None = None
     authorization_number: str | None = Field(
-        default=None, serialization_alias="authorizationNumber"
+        default=None, alias="authorizationNumber"
     )
-    dte_type: str | None = Field(default=None, serialization_alias="dteType")
+    dte_type: str | None = Field(default=None, alias="dteType")
     serie: str | None = None
-    dte_number: str | None = Field(
-        default=None, serialization_alias="dteNumber"
-    )
-    company_id: int | None = Field(
-        default=None, serialization_alias="companyId"
-    )
-    customer_id: int | None = Field(
-        default=None, serialization_alias="customerId"
-    )
+    dte_number: str | None = Field(default=None, alias="dteNumber")
+    company_id: int | None = Field(default=None, alias="companyId")
+    customer_id: int | None = Field(default=None, alias="customerId")
     currency: str | None = None
     state: str | None = None
-    is_cancelled: bool | None = Field(
-        default=None, serialization_alias="isCancelled"
-    )
+    is_cancelled: bool | None = Field(default=None, alias="isCancelled")
     cancelled_date: datetime | None = Field(
-        default=None, serialization_alias="cancelledDate"
+        default=None, alias="cancelledDate"
     )
-    account_id: int | None = Field(
-        default=None, serialization_alias="accountId"
-    )
+    account_id: int | None = Field(default=None, alias="accountId")
 
 
 class InvoiceResponse(BaseModel):
@@ -322,7 +312,7 @@ class InvoiceUpdateAccount(BaseModel):
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    account_id: int = Field(serialization_alias="accountId")
+    account_id: int = Field(alias="accountId")
 
 
 class InvoiceType(str, Enum):
