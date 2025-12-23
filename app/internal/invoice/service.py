@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from enum import Enum
 from io import BytesIO
 
 import pandas as pd
@@ -15,6 +16,9 @@ from app.internal.customer.repository_impl import CustomerRepositoryImpl
 from app.internal.invoice.entity import (
     Invoice,
     InvoiceDetail,
+    InvoiceItemType,
+    InvoiceOrigin,
+    InvoiceTaxStatus,
     InvoiceUpdate,
     InvoiceUpdateAccount,
 )
@@ -44,6 +48,56 @@ class InvoiceService:
         )
         self.errors: list[dict] = []
         self.current_user = current_user
+
+    def _validate_classification_field(
+        self, field_name: str, value: str | None, enum_class: type[Enum]
+    ) -> None:
+        """
+        Validate classification field against enum.
+
+        Args:
+            field_name: Name of the field (for error messages)
+            value: Value to validate (can be None)
+            enum_class: Enum class to validate against
+
+        Raises:
+            HTTPException: If value is not in enum (when not None)
+        """
+        # Skip validation if value is None (allowed)
+        if value is None:
+            return
+
+        valid_values = [e.value for e in enum_class]
+        if value not in valid_values:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"Invalid {field_name}: '{value}'. "
+                    f"Must be one of: {', '.join(valid_values)}"
+                ),
+            )
+
+    def _validate_invoice_classification(
+        self, origin: str | None, item_type: str | None, tax_status: str | None
+    ) -> None:
+        """
+        Validate all invoice classification fields.
+
+        Args:
+            origin: Invoice origin value (can be None)
+            item_type: Invoice item type value (can be None)
+            tax_status: Invoice tax status value (can be None)
+
+        Raises:
+            HTTPException: If any classification field is invalid
+        """
+        self._validate_classification_field("origin", origin, InvoiceOrigin)
+        self._validate_classification_field(
+            "item_type", item_type, InvoiceItemType
+        )
+        self._validate_classification_field(
+            "tax_status", tax_status, InvoiceTaxStatus
+        )
 
     def list_all_invoices(
         self, offset: int, limit: int = 10

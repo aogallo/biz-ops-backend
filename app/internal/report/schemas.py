@@ -26,3 +26,30 @@ class GeneralJournalReport(BaseModel):
     total_debits: float = Field(serialization_alias="totalDebits")
     total_credits: float = Field(serialization_alias="totalCredits")
     count: int
+
+
+class SalesLedgerEntry(BaseModel):
+    """Schema for a single entry in the sales ledger report."""
+
+    date: datetime
+    type: str
+    transaction_type: str = Field(serialization_alias="transtactionType")
+    serie: str
+    number_doc: str = Field(serialization_alias="numberDoc")
+    nit: str
+    name: str
+    locally_taxed_goods: float
+    locally_taxed_services: float
+    locally_exempt_goods: float
+    locally_exempt_services: float
+    imported_taxed_goods: float
+    imported_taxed_services: float
+    imported_exempt_goods: float
+    imported_exempt_services: float
+    iva: float
+    total: float
+
+
+class SalesLedgerReport(BaseModel):
+    entries: list[SalesLedgerEntry]
+    count: int
