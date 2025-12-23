@@ -18,7 +18,6 @@ class CompanyBase(SQLModel):
 
 class Company(CompanyBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
-
     created_by: str = Field(index=True, default="test")
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_by: str | None = Field(default=None, index=True)
