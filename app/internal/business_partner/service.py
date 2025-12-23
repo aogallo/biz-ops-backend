@@ -4,13 +4,15 @@ from sqlmodel import Session
 from app.internal.customer.entity import CustomerCreate
 from app.internal.customer.repository_impl import CustomerRepositoryImpl
 from app.internal.customer.service_schemas import CustomerListServiceResponse
-from app.internal.user.entity import User
+from app.internal.user.entity import UserAuthenticated
 
 
 class CustomerService:
     """Service for managing customers."""
 
-    def __init__(self, session: Session, current_user: User) -> None:
+    def __init__(
+        self, session: Session, current_user: UserAuthenticated
+    ) -> None:
         self.repository = CustomerRepositoryImpl(session, current_user)
 
     def create_customer(self, customer: CustomerCreate):

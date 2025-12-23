@@ -2,13 +2,15 @@ from sqlmodel import Session, col, func, select
 
 from app.internal.customer.entity import Customer, CustomerCreate
 from app.internal.customer.repository import CustomerRepository
-from app.internal.user.entity import User
+from app.internal.user.entity import UserAuthenticated
 
 
 class CustomerRepositoryImpl(CustomerRepository):
     """Implementation of Customer Repository"""
 
-    def __init__(self, session: Session, current_user: User) -> None:
+    def __init__(
+        self, session: Session, current_user: UserAuthenticated
+    ) -> None:
         self.db = session
         self.current_user = current_user
 

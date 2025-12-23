@@ -4,7 +4,7 @@ from pydantic import EmailStr
 from sqlmodel import Field, SQLModel
 
 
-class CustomerBase(SQLModel):
+class BusinessPartnerBase(SQLModel):
     """
     Base customer
     """
@@ -20,7 +20,7 @@ class CustomerBase(SQLModel):
     address: str | None = Field(default=None)
 
 
-class CustomerCreate(CustomerBase):
+class BusinessPartnerCreate(BusinessPartnerBase):
     """
     Create customer
     """
@@ -28,7 +28,7 @@ class CustomerCreate(CustomerBase):
     pass
 
 
-class Customer(CustomerBase, table=True):
+class BusinessPartner(BusinessPartnerBase, table=True):
     """
     Customer
     """
