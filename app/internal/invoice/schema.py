@@ -79,6 +79,13 @@ class InvoiceCreate(BaseModel):
     currency: str = "GTQ"
     state: InvoiceState = "draft"
 
+    # Classification fields (optional - set by accountant after creation)
+    origin: str | None = None
+    item_type: str | None = Field(default=None, serialization_alias="itemType")
+    tax_status: str | None = Field(
+        default=None, serialization_alias="taxStatus"
+    )
+
 
 class InvoiceUpdate(BaseModel):
     """Schema for updating an invoice."""
@@ -101,6 +108,11 @@ class InvoiceUpdate(BaseModel):
         default=None, alias="cancelledDate"
     )
     account_id: int | None = Field(default=None, alias="accountId")
+
+    # Classification fields (optional)
+    origin: str | None = Field(default=None, alias="origin")
+    item_type: str | None = Field(default=None, alias="itemType")
+    tax_status: str | None = Field(default=None, alias="taxStatus")
 
 
 class InvoiceResponse(BaseModel):
@@ -128,6 +140,11 @@ class InvoiceResponse(BaseModel):
     created_at: datetime = Field(serialization_alias="createdAt")
     updated_at: datetime | None = Field(serialization_alias="updatedAt")
     invoice_type: str = Field(serialization_alias="invoiceType")
+
+    # Classification fields (nullable - set by accountant)
+    origin: str | None
+    item_type: str | None = Field(serialization_alias="itemType")
+    tax_status: str | None = Field(serialization_alias="taxStatus")
 
     # Optional nested details
     details: list[InvoiceDetailResponse] | None = None

@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from enum import Enum
 from typing import TYPE_CHECKING, Literal
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -9,6 +10,27 @@ if TYPE_CHECKING:
     from app.internal.customer.entity import Customer
 
 InvoiceState = Literal["draft", "open", "paid", "void"]
+
+
+class InvoiceOrigin(str, Enum):
+    """Invoice origin classification."""
+
+    LOCAL = "local"
+    IMPORTED = "imported"
+
+
+class InvoiceItemType(str, Enum):
+    """Invoice item type classification."""
+
+    GOODS = "goods"
+    SERVICES = "services"
+
+
+class InvoiceTaxStatus(str, Enum):
+    """Invoice tax status classification."""
+
+    TAXED = "taxed"
+    EXEMPT = "exempt"
 
 
 class InvoiceBase(SQLModel):
@@ -35,6 +57,11 @@ class InvoiceBase(SQLModel):
     subtotal: float = Field(default=0.0)
     total_taxes: float = Field(default=0.0)
     total_amount: float = Field(default=0.0)
+
+    # Classification dimensions (nullable - set by accountant after creation)
+    origin: str | None = Field(default=None)  # InvoiceOrigin
+    item_type: str | None = Field(default=None)  # InvoiceItemType
+    tax_status: str | None = Field(default=None)  # InvoiceTaxStatus
 
     # Draft: The invoice is still being created and has not yet been sent
     # to the customer
