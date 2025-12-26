@@ -2,13 +2,15 @@ from sqlmodel import Session, select
 
 from app.internal.account.entity import Account, AccountCreate
 from app.internal.account.repository import AccountRepository
-from app.internal.user.entity import User
+from app.internal.user.entity import UserAuthenticated
 
 
 class AccountRepositoryImpl(AccountRepository):
     """Implementation of Account Repository"""
 
-    def __init__(self, session: Session, current_user: User) -> None:
+    def __init__(
+        self, session: Session, current_user: UserAuthenticated
+    ) -> None:
         self.db = session
         self.current_user = current_user
 

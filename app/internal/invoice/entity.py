@@ -1,13 +1,16 @@
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Literal
+from uuid import UUID, uuid4
 
 from sqlmodel import Field, Relationship, SQLModel
 
+from app.internal.shared.entity import TimestampMixin
+
 if TYPE_CHECKING:
     from app.internal.account.entity import Account
+    from app.internal.business_partner.entity import BusinessPartner
     from app.internal.company.entity import Company
-    from app.internal.customer.entity import Customer
 
 InvoiceState = Literal["draft", "open", "paid", "void"]
 
@@ -34,9 +37,7 @@ class InvoiceTaxStatus(str, Enum):
 
 
 class InvoiceBase(SQLModel):
-    """
-    Base invoice
-    """
+    """Base invoice model."""
 
     date: datetime
     authorization_number: str
@@ -44,12 +45,8 @@ class InvoiceBase(SQLModel):
     serie: str = Field(index=True)
     dte_number: str
 
-    # income
-    # expenses
+    # income or expenses
     invoice_type: str = "expenses"
-
-    company_id: int
-    customer_id: int
 
     currency: str = "GTQ"
 
@@ -63,42 +60,30 @@ class InvoiceBase(SQLModel):
     item_type: str | None = Field(default=None)  # InvoiceItemType
     tax_status: str | None = Field(default=None)  # InvoiceTaxStatus
 
-    # Draft: The invoice is still being created and has not yet been sent
-    # to the customer
-    # Open / Due: The invoice has been finalized and sent,
-    # but payment has not yet been received
-    # Paid: The invoice has been paid in full
-    # Void / Cancelled: The invoice was created by mistake and has been
-    # cancelled
-
+    # State management
     state: str = "draft"
     is_cancelled: bool | None = False
     cancelled_date: datetime | None = None
 
-    # journal_entries: list[JournalEntry] = Relationship(
-    #     back_populates="journal_entry"
-    # )
-    #
+    # SAT issuer and receiver names
+    sat_issuer_name: str
+    sat_receiver_name: str
 
 
 class InvoiceCreate(InvoiceBase):
-    """
-    Create invoice
-    """
+    """Create invoice schema."""
+
+    business_partner_id: UUID
 
 
 class InvoiceUpdate(SQLModel):
-    """
-    Update invoice
-    """
+    """Update invoice schema."""
 
     date: datetime | None = None
     authorization_number: str | None = None
     dte_type: str | None = None
     serie: str | None = None
     dte_number: str | None = None
-    company_id: int | None = None
-    customer_id: int | None = None
     currency: str | None = None
     state: str | None = None
     is_cancelled: bool | None = None
@@ -106,46 +91,31 @@ class InvoiceUpdate(SQLModel):
 
 
 class InvoiceUpdateAccount(SQLModel):
-    """
-    Update account invoice
-    """
+    """Update account invoice schema."""
 
-    account_id: int
+    account_id: UUID
 
 
-class Invoice(InvoiceBase, table=True):
-    """
-    Invoice entity
-    """
+class Invoice(InvoiceBase, TimestampMixin, table=True):
+    """Invoice entity."""
 
-    id: int | None = Field(default=None, primary_key=True)
+    __tablename__ = "invoice"
 
-    created_by: str = Field(index=True, default=None)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_by: str | None = Field(default=None, index=True)
-    updated_at: datetime | None = Field(default=None)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
 
-    # Relationship with company
-    company_id: int = Field(foreign_key="company.id", index=True)
-    company: "Company" = Relationship(
-        sa_relationship_kwargs={"foreign_keys": "[Invoice.company_id]"}
+    # Foreign keys
+    company_id: UUID = Field(foreign_key="companies.id", index=True)
+    business_partner_id: UUID = Field(
+        foreign_key="business_partner.id", index=True
     )
-
-    # Relationship with customer
-    customer_id: int = Field(foreign_key="customer.id", index=True)
-    customer: "Customer" = Relationship(
-        sa_relationship_kwargs={"foreign_keys": "[Invoice.customer_id]"}
-    )
-
-    # Relationship with account
-    account_id: int | None = Field(
+    account_id: UUID | None = Field(
         foreign_key="account.id", index=True, default=None
     )
-    account: "Account" = Relationship(
-        sa_relationship_kwargs={"foreign_keys": "[Invoice.account_id]"}
-    )
 
-    # Relationship with invoice details
+    # Relationships
+    company: "Company" = Relationship(back_populates="invoices")
+    business_partner: "BusinessPartner" = Relationship()
+    account: "Account" = Relationship()
     details: list["InvoiceDetail"] = Relationship(back_populates="invoice")
 
     def calculate_totals(self):
@@ -162,9 +132,7 @@ class Invoice(InvoiceBase, table=True):
 
 
 class InvoiceDetailBase(SQLModel):
-    """
-    Base invoice detail
-    """
+    """Base invoice detail model."""
 
     # Product/Service information
     product_code: str | None = None
@@ -194,17 +162,13 @@ class InvoiceDetailBase(SQLModel):
 
 
 class InvoiceDetailCreate(InvoiceDetailBase):
-    """
-    Create invoice detail
-    """
+    """Create invoice detail schema."""
 
     pass
 
 
 class InvoiceDetailUpdate(SQLModel):
-    """
-    Update invoice detail
-    """
+    """Update invoice detail schema."""
 
     product_code: str | None = None
     product_name: str | None = None
@@ -225,20 +189,17 @@ class InvoiceDetailUpdate(SQLModel):
     tarifa_portuaria: float | None = None
 
 
-class InvoiceDetail(InvoiceDetailBase, table=True):
-    """
-    Invoice detail entity
-    """
+class InvoiceDetail(InvoiceDetailBase, TimestampMixin, table=True):
+    """Invoice detail entity."""
 
-    id: int | None = Field(default=None, primary_key=True)
+    __tablename__ = "invoice_detail"
 
-    created_by: str = Field(index=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_by: str | None = Field(default=None, index=True)
-    updated_at: datetime | None = Field(default=None)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
 
-    # Relationships
-    invoice_id: int | None = Field(default=None, foreign_key="invoice.id")
+    # Foreign key
+    invoice_id: UUID = Field(foreign_key="invoice.id")
+
+    # Relationship
     invoice: "Invoice" = Relationship(back_populates="details")
 
     def calculate_totals(self):

@@ -1,16 +1,20 @@
-from datetime import UTC, datetime
+from typing import TYPE_CHECKING
+from uuid import UUID, uuid4
 
 from pydantic import EmailStr
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
+
+from app.internal.shared.entity import TimestampMixin
+
+if TYPE_CHECKING:
+    from app.internal.organization.entity import Organization
 
 
 class BusinessPartnerBase(SQLModel):
-    """
-    Base customer
-    """
+    """Base business partner model."""
 
-    name: str = Field(unique=True, index=True)
-    nit: str = Field(unique=True, index=True)
+    name: str = Field(index=True)
+    nit: str = Field(index=True)
     date_birth: str | None = Field(default=None)
     commercial_activity: str | None = Field(default=None)
     email: EmailStr | None = Field(
@@ -18,24 +22,31 @@ class BusinessPartnerBase(SQLModel):
         nullable=True,
     )
     address: str | None = Field(default=None)
+    is_vendor: bool
+    is_customer: bool
 
 
 class BusinessPartnerCreate(BusinessPartnerBase):
-    """
-    Create customer
-    """
+    """Create business partner schema."""
 
     pass
 
 
-class BusinessPartner(BusinessPartnerBase, table=True):
+class BusinessPartner(BusinessPartnerBase, TimestampMixin, table=True):
     """
-    Customer
+    Business Partner entity (Vendors and BusinessPartners).
+    BusinessPartners are organization-scoped (shared across companies).
+    Example: 'Los 3 pollos hermanos' vendor can be used across multiple client companies.
     """
 
-    id: int | None = Field(default=None, primary_key=True)
+    __tablename__ = "business_partner"
 
-    created_by: str = Field(index=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_by: str | None = Field(default=None, index=True)
-    updated_at: datetime | None = Field(default=None)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    organization_id: UUID = Field(
+        foreign_key="organizations.id",
+        nullable=False,
+        index=True,
+    )
+
+    # Relationships
+    organization: "Organization" = Relationship(back_populates="business_partners")

@@ -4,13 +4,15 @@ from sqlmodel import Session
 from app.internal.company.entity import Company, CompanyCreate
 from app.internal.company.repostiory_impl import CompanyRepositoryImpl
 from app.internal.company.service_schemas import CompanyListServiceResponse
-from app.internal.user.entity import User
+from app.internal.user.entity import UserAuthenticated
 
 
 class CompanyService:
     """Service for managing companies."""
 
-    def __init__(self, session: Session, current_user: User) -> None:
+    def __init__(
+        self, session: Session, current_user: UserAuthenticated
+    ) -> None:
         self.repository = CompanyRepositoryImpl(session, current_user)
 
     def create_company(self, company: CompanyCreate):

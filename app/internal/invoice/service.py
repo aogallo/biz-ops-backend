@@ -2,17 +2,19 @@ import logging
 from datetime import datetime
 from enum import Enum
 from io import BytesIO
+from uuid import UUID
 
 import pandas as pd
 from fastapi import HTTPException, status
 from sqlmodel import Session
 
+from app.core.exceptions import NotFoundError
 from app.internal.account.entity import Account
 from app.internal.account.respository_impl import AccountRepositoryImpl
 from app.internal.company.entity import Company
 from app.internal.company.repostiory_impl import CompanyRepositoryImpl
-from app.internal.customer.entity import Customer
-from app.internal.customer.repository_impl import CustomerRepositoryImpl
+from app.internal.business_partner.entity import BusinessPartner
+from app.internal.business_partner.repository_impl import BusinessPartnerRepositoryImpl
 from app.internal.invoice.entity import (
     Invoice,
     InvoiceDetail,
@@ -34,20 +36,34 @@ logger = logging.getLogger(__name__)
 
 
 class InvoiceService:
-    """Service for managing invoices."""
+    """Service for managing invoices (company-scoped)."""
 
-    def __init__(self, session: Session, current_user: User) -> None:
-        self.customer_repo = CustomerRepositoryImpl(session, current_user)
-        self.company_repo = CompanyRepositoryImpl(session, current_user)
-        self.invoice_repo = InvoiceRepositoryImpl(session)
-        self.accont_repo = AccountRepositoryImpl(
-            session=session, current_user=current_user
-        )
-        self.journal_entry_repo = JournalEntryRepositoryImpl(
-            session, current_user
-        )
-        self.errors: list[dict] = []
+    def __init__(
+        self, session: Session, current_user: User, company_id: UUID
+    ) -> None:
+        self.session = session
         self.current_user = current_user
+        self.company_id = company_id
+
+        # Get company to extract organization_id for org-scoped repos
+        company = session.get(Company, company_id)
+        if not company:
+            raise NotFoundError(f"Company {company_id} not found")
+
+        self.organization_id = company.organization_id
+
+        # Company-scoped repositories
+        self.invoice_repo = InvoiceRepositoryImpl(session, current_user, company_id)
+        self.journal_entry_repo = JournalEntryRepositoryImpl(session, current_user, company_id)
+
+        # Organization-scoped repositories (shared across companies)
+        self.customer_repo = BusinessPartnerRepositoryImpl(session, current_user, self.organization_id)
+        self.accont_repo = AccountRepositoryImpl(session, current_user, self.organization_id)
+
+        # Company repo for lookups (not scoped)
+        self.company_repo = CompanyRepositoryImpl(session, current_user)
+
+        self.errors: list[dict] = []
 
     def _validate_classification_field(
         self, field_name: str, value: str | None, enum_class: type[Enum]
@@ -279,7 +295,7 @@ class InvoiceService:
         new_customers = []
         for customer_data in unique_customers:
             if customer_data["nit"] not in existing_nits_set:
-                new_customer = Customer(
+                new_customer = BusinessPartner(
                     nit=customer_data["nit"],
                     name=customer_data["name"],
                     email=None,

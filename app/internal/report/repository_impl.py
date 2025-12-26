@@ -1,11 +1,12 @@
 """Implementation of report repository."""
 
 from datetime import datetime
+from uuid import UUID
 
 from sqlmodel import Session, col, select
 
 from app.internal.account.entity import Account
-from app.internal.customer.entity import Customer
+from app.internal.business_partner.entity import BusinessPartner
 from app.internal.invoice.entity import Invoice, InvoiceDetail
 from app.internal.journal.entity import JournalEntry
 from app.internal.report.repository import ReportRepository
@@ -13,21 +14,28 @@ from app.internal.report.schemas import (
     GeneralJournalEntry,
     SalesLedgerEntry,
 )
+from app.internal.user.entity import User
 
 
 class ReportRepositoryImpl(ReportRepository):
-    """Implementation of Report Repository."""
+    """
+    Implementation of Report Repository.
+    All queries are automatically scoped to company_id for multi-tenancy.
+    """
 
-    def __init__(self, session: Session) -> None:
+    def __init__(
+        self, session: Session, current_user: User, company_id: UUID
+    ) -> None:
         self.db = session
+        self.current_user = current_user
+        self.company_id = company_id  # Company context for multi-tenancy
 
     def get_general_journal_entries(
         self,
-        company_id: int,
         start_date: datetime | None = None,
         end_date: datetime | None = None,
     ) -> list[GeneralJournalEntry]:
-        """Get general journal entries for a company within a date range."""
+        """Get general journal entries for a company within a date range (scoped to company)."""
         # Build query joining JournalEntry with Account and Invoice
         statement = (
             select(  # type: ignore
@@ -41,7 +49,7 @@ class ReportRepositoryImpl(ReportRepository):
             )
             .join(Account, JournalEntry.account_id == Account.id)
             .join(Invoice, JournalEntry.invoice_id == Invoice.id)
-            .where(JournalEntry.company_id == company_id)
+            .where(JournalEntry.company_id == self.company_id)
             .order_by(Invoice.date, Invoice.id)
         )
 
@@ -71,11 +79,10 @@ class ReportRepositoryImpl(ReportRepository):
 
     def get_sales_ledger_entries(
         self,
-        company_id: int,
         start_date: datetime | None = None,
         end_date: datetime | None = None,
     ) -> list[SalesLedgerEntry]:
-        """Get sales ledger entries for a company within a date range."""
+        """Get sales ledger entries for a company within a date range (scoped to company)."""
 
         statement = (
             select(  # type: ignore
@@ -83,8 +90,8 @@ class ReportRepositoryImpl(ReportRepository):
                 col(Invoice.dte_type),
                 col(Invoice.serie),
                 col(Invoice.dte_number),
-                col(Customer.nit),
-                col(Customer.name),
+                col(BusinessPartner.nit),
+                col(BusinessPartner.name),
                 col(Invoice.subtotal),
                 col(InvoiceDetail.iva),
                 col(Invoice.total_amount),
@@ -92,10 +99,13 @@ class ReportRepositoryImpl(ReportRepository):
                 col(Invoice.item_type),
                 col(Invoice.tax_status),
             )
-            .join(Customer, Customer.id == Invoice.customer_id)
+            .join(
+                BusinessPartner,
+                BusinessPartner.id == Invoice.business_partner_id,
+            )
             .join(InvoiceDetail, InvoiceDetail.invoice_id == Invoice.id)
             .where(
-                Invoice.company_id == company_id,
+                Invoice.company_id == self.company_id,
                 Invoice.invoice_type == "incomes",
             )
             .order_by(Invoice.date, Invoice.id)

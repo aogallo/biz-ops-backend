@@ -1,24 +1,40 @@
-from datetime import UTC, datetime
+from typing import TYPE_CHECKING
+from uuid import UUID, uuid4
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
+
+from app.internal.shared.entity import TimestampMixin
+
+if TYPE_CHECKING:
+    from app.internal.organization.entity import Organization
 
 
 class CategoryBase(SQLModel):
-    name: str = Field(unique=True)
+    """Base category model."""
 
-
-class Category(CategoryBase, table=True):
-    """
-    Category entity
-    """
-
-    id: int | None = Field(default=None, primary_key=True)
-
-    created_by: str = Field(index=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_by: str | None = Field(default=None, index=True)
-    updated_at: datetime | None = Field(default=None)
+    name: str = Field(index=True)
 
 
 class CategoryCreate(CategoryBase):
+    """Create category schema."""
+
     pass
+
+
+class Category(CategoryBase, TimestampMixin, table=True):
+    """
+    Category entity.
+    Categories are organization-scoped (shared across companies).
+    """
+
+    __tablename__ = "category"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    organization_id: UUID = Field(
+        foreign_key="organizations.id",
+        nullable=False,
+        index=True,
+    )
+
+    # Relationships
+    organization: "Organization" = Relationship(back_populates="categories")

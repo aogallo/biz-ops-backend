@@ -1,6 +1,7 @@
 """Product API schemas for requests and responses."""
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -34,15 +35,15 @@ class ProductResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    id: int
+    id: UUID
     name: str
     description: str | None
     price: float
     stock: int
-    created_by: str = Field(serialization_alias="createdBy")
-    created_at: datetime = Field(serialization_alias="createdAt")
-    updated_by: str | None = Field(serialization_alias="updatedBy")
-    updated_at: datetime | None = Field(serialization_alias="updatedAt")
+    created_by: str | None = Field(default=None, serialization_alias="createdBy")
+    created_at: datetime | None = Field(default=None, serialization_alias="createdAt")
+    updated_by: str | None = Field(default=None, serialization_alias="updatedBy")
+    updated_at: datetime | None = Field(default=None, serialization_alias="updatedAt")
 
 
 class ProductListResponse(BaseModel):

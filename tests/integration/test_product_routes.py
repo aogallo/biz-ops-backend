@@ -64,6 +64,7 @@ class TestProductRoutes:
         self,
         authenticated_client: TestClient,
         engine,  # Need engine to create product
+        test_user,  # Need test_user for organization_id
     ):
         """Test reading products with valid authentication."""
         # Create a product directly in the database
@@ -75,6 +76,7 @@ class TestProductRoutes:
                 description="A test product",
                 price=99.99,
                 stock=10,
+                organization_id=test_user.organization_id,
                 created_by="auth0|test123",
             )
             session.add(product)

@@ -26,17 +26,34 @@ class TestCompanyRoutes:
     def test_create_company_success(
         self,
         authenticated_client: TestClient,
+        engine,
     ):
         """Test creating a company with valid authentication."""
         # Use a unique name for each test run
         import time
+        from uuid import uuid4
+        from sqlmodel import Session
+        from app.internal.organization.entity import Organization
 
         unique_name = f"Test Company {time.time()}"
+
+        # Create an organization first
+        with Session(engine) as session:
+            org = Organization(
+                name="Test Organization",
+                slug="test-org",
+                created_by="auth0|test123",
+            )
+            session.add(org)
+            session.commit()
+            session.refresh(org)
+            org_id = str(org.id)
 
         # Create a company via API
         company_data = {
             "name": unique_name,
             "nit": f"{int(time.time())}",
+            "organizationId": org_id,
             "email": "test@company.com",
             "address": "123 Test Street",
             "managedByAccountant": True,
@@ -70,14 +87,26 @@ class TestCompanyRoutes:
         """Test reading companies with valid authentication."""
         # Create companies directly in the database
         from sqlmodel import Session
+        from app.internal.organization.entity import Organization
 
         with Session(engine) as session:
+            # Create organization first
+            org = Organization(
+                name="Test Organization",
+                slug="test-org",
+                created_by="auth0|test123",
+            )
+            session.add(org)
+            session.commit()
+            session.refresh(org)
+
             company1 = Company(
                 name="Test Company 1",
                 nit="111111111",
                 email="company1@test.com",
                 address="123 Main St",
                 managed_by_accountant=True,
+                organization_id=org.id,
                 created_by="auth0|test123",
             )
             company2 = Company(
@@ -86,6 +115,7 @@ class TestCompanyRoutes:
                 email="company2@test.com",
                 address="456 Oak Ave",
                 managed_by_accountant=False,
+                organization_id=org.id,
                 created_by="auth0|test123",
             )
             session.add(company1)
@@ -137,14 +167,26 @@ class TestCompanyRoutes:
     ):
         """Test reading companies filtered by managed_by_accountant=true."""
         from sqlmodel import Session
+        from app.internal.organization.entity import Organization
 
         with Session(engine) as session:
+            # Create organization first
+            org = Organization(
+                name="Test Organization",
+                slug="test-org",
+                created_by="auth0|test123",
+            )
+            session.add(org)
+            session.commit()
+            session.refresh(org)
+
             company1 = Company(
                 name="Managed Company 1",
                 nit="333333333",
                 email="managed1@test.com",
                 address="123 Main St",
                 managed_by_accountant=True,
+                organization_id=org.id,
                 created_by="auth0|test123",
             )
             company2 = Company(
@@ -153,6 +195,7 @@ class TestCompanyRoutes:
                 email="unmanaged@test.com",
                 address="456 Oak Ave",
                 managed_by_accountant=False,
+                organization_id=org.id,
                 created_by="auth0|test123",
             )
             company3 = Company(
@@ -161,6 +204,7 @@ class TestCompanyRoutes:
                 email="managed2@test.com",
                 address="789 Pine Rd",
                 managed_by_accountant=True,
+                organization_id=org.id,
                 created_by="auth0|test123",
             )
             session.add_all([company1, company2, company3])
@@ -194,14 +238,26 @@ class TestCompanyRoutes:
     ):
         """Test reading companies filtered by managed_by_accountant=false."""
         from sqlmodel import Session
+        from app.internal.organization.entity import Organization
 
         with Session(engine) as session:
+            # Create organization first
+            org = Organization(
+                name="Test Organization",
+                slug="test-org",
+                created_by="auth0|test123",
+            )
+            session.add(org)
+            session.commit()
+            session.refresh(org)
+
             company1 = Company(
                 name="Managed Company",
                 nit="666666666",
                 email="managed@test.com",
                 address="123 Main St",
                 managed_by_accountant=True,
+                organization_id=org.id,
                 created_by="auth0|test123",
             )
             company2 = Company(
@@ -210,6 +266,7 @@ class TestCompanyRoutes:
                 email="unmanaged1@test.com",
                 address="456 Oak Ave",
                 managed_by_accountant=False,
+                organization_id=org.id,
                 created_by="auth0|test123",
             )
             company3 = Company(
@@ -218,6 +275,7 @@ class TestCompanyRoutes:
                 email="unmanaged2@test.com",
                 address="789 Pine Rd",
                 managed_by_accountant=False,
+                organization_id=org.id,
                 created_by="auth0|test123",
             )
             session.add_all([company1, company2, company3])
@@ -251,15 +309,27 @@ class TestCompanyRoutes:
     ):
         """Test updating a company with valid authentication."""
         from sqlmodel import Session
+        from app.internal.organization.entity import Organization
 
         # Create a company to update
         with Session(engine) as session:
+            # Create organization first
+            org = Organization(
+                name="Test Organization",
+                slug="test-org",
+                created_by="auth0|test123",
+            )
+            session.add(org)
+            session.commit()
+            session.refresh(org)
+
             company = Company(
                 name="Original Company Name",
                 nit="999999999",
                 email="original@test.com",
                 address="123 Original St",
                 managed_by_accountant=False,
+                organization_id=org.id,
                 created_by="auth0|test123",
             )
             session.add(company)
@@ -287,7 +357,7 @@ class TestCompanyRoutes:
         )
 
         data = response.json()
-        assert data["id"] == company_id
+        assert data["id"] == str(company_id)
         assert data["name"] == "Updated Company Name"
         assert data["managedByAccountant"] is True
         # Email should remain unchanged
@@ -298,12 +368,17 @@ class TestCompanyRoutes:
         authenticated_client: TestClient,
     ):
         """Test updating a non-existent company returns 404."""
+        from uuid import uuid4
+
+        # Use a valid UUID that doesn't exist in the database
+        non_existent_id = uuid4()
+
         update_data = {
             "name": "Updated Name",
         }
 
         response = authenticated_client.patch(
-            f"{self.API_PREFIX}/companies/99999",
+            f"{self.API_PREFIX}/companies/{non_existent_id}",
             json=update_data,
         )
 
@@ -322,15 +397,27 @@ class TestCompanyRoutes:
     ):
         """Test partial update of company fields."""
         from sqlmodel import Session
+        from app.internal.organization.entity import Organization
 
         # Create a company
         with Session(engine) as session:
+            # Create organization first
+            org = Organization(
+                name="Test Organization",
+                slug="test-org",
+                created_by="auth0|test123",
+            )
+            session.add(org)
+            session.commit()
+            session.refresh(org)
+
             company = Company(
                 name="Original Name",
                 nit="000000000",
                 email="original@test.com",
                 address="123 Original St",
                 managed_by_accountant=False,
+                organization_id=org.id,
                 created_by="auth0|test123",
             )
             session.add(company)

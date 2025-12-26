@@ -10,7 +10,7 @@ from sqlmodel import SQLModel
 
 from app.internal.account.entity import Account
 from app.internal.company.schema import CompanyResponse
-from app.internal.customer.schema import CustomerResponse
+from app.internal.business_partner.schema import BusinessPartnerResponse
 from app.schemas.common import PaginationResponse
 
 InvoiceState = Literal["draft", "open", "paid", "void", "Vigente"]
@@ -151,7 +151,7 @@ class InvoiceResponse(BaseModel):
 
     company: CompanyResponse | None = None
 
-    customer: CustomerResponse | None = None
+    customer: BusinessPartnerResponse | None = None
 
     account: Account | None = None
 
@@ -228,7 +228,7 @@ class InvoiceRowSchema(SQLModel):
         return str(value)
 
 
-class UniqueCustomers(BaseModel):
+class UniqueBusinessPartners(BaseModel):
     """Schema for unique customers."""
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)

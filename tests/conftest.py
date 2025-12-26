@@ -2,8 +2,6 @@
 
 import os
 
-from app.internal.journal.entity import JournalEntry
-
 # CRITICAL: Set test environment variables BEFORE any app imports
 # This ensures the app uses SQLite instead of PostgreSQL
 os.environ["DATABASE_URI"] = "sqlite:///:memory:"
@@ -19,8 +17,18 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, StaticPool, create_engine
 
 from app.database import get_session
+# Import all entities so SQLModel.metadata knows about all tables
+from app.internal.account.entity import Account
+from app.internal.account_payable.entity import AccountPayable
+from app.internal.account_receivable.entity import AccountReceivable
+from app.internal.business_partner.entity import BusinessPartner
+from app.internal.category.entity import Category
+from app.internal.company.entity import Company
+from app.internal.invoice.entity import Invoice, InvoiceDetail
+from app.internal.journal.entity import JournalEntry
+from app.internal.organization.entity import Organization
 from app.internal.product.entity import Product
-from app.internal.user.entity import User
+from app.internal.user.entity import User, UserAuthenticated, UserCompanyAccess
 from app.main import app
 
 
@@ -54,17 +62,44 @@ def session_fixture(engine) -> Generator[Session, None, None]:
 
 
 @pytest.fixture(name="test_user")
-def test_user_fixture() -> User:
-    """Create a test user (not persisted to database)."""
-    user = User(
-        auth_id="auth0|test123",
-        permissions=["read", "write"],
-    )
-    return user
+def test_user_fixture(engine) -> User:
+    """Create a test user with an organization (persisted to database)."""
+    from uuid import uuid4
+    from app.internal.organization.entity import Organization
+
+    # Create organization and user in database
+    with Session(engine) as session:
+        # Create organization
+        org = Organization(
+            name="Test Organization",
+            slug="test-org-user",
+            created_by="auth0|test123",
+        )
+        session.add(org)
+        session.commit()
+        session.refresh(org)
+
+        # Create user with organization
+        user = User(
+            id=uuid4(),
+            auth_id="auth0|test123",
+            auth0_user_id="auth0|test123",
+            email="test@example.com",
+            is_active=True,
+            is_email_verified=True,
+            first_name="Test",
+            last_name="User",
+            organization_id=org.id,
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+
+        return user
 
 
 @pytest.fixture(name="test_product")
-def test_product_fixture(engine) -> Product:
+def test_product_fixture(engine, test_user: User) -> Product:
     """Create a test product in the database."""
     # Use a new session from the same engine to ensure data persists
     with Session(engine) as session:
@@ -73,6 +108,7 @@ def test_product_fixture(engine) -> Product:
             description="A test product for integration tests",
             price=99.99,
             stock=10,
+            organization_id=test_user.organization_id,
             created_by="auth0|test123",
         )
         session.add(product)
@@ -137,10 +173,12 @@ def authenticated_client_fixture(
     app.dependency_overrides[get_session] = get_session_override
 
     # Override authentication dependencies
-    from app.dependencies import get_current_user, verify_token
+    from app.dependencies import get_current_user, verify_company_access, verify_token
 
     app.dependency_overrides[verify_token] = lambda: mock_verify_token
     app.dependency_overrides[get_current_user] = lambda: mock_get_current_user
+    # Bypass access control for tests
+    app.dependency_overrides[verify_company_access] = lambda: None
 
     client = TestClient(app)
     yield client
@@ -161,27 +199,81 @@ def clean_database(engine):
     from sqlmodel import select
 
     with Session(engine) as session:
-        # Delete all products (add other tables as needed)
+        # Delete in order of dependencies (children first, then parents)
+
+        # Delete invoice details first (depends on invoice)
+        invoice_details = session.exec(select(InvoiceDetail)).all()
+        for detail in invoice_details:
+            session.delete(detail)
+
+        # Delete journal entries (depends on invoice, account, company)
+        journal_entries = session.exec(select(JournalEntry)).all()
+        for journal_entry in journal_entries:
+            session.delete(journal_entry)
+
+        # Delete account payable/receivable (depends on invoice, company, business partner)
+        from app.internal.account_payable.entity import AccountPayable
+        from app.internal.account_receivable.entity import AccountReceivable
+
+        payables = session.exec(select(AccountPayable)).all()
+        for payable in payables:
+            session.delete(payable)
+
+        receivables = session.exec(select(AccountReceivable)).all()
+        for receivable in receivables:
+            session.delete(receivable)
+
+        # Delete invoices (depends on company, business partner)
+        invoices = session.exec(select(Invoice)).all()
+        for invoice in invoices:
+            session.delete(invoice)
+
+        # Delete UserCompanyAccess (depends on user and company)
+        user_accesses = session.exec(select(UserCompanyAccess)).all()
+        for access in user_accesses:
+            session.delete(access)
+
+        # Delete products (depends on organization)
         products = session.exec(select(Product)).all()
         for product in products:
             session.delete(product)
 
-        # Delete all companies
+        # Delete accounts (depends on organization)
+        accounts = session.exec(select(Account)).all()
+        for account in accounts:
+            session.delete(account)
+
+        # Delete categories (depends on organization)
+        categories = session.exec(select(Category)).all()
+        for category in categories:
+            session.delete(category)
+
+        # Delete business partners (depends on organization)
+        from app.internal.business_partner.entity import BusinessPartner
+
+        customers = session.exec(select(BusinessPartner)).all()
+        for customer in customers:
+            session.delete(customer)
+
+        # Delete companies (depends on organization)
         from app.internal.company.entity import Company
 
         companies = session.exec(select(Company)).all()
         for company in companies:
             session.delete(company)
 
-        # Delete all customers
-        from app.internal.customer.entity import Customer
+        # Delete users (depends on organization)
+        from app.internal.user.entity import User
 
-        customers = session.exec(select(Customer)).all()
-        for customer in customers:
-            session.delete(customer)
+        users = session.exec(select(User)).all()
+        for user in users:
+            session.delete(user)
 
-        journal_entries = session.exec(select(JournalEntry)).all()
-        for journal_entry in journal_entries:
-            session.delete(journal_entry)
+        # Delete organizations (last, has no dependencies)
+        from app.internal.organization.entity import Organization
+
+        organizations = session.exec(select(Organization)).all()
+        for org in organizations:
+            session.delete(org)
 
         session.commit()

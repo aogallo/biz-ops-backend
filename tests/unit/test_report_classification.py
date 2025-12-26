@@ -32,7 +32,7 @@ class TestReportClassificationAggregation:
                 "A",  # serie
                 "001",  # number
                 "123",  # nit
-                "Customer",  # name
+                "BusinessPartner",  # name
                 100.0,  # subtotal
                 12.0,  # iva
                 112.0,  # total
@@ -73,7 +73,7 @@ class TestReportClassificationAggregation:
                 "A",
                 "001",
                 "123",
-                "Customer",
+                "BusinessPartner",
                 500.0,  # subtotal
                 0.0,  # iva
                 500.0,  # total
@@ -115,7 +115,7 @@ class TestReportClassificationAggregation:
                 "A",
                 "001",
                 "123",
-                "Customer",
+                "BusinessPartner",
                 100.0,  # subtotal
                 12.0,  # iva
                 112.0,  # total

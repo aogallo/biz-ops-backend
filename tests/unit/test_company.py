@@ -1,6 +1,7 @@
 """Unit tests for CompanyService - testing business logic in isolation."""
 
 from unittest.mock import Mock
+from uuid import uuid4
 
 import pytest
 from fastapi import HTTPException
@@ -16,10 +17,12 @@ class TestCompanyService:
     @pytest.fixture
     def mock_user(self):
         """Create a mock user for testing."""
-        return User(
-            auth_id="auth0|test123",
-            permissions=["create:company"],
-        )
+        mock = Mock(spec=User)
+        mock.auth_id = "auth0|test123"
+        mock.auth0_user_id = "auth0|test123"
+        mock.organization_id = uuid4()
+        mock.permissions = ["create:company"]
+        return mock
 
     @pytest.fixture
     def mock_session(self):
@@ -42,20 +45,23 @@ class TestCompanyService:
     def test_create_company_success(self, service, mock_repository):
         """Test successful company creation when name doesn't exist."""
         # Arrange
+        org_id = uuid4()
         company_data = CompanyCreate(
             name="Test Company Inc",
             nit="123456789",
             email="test@company.com",
             address="123 Main St",
             managed_by_accountant=True,
+            organization_id=org_id,
         )
         expected_company = Company(
-            id=1,
+            id=uuid4(),
             name="Test Company Inc",
             nit="123456789",
             email="test@company.com",
             address="123 Main St",
             managed_by_accountant=True,
+            organization_id=org_id,
             created_by="auth0|test123",
         )
         # Mock repository responses
@@ -68,7 +74,7 @@ class TestCompanyService:
         result = service.create_company(company=company_data)
 
         # Assert
-        assert result.id == 1
+        assert result == expected_company
         assert result.name == "Test Company Inc"
         assert result.email == "test@company.com"
         assert result.address == "123 Main St"
@@ -82,18 +88,21 @@ class TestCompanyService:
     def test_create_company_duplicate_name(self, service, mock_repository):
         """Test that creating a company with duplicate name raises 409 error."""
         # Arrange
+        org_id = uuid4()
         company_data = CompanyCreate(
             name="Existing Company",
             nit="987654321",
             email="test@existing.com",
             address="456 Oak Ave",
+            organization_id=org_id,
         )
         existing_company = Company(
-            id=1,
+            id=uuid4(),
             name="Existing Company",
             nit="111111111",
             email="other@existing.com",
             address="789 Pine St",
+            organization_id=org_id,
             created_by="other_user",
         )
         # Mock: Company with same nit already exists

@@ -1,6 +1,7 @@
 """Company API schemas for requests and responses."""
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -14,6 +15,9 @@ class CompanyCreate(BaseModel):
 
     name: str
     nit: str
+    organization_id: UUID = Field(
+        alias="organizationId", serialization_alias="organizationId"
+    )
     date_birth: str | None = Field(
         default=None, alias="dateBirth", serialization_alias="dateBirth"
     )
@@ -60,7 +64,7 @@ class CompanyResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    id: int
+    id: UUID
     name: str
     nit: str
     date_birth: str | None = Field(serialization_alias="dateBirth")
@@ -90,7 +94,7 @@ class CompanyMinimalResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    id: int
+    id: UUID
     name: str
     email: str | None
     nit: str

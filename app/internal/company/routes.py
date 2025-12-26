@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 
@@ -111,7 +113,7 @@ def list_companies_that_are_clients(
 
 @router.patch("/{company_id}", response_model=CompanyResponse)
 def update_company(
-    company_id: int,
+    company_id: UUID,
     company: CompanyUpdate,
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
@@ -136,7 +138,7 @@ def update_company(
 
 @router.get("/{company_id}", response_model=CompanyResponse)
 def get_company_by_id(
-    company_id: int,
+    company_id: UUID,
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
 ):

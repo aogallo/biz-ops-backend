@@ -3,18 +3,19 @@
 import os
 import tempfile
 from datetime import datetime
+from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from fastapi.responses import FileResponse
 from sqlmodel import Session
 
 from app.database import get_session
-from app.dependencies import get_current_user, verify_token
+from app.dependencies import get_current_user, verify_company_access, verify_token
 from app.internal.report.schemas import GeneralJournalReport, SalesLedgerReport
 from app.internal.report.service import ReportService
 
 router = APIRouter(
-    prefix="/reports",
+    prefix="/companies/{company_id}/reports",
     tags=["reports"],
     dependencies=[Depends(verify_token)],
 )
@@ -22,9 +23,7 @@ router = APIRouter(
 
 @router.get("/general-journal", response_model=GeneralJournalReport)
 def get_general_journal_report(
-    company_id: int = Query(
-        ..., description="Company ID to generate report for"
-    ),
+    company_id: UUID,
     start_date: datetime | None = Query(
         None, description="Start date for the report (ISO format)"
     ),
@@ -33,6 +32,7 @@ def get_general_journal_report(
     ),
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
+    _: None = Depends(verify_company_access),
 ):
     """
     Get the general journal report for a company.
@@ -48,17 +48,15 @@ def get_general_journal_report(
 
     The report includes totals for debits and credits.
     """
-    service = ReportService(session, current_user)
+    service = ReportService(session, current_user, company_id)
     return service.get_general_journal_report(
-        company_id=company_id, start_date=start_date, end_date=end_date
+        start_date=start_date, end_date=end_date
     )
 
 
 @router.get("/general-journal/pdf")
 def download_general_journal_pdf(
-    company_id: int = Query(
-        ..., description="Company ID to generate report for"
-    ),
+    company_id: UUID,
     start_date: datetime | None = Query(
         None, description="Start date for the report (ISO format)"
     ),
@@ -68,6 +66,7 @@ def download_general_journal_pdf(
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
     background_tasks: BackgroundTasks = BackgroundTasks(),
+    _: None = Depends(verify_company_access),
 ):
     """
     Download the general journal report as a PDF file.
@@ -81,11 +80,11 @@ def download_general_journal_pdf(
 
     The PDF will be downloaded with a descriptive filename.
     """
-    service = ReportService(session, current_user)
+    service = ReportService(session, current_user, company_id)
 
     # Generate PDF bytes
     pdf_bytes = service.generate_general_journal_pdf(
-        company_id=company_id, start_date=start_date, end_date=end_date
+        start_date=start_date, end_date=end_date
     )
 
     # Create temporary file
@@ -113,13 +112,13 @@ def download_general_journal_pdf(
 
 
 def _generate_pdf_filename(
-    company_id: int,
+    company_id: UUID,
     filename: str,
     start_date: datetime | None,
     end_date: datetime | None,
 ) -> str:
     """Generate descriptive filename for PDF download."""
-    base = f"{filename}_company{company_id}"
+    base = f"{filename}_company{str(company_id)[:8]}"
 
     if start_date and end_date:
         date_range = (
@@ -137,9 +136,7 @@ def _generate_pdf_filename(
 
 @router.get("/sales-ledger", response_model=SalesLedgerReport)
 def get_sales_ledger_report(
-    company_id: int = Query(
-        ..., description="Company ID to generate report for"
-    ),
+    company_id: UUID,
     start_date: datetime | None = Query(
         None, description="Start date for the report (ISO format)"
     ),
@@ -148,6 +145,7 @@ def get_sales_ledger_report(
     ),
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
+    _: None = Depends(verify_company_access),
 ):
     """
     Get the sales ledger report for a company.
@@ -159,24 +157,22 @@ def get_sales_ledger_report(
     - Serie
     - Number document
     - NIT
-    - Name (Customer)
-    - Amonut
+    - Name (BusinessPartner)
+    - Amount
     - IVA
     - Total
 
     """
 
-    service = ReportService(session=session, current_user=current_user)
+    service = ReportService(session, current_user, company_id)
     return service.get_sales_ledger_report(
-        company_id=company_id, start_date=start_date, end_date=end_date
+        start_date=start_date, end_date=end_date
     )
 
 
 @router.get("/sales-ledger/pdf")
 def download_sales_ledger_pdf(
-    company_id: int = Query(
-        ..., description="Company ID to generate report for"
-    ),
+    company_id: UUID,
     start_date: datetime | None = Query(
         None, description="Start date for the report (ISO format)"
     ),
@@ -186,6 +182,7 @@ def download_sales_ledger_pdf(
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
     background_tasks: BackgroundTasks = BackgroundTasks(),
+    _: None = Depends(verify_company_access),
 ):
     """
     Download the sales ledger report as a PDF file.
@@ -197,11 +194,10 @@ def download_sales_ledger_pdf(
 
     The PDF will be downloaded with a descriptive filename.
     """
-    service = ReportService(session, current_user)
+    service = ReportService(session, current_user, company_id)
 
     # Generate PDF bytes
     pdf_bytes = service.generate_sales_ledger_pdf(
-        company_id=company_id,
         start_date=start_date,
         end_date=end_date,
     )

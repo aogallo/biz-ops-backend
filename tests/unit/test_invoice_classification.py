@@ -21,7 +21,7 @@ from app.internal.invoice.schema import (
     InvoiceUpdate,
 )
 from app.internal.invoice.service import InvoiceService
-from app.internal.user.entity import User
+from app.internal.user.entity import UserAuthenticated
 
 
 class TestInvoiceClassificationEnums:
@@ -256,7 +256,7 @@ class TestInvoiceServiceClassificationValidation:
     @pytest.fixture
     def mock_user(self):
         """Create mock user."""
-        return User(auth_id="auth0|test", permissions=[])
+        return UserAuthenticated(auth_id="auth0|test", permissions=[])
 
     @pytest.fixture
     def mock_session(self):

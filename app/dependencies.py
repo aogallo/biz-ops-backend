@@ -1,11 +1,16 @@
 import logging
+from typing import Annotated
+from uuid import UUID
 
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlmodel import Session, select
 
 from app.core.config import settings
-from app.internal.user.entity import User
+from app.core.exceptions import AuthenticationError, AuthorizationError
+from app.database import get_session
+from app.internal.user.entity import User, UserAuthenticated, UserCompanyAccess
 
 logger = logging.getLogger(__name__)
 oauth2_scheme = HTTPBearer()
@@ -154,15 +159,88 @@ def verify_token(token: str = Depends(get_credentials)):
         ) from e
 
 
-def get_current_user(token: str = Depends(get_credentials)) -> User:
+def get_current_user(
+    token: str = Depends(get_credentials),
+    session: Session = Depends(get_session),
+) -> User:
     """
-    Get the current user from the token payload.
+    Get the current user from the token payload and fetch full User entity from database.
+
+    Raises:
+        AuthenticationError: If user not found in database
     """
     token_payload = verify_token(token)
-    permissions = token_payload.get("permissions")
-    if permissions is not None:
-        permissions = [str(item) for item in permissions]
-    else:
-        permissions = []
+    auth0_user_id = str(token_payload.get("sub"))
 
-    return User(auth_id=str(token_payload.get("sub")), permissions=permissions)
+    # Fetch user from database
+    statement = select(User).where(User.auth0_user_id == auth0_user_id)
+    user = session.exec(statement).first()
+
+    if not user:
+        # Auto-create user on first login (will be activated when admin grants access)
+        logger.info("Creating new user for Auth0 ID: %s", auth0_user_id)
+        user = User(
+            auth0_user_id=auth0_user_id,
+            auth_id=auth0_user_id,
+            email=token_payload.get("email", ""),
+            first_name=token_payload.get("given_name"),
+            last_name=token_payload.get("family_name"),
+            is_active=False,  # Not active until admin assigns to organization
+            is_email_verified=token_payload.get("email_verified", False),
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+
+    return user
+
+
+def verify_company_access(
+    company_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Session = Depends(get_session),
+) -> None:
+    """
+    Verify user has access to the requested company.
+
+    Raises:
+        AuthorizationError: If user doesn't have access
+    """
+    # Check if user has access to this company
+    statement = select(UserCompanyAccess).where(
+        UserCompanyAccess.user_id == current_user.id,
+        UserCompanyAccess.company_id == company_id,
+    )
+    access = session.exec(statement).first()
+
+    if not access:
+        logger.warning(
+            "User %s attempted to access company %s without permission",
+            current_user.auth0_user_id,
+            company_id,
+        )
+        raise AuthorizationError(
+            f"User does not have access to company {company_id}"
+        )
+
+
+def verify_organization_access(
+    organization_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> None:
+    """
+    Verify user belongs to the requested organization.
+
+    Raises:
+        AuthorizationError: If user doesn't belong to org
+    """
+    if current_user.organization_id != organization_id:
+        logger.warning(
+            "User %s attempted to access organization %s but belongs to %s",
+            current_user.auth0_user_id,
+            organization_id,
+            current_user.organization_id,
+        )
+        raise AuthorizationError(
+            f"User does not belong to organization {organization_id}"
+        )
