@@ -33,7 +33,9 @@ class UserCompanyAccess(SQLModel, table=True):
     company_id: UUID = Field(foreign_key="companies.id", primary_key=True)
 
     # Role for this user in this company
-    role: str = Field(default="user")  # "owner", "admin", "accountant", "viewer"
+    role: str = Field(
+        default="user"
+    )  # "owner", "admin", "accountant", "viewer"
 
     # Timestamps
     created_at: datetime = Field(default_factory=datetime.utcnow)

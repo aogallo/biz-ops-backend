@@ -41,7 +41,7 @@ class TestProductService:
         service = ProductService(
             session=mock_session,
             current_user=mock_user,
-            organization_id=mock_user.organization_id
+            organization_id=mock_user.organization_id,
         )
         # Replace the repository with our mock
         monkeypatch.setattr(service, "repository", mock_repository)

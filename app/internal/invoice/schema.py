@@ -9,8 +9,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlmodel import SQLModel
 
 from app.internal.account.entity import Account
-from app.internal.company.schema import CompanyResponse
 from app.internal.business_partner.schema import BusinessPartnerResponse
+from app.internal.company.schema import CompanyResponse
 from app.schemas.common import PaginationResponse
 
 InvoiceState = Literal["draft", "open", "paid", "void", "Vigente"]

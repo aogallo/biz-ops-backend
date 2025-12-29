@@ -1,11 +1,15 @@
 from uuid import UUID
 
-from app.internal.business_partner.entity import BusinessPartnerCreate
-from app.internal.business_partner.repository_impl import BusinessPartnerRepositoryImpl
-from app.internal.business_partner.service_schemas import BusinessPartnerListServiceResponse
 from fastapi import HTTPException, status
 from sqlmodel import Session
 
+from app.internal.business_partner.entity import BusinessPartnerCreate
+from app.internal.business_partner.repository_impl import (
+    BusinessPartnerRepositoryImpl,
+)
+from app.internal.business_partner.service_schemas import (
+    BusinessPartnerListServiceResponse,
+)
 from app.internal.user.entity import User
 
 
@@ -13,7 +17,10 @@ class BusinessPartnerService:
     """Service for managing business partners (organization-scoped)."""
 
     def __init__(
-        self, session: Session, current_user: User, organization_id: UUID | None = None
+        self,
+        session: Session,
+        current_user: User,
+        organization_id: UUID | None = None,
     ) -> None:
         # Use provided organization_id or extract from current_user
         org_id = organization_id or current_user.organization_id
@@ -22,7 +29,9 @@ class BusinessPartnerService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="User must belong to an organization",
             )
-        self.repository = BusinessPartnerRepositoryImpl(session, current_user, org_id)
+        self.repository = BusinessPartnerRepositoryImpl(
+            session, current_user, org_id
+        )
 
     def create_customer(self, customer: BusinessPartnerCreate):
         """
@@ -59,4 +68,6 @@ class BusinessPartnerService:
         customers = self.repository.get_all(offset=offset, limit=limit)
         count = self.repository.get_count()
 
-        return BusinessPartnerListServiceResponse(count=count, customers=customers)
+        return BusinessPartnerListServiceResponse(
+            count=count, customers=customers
+        )

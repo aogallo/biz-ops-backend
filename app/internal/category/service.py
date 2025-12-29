@@ -12,7 +12,10 @@ class CategoryService:
     """Service for managing categories (organization-scoped)."""
 
     def __init__(
-        self, session: Session, current_user: User, organization_id: UUID | None = None
+        self,
+        session: Session,
+        current_user: User,
+        organization_id: UUID | None = None,
     ) -> None:
         # Use provided organization_id or extract from current_user
         org_id = organization_id or current_user.organization_id
@@ -21,7 +24,9 @@ class CategoryService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="User must belong to an organization",
             )
-        self._category_repo = CategoryRepositoryImpl(session, current_user, org_id)
+        self._category_repo = CategoryRepositoryImpl(
+            session, current_user, org_id
+        )
 
     def create_category(self, category: CategoryCreate):
         return self._category_repo.create(category)

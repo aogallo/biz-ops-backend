@@ -1,10 +1,13 @@
-from app.internal.business_partner.schema import BusinessPartnerListResponse, BusinessPartnerResponse
-from app.internal.business_partner.service import BusinessPartnerService
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
 from app.database import get_session
 from app.dependencies import get_current_user, verify_token
+from app.internal.business_partner.schema import (
+    BusinessPartnerListResponse,
+    BusinessPartnerResponse,
+)
+from app.internal.business_partner.service import BusinessPartnerService
 from app.schemas.common import PaginationResponse
 from app.utils.pagination import calculate_offset
 

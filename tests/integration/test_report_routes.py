@@ -7,8 +7,8 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app.internal.account.entity import Account
-from app.internal.company.entity import Company
 from app.internal.business_partner.entity import BusinessPartner
+from app.internal.company.entity import Company
 from app.internal.invoice.entity import Invoice
 from app.internal.journal.entity import JournalEntry
 
@@ -22,6 +22,7 @@ class TestReportRoutes:
     def test_get_general_journal_unauthorized(self, client: TestClient):
         """Test that getting general journal without auth fails."""
         from uuid import uuid4
+
         company_id = uuid4()
         response = client.get(
             f"{self.API_PREFIX}/companies/{company_id}/reports/general-journal"
@@ -329,6 +330,7 @@ class TestReportRoutes:
     ):
         """Test that getting general journal PDF without auth fails."""
         from uuid import uuid4
+
         company_id = uuid4()
         response = client.get(
             f"{self.API_PREFIX}/companies/{company_id}/reports/general-journal/pdf"
@@ -566,10 +568,14 @@ class TestReportRoutes:
     ):
         """Test PDF download with non-existent company."""
         from uuid import uuid4
+
         company_id = uuid4()
         response = authenticated_client.get(
             f"{self.API_PREFIX}/companies/{company_id}/reports/general-journal/pdf"
         )
 
         assert response.status_code == 404
-        assert f"Company with ID {company_id} not found" in response.json()["detail"]
+        assert (
+            f"Company with ID {company_id} not found"
+            in response.json()["detail"]
+        )

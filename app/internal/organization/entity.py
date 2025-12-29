@@ -43,7 +43,9 @@ class OrganizationBase(SQLModel):
     is_active: bool = Field(default=True, index=True)
 
 
-class Organization(OrganizationBase, TimestampMixin, SoftDeleteMixin, table=True):
+class Organization(
+    OrganizationBase, TimestampMixin, SoftDeleteMixin, table=True
+):
     """Entity for Organization"""
 
     __tablename__ = "organizations"

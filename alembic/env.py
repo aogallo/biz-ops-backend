@@ -2,11 +2,14 @@
 
 This module configures Alembic to work with our FastAPI application and SQLModel.
 """
+
 import os
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
+from sqlmodel import SQLModel
+
+from alembic import context
 
 # Import all models so Alembic can detect schema changes
 # IMPORTANT: Import all entities here so SQLModel.metadata includes them
@@ -23,7 +26,6 @@ from app.internal.journal.entity import JournalEntry  # noqa: F401
 from app.internal.organization.entity import Organization  # noqa: F401
 from app.internal.product.entity import Product  # noqa: F401
 from app.internal.user.entity import User, UserCompanyAccess  # noqa: F401
-from sqlmodel import SQLModel
 
 # Alembic Config object
 config = context.config

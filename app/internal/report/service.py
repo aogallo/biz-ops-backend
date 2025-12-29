@@ -38,7 +38,9 @@ class ReportService:
         self.organization_id = company.organization_id
 
         # Company-scoped repository
-        self._report_repo = ReportRepositoryImpl(session, current_user, company_id)
+        self._report_repo = ReportRepositoryImpl(
+            session, current_user, company_id
+        )
         self._company_repo = CompanyRepositoryImpl(session, current_user)
 
     def get_general_journal_report(

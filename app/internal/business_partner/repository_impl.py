@@ -116,9 +116,7 @@ class BusinessPartnerRepositoryImpl(BusinessPartnerRepository):
             BusinessPartner.organization_id == self.organization_id,
             BusinessPartner.nit == nit,
         )
-        result: BusinessPartner | None = self.db.exec(
-            statement
-        ).one_or_none()
+        result: BusinessPartner | None = self.db.exec(statement).one_or_none()
         return result
 
     def get_or_create_by_nit(

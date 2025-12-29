@@ -17,18 +17,15 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, StaticPool, create_engine
 
 from app.database import get_session
+
 # Import all entities so SQLModel.metadata knows about all tables
 from app.internal.account.entity import Account
-from app.internal.account_payable.entity import AccountPayable
-from app.internal.account_receivable.entity import AccountReceivable
-from app.internal.business_partner.entity import BusinessPartner
 from app.internal.category.entity import Category
-from app.internal.company.entity import Company
 from app.internal.invoice.entity import Invoice, InvoiceDetail
 from app.internal.journal.entity import JournalEntry
 from app.internal.organization.entity import Organization
 from app.internal.product.entity import Product
-from app.internal.user.entity import User, UserAuthenticated, UserCompanyAccess
+from app.internal.user.entity import User, UserCompanyAccess
 from app.main import app
 
 
@@ -65,7 +62,6 @@ def session_fixture(engine) -> Generator[Session, None, None]:
 def test_user_fixture(engine) -> User:
     """Create a test user with an organization (persisted to database)."""
     from uuid import uuid4
-    from app.internal.organization.entity import Organization
 
     # Create organization and user in database
     with Session(engine) as session:
@@ -173,7 +169,11 @@ def authenticated_client_fixture(
     app.dependency_overrides[get_session] = get_session_override
 
     # Override authentication dependencies
-    from app.dependencies import get_current_user, verify_company_access, verify_token
+    from app.dependencies import (
+        get_current_user,
+        verify_company_access,
+        verify_token,
+    )
 
     app.dependency_overrides[verify_token] = lambda: mock_verify_token
     app.dependency_overrides[get_current_user] = lambda: mock_get_current_user

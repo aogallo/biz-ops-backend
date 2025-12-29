@@ -13,7 +13,11 @@ from fastapi import (
 from sqlmodel import Session
 
 from app.database import get_session
-from app.dependencies import get_current_user, verify_company_access, verify_token
+from app.dependencies import (
+    get_current_user,
+    verify_company_access,
+    verify_token,
+)
 from app.internal.invoice.entity import InvoiceUpdate as InvoiceUpdateEntity
 from app.internal.invoice.entity import (
     InvoiceUpdateAccount as InvoiceUpdateAccountEntity,

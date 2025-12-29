@@ -11,10 +11,12 @@ from sqlmodel import Session
 from app.core.exceptions import NotFoundError
 from app.internal.account.entity import Account
 from app.internal.account.respository_impl import AccountRepositoryImpl
+from app.internal.business_partner.entity import BusinessPartner
+from app.internal.business_partner.repository_impl import (
+    BusinessPartnerRepositoryImpl,
+)
 from app.internal.company.entity import Company
 from app.internal.company.repostiory_impl import CompanyRepositoryImpl
-from app.internal.business_partner.entity import BusinessPartner
-from app.internal.business_partner.repository_impl import BusinessPartnerRepositoryImpl
 from app.internal.invoice.entity import (
     Invoice,
     InvoiceDetail,
@@ -53,12 +55,20 @@ class InvoiceService:
         self.organization_id = company.organization_id
 
         # Company-scoped repositories
-        self.invoice_repo = InvoiceRepositoryImpl(session, current_user, company_id)
-        self.journal_entry_repo = JournalEntryRepositoryImpl(session, current_user, company_id)
+        self.invoice_repo = InvoiceRepositoryImpl(
+            session, current_user, company_id
+        )
+        self.journal_entry_repo = JournalEntryRepositoryImpl(
+            session, current_user, company_id
+        )
 
         # Organization-scoped repositories (shared across companies)
-        self.customer_repo = BusinessPartnerRepositoryImpl(session, current_user, self.organization_id)
-        self.accont_repo = AccountRepositoryImpl(session, current_user, self.organization_id)
+        self.customer_repo = BusinessPartnerRepositoryImpl(
+            session, current_user, self.organization_id
+        )
+        self.accont_repo = AccountRepositoryImpl(
+            session, current_user, self.organization_id
+        )
 
         # Company repo for lookups (not scoped)
         self.company_repo = CompanyRepositoryImpl(session, current_user)

@@ -10,17 +10,14 @@ from app.internal.user.entity import User
 class CompanyRepositoryImpl(CompanyRepository):
     """Implementation of Company Repository"""
 
-    def __init__(
-        self, session: Session, current_user: User
-    ) -> None:
+    def __init__(self, session: Session, current_user: User) -> None:
         self.db = session
         self.current_user = current_user
 
     def create(self, company: CompanyCreate) -> Company:
         """Create a new company"""
         company_created: Company = Company.model_validate(
-            company,
-            update={"created_by": self.current_user.auth0_user_id}
+            company, update={"created_by": self.current_user.auth0_user_id}
         )
         self.db.add(company_created)
         self.db.commit()

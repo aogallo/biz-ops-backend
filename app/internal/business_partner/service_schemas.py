@@ -4,8 +4,9 @@ These schemas define the contract between service and route layers.
 They are distinct from API schemas to separate internal and external contracts.
 """
 
-from app.internal.business_partner.entity import BusinessPartner
 from pydantic import BaseModel, ConfigDict, Field
+
+from app.internal.business_partner.entity import BusinessPartner
 
 
 class BusinessPartnerListServiceResponse(BaseModel):

@@ -10,7 +10,11 @@ from fastapi.responses import FileResponse
 from sqlmodel import Session
 
 from app.database import get_session
-from app.dependencies import get_current_user, verify_company_access, verify_token
+from app.dependencies import (
+    get_current_user,
+    verify_company_access,
+    verify_token,
+)
 from app.internal.report.schemas import GeneralJournalReport, SalesLedgerReport
 from app.internal.report.service import ReportService
 

@@ -7,9 +7,14 @@ import pytest
 from fastapi import HTTPException
 from pydantic import ValidationError
 
-from app.internal.business_partner.entity import BusinessPartner, BusinessPartnerCreate
+from app.internal.business_partner.entity import (
+    BusinessPartner,
+    BusinessPartnerCreate,
+)
 from app.internal.business_partner.service import BusinessPartnerService
-from app.internal.business_partner.service_schemas import BusinessPartnerListServiceResponse
+from app.internal.business_partner.service_schemas import (
+    BusinessPartnerListServiceResponse,
+)
 from app.internal.user.entity import User
 
 
@@ -43,7 +48,7 @@ class TestBusinessPartnerService:
         service = BusinessPartnerService(
             session=mock_session,
             current_user=mock_user,
-            organization_id=mock_user.organization_id
+            organization_id=mock_user.organization_id,
         )
         monkeypatch.setattr(service, "repository", mock_repository)
         return service
@@ -75,8 +80,8 @@ class TestBusinessPartnerService:
         mock_repository.get_count.return_value = 2
 
         # Act
-        result: BusinessPartnerListServiceResponse = service.list_all_customers(
-            offset=0, limit=10
+        result: BusinessPartnerListServiceResponse = (
+            service.list_all_customers(offset=0, limit=10)
         )
 
         # Assert - Pydantic model with attribute access
@@ -85,9 +90,7 @@ class TestBusinessPartnerService:
         assert len(result.customers) == 2
         assert result.customers[0].name == "BusinessPartner A"
         assert result.customers[1].name == "BusinessPartner B"
-        mock_repository.get_all.assert_called_once_with(
-            offset=0, limit=10
-        )
+        mock_repository.get_all.assert_called_once_with(offset=0, limit=10)
         mock_repository.get_count.assert_called_once()
 
     def test_list_all_customers_validates_response(
@@ -134,9 +137,7 @@ class TestBusinessPartnerService:
         # Assert
         assert result.count == 0
         assert result.customers == []
-        mock_repository.get_all.assert_called_once_with(
-            offset=20, limit=5
-        )
+        mock_repository.get_all.assert_called_once_with(offset=20, limit=5)
 
     def test_create_customer_success(self, service, mock_repository):
         """Test creating a customer successfully."""

@@ -49,4 +49,6 @@ class BusinessPartner(BusinessPartnerBase, TimestampMixin, table=True):
     )
 
     # Relationships
-    organization: "Organization" = Relationship(back_populates="business_partners")
+    organization: "Organization" = Relationship(
+        back_populates="business_partners"
+    )

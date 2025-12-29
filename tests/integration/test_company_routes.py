@@ -31,8 +31,9 @@ class TestCompanyRoutes:
         """Test creating a company with valid authentication."""
         # Use a unique name for each test run
         import time
-        from uuid import uuid4
+
         from sqlmodel import Session
+
         from app.internal.organization.entity import Organization
 
         unique_name = f"Test Company {time.time()}"
@@ -87,6 +88,7 @@ class TestCompanyRoutes:
         """Test reading companies with valid authentication."""
         # Create companies directly in the database
         from sqlmodel import Session
+
         from app.internal.organization.entity import Organization
 
         with Session(engine) as session:
@@ -167,6 +169,7 @@ class TestCompanyRoutes:
     ):
         """Test reading companies filtered by managed_by_accountant=true."""
         from sqlmodel import Session
+
         from app.internal.organization.entity import Organization
 
         with Session(engine) as session:
@@ -238,6 +241,7 @@ class TestCompanyRoutes:
     ):
         """Test reading companies filtered by managed_by_accountant=false."""
         from sqlmodel import Session
+
         from app.internal.organization.entity import Organization
 
         with Session(engine) as session:
@@ -309,6 +313,7 @@ class TestCompanyRoutes:
     ):
         """Test updating a company with valid authentication."""
         from sqlmodel import Session
+
         from app.internal.organization.entity import Organization
 
         # Create a company to update
@@ -397,6 +402,7 @@ class TestCompanyRoutes:
     ):
         """Test partial update of company fields."""
         from sqlmodel import Session
+
         from app.internal.organization.entity import Organization
 
         # Create a company

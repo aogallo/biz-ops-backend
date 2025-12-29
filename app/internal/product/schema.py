@@ -40,10 +40,18 @@ class ProductResponse(BaseModel):
     description: str | None
     price: float
     stock: int
-    created_by: str | None = Field(default=None, serialization_alias="createdBy")
-    created_at: datetime | None = Field(default=None, serialization_alias="createdAt")
-    updated_by: str | None = Field(default=None, serialization_alias="updatedBy")
-    updated_at: datetime | None = Field(default=None, serialization_alias="updatedAt")
+    created_by: str | None = Field(
+        default=None, serialization_alias="createdBy"
+    )
+    created_at: datetime | None = Field(
+        default=None, serialization_alias="createdAt"
+    )
+    updated_by: str | None = Field(
+        default=None, serialization_alias="updatedBy"
+    )
+    updated_at: datetime | None = Field(
+        default=None, serialization_alias="updatedAt"
+    )
 
 
 class ProductListResponse(BaseModel):

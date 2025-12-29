@@ -13,7 +13,10 @@ class ProductService:
     """Service for managing products (organization-scoped)."""
 
     def __init__(
-        self, session: Session, current_user: User, organization_id: UUID | None = None
+        self,
+        session: Session,
+        current_user: User,
+        organization_id: UUID | None = None,
     ):
         # Use provided organization_id or extract from current_user
         org_id = organization_id or current_user.organization_id

@@ -8,9 +8,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session, select
 
 from app.core.config import settings
-from app.core.exceptions import AuthenticationError, AuthorizationError
+from app.core.exceptions import AuthorizationError
 from app.database import get_session
-from app.internal.user.entity import User, UserAuthenticated, UserCompanyAccess
+from app.internal.user.entity import User, UserCompanyAccess
 
 logger = logging.getLogger(__name__)
 oauth2_scheme = HTTPBearer()
