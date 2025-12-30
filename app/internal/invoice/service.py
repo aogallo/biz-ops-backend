@@ -41,7 +41,10 @@ class InvoiceService:
     """Service for managing invoices (company-scoped)."""
 
     def __init__(
-        self, session: Session, current_user: User, company_id: UUID
+        self,
+        session: Session,
+        current_user: User,
+        company_id: UUID,
     ) -> None:
         self.session = session
         self.current_user = current_user
@@ -143,7 +146,12 @@ class InvoiceService:
         invoices = self.invoice_repo.get_all(offset, limit)
         return InvoiceListServiceResponse(count=count, invoices=invoices)
 
-    def process_file(self, file_bytes: bytes, invoice_type: InvoiceType):
+    def process_file(
+        self,
+        file_bytes: bytes,
+        invoice_type: InvoiceType,
+        company_id: UUID,
+    ):
         try:
             df = pd.read_excel(BytesIO(file_bytes))
             df.rename(
@@ -202,7 +210,9 @@ class InvoiceService:
 
                 if validated_rows:
                     response = self._process_validated_rows(
-                        validated_rows, invoice_type
+                        validated_rows,
+                        invoice_type,
+                        company_id,
                     )
 
             return response
@@ -310,6 +320,8 @@ class InvoiceService:
                     name=customer_data["name"],
                     email=None,
                     created_by=self.current_user.auth_id,
+                    is_customer=False,
+                    is_vendor=True,
                 )
                 new_customers.append(new_customer)
 
@@ -326,6 +338,7 @@ class InvoiceService:
         self,
         rows: list[InvoiceRowSchema],
         invoice_type: InvoiceType,
+        company_id: UUID,
     ):
         """Process validated rows: companies, invoices, details."""
         existing_companies = self._create_missing_companies(rows)
@@ -446,7 +459,7 @@ class InvoiceService:
         self.invoice_repo.add_bulk(invoices)
         logger.info("Invoices created successfully: %d", len(invoices))
 
-    def get_invoice_by_id(self, id: int):
+    def get_invoice_by_id(self, id: UUID):
         invoice = self.invoice_repo.get_invoice_by_id(id)
 
         if invoice is None:
@@ -457,12 +470,12 @@ class InvoiceService:
 
         return invoice
 
-    def get_invoice_deatils(self, id: int):
+    def get_invoice_deatils(self, id: UUID):
         details = self.invoice_repo.get_invoice_details(id)
 
         return details
 
-    def update_invoice_by_id(self, id: int, invoice: InvoiceUpdate):
+    def update_invoice_by_id(self, id: UUID, invoice: InvoiceUpdate):
         db_invoice = self.invoice_repo.get_invoice_by_id(id)
 
         if db_invoice is None:
@@ -476,7 +489,7 @@ class InvoiceService:
 
         return self.invoice_repo.update_by_id(db_invoice)
 
-    def update_account_invoice(self, id: int, invoice: InvoiceUpdateAccount):
+    def update_account_invoice(self, id: UUID, invoice: InvoiceUpdateAccount):
         """
         Update the account of an invoice
 
@@ -507,7 +520,7 @@ class InvoiceService:
             db_journal_entry = self.journal_entry_repo.get_by_id(db_invoice.id)
 
             if db_invoice.invoice_type == "expenses":
-                if len(db_journal_entry) == 0:
+                if db_journal_entry is None:
                     self._create_expenses_journal_entry(
                         invoice=db_invoice,
                         account=db_account,
@@ -519,7 +532,7 @@ class InvoiceService:
                         debit=db_invoice.subtotal,
                     )
             else:
-                if len(db_journal_entry) == 0:
+                if db_journal_entry is None:
                     self._create_income_journal_entry(
                         invoice=db_invoice,
                         account=db_account,
@@ -545,7 +558,7 @@ class InvoiceService:
             ) from e
 
     def _update_expense_journal_account(
-        self, invoice_id: int, account_id: int, debit: float
+        self, invoice_id: UUID, account_id: UUID, debit: float
     ):
         """Updating the account for the expense journal entry"""
         logger.info(
@@ -555,7 +568,7 @@ class InvoiceService:
         )
 
         db_journal_entry = self.journal_entry_repo.get_by_debit_invoice_id(
-            id=invoice_id, debit=debit
+            invoice_id=invoice_id, debit=debit
         )
 
         db_journal_entry.sqlmodel_update({"account_id": account_id})
@@ -563,11 +576,12 @@ class InvoiceService:
         self.journal_entry_repo.update_by_id(db_journal_entry)
 
     def _update_income_journal_account(
-        self, invoice_id: int, account_id: int, credit: float
+        self, invoice_id: UUID, account_id: UUID, credit: float
     ):
         """Updating the account for the income journal entry"""
         db_journal_entry = self.journal_entry_repo.get_by_credit_invoice_id(
-            id=invoice_id, credit=credit
+            invoice_id=invoice_id,
+            credit=credit,
         )
 
         db_journal_entry.sqlmodel_update({"account_id": account_id})
@@ -589,24 +603,14 @@ class InvoiceService:
             debit = invoice.subtotal
             credit = 0
 
-            if invoice.id is None:
-                raise ValueError(
-                    "Invoice must be exist before creating journal entry"
-                )
-
-            if account.id is None:
-                raise ValueError(
-                    "Account must be saved exist before creating journal entry"
-                )
-
             # 1. DEBIT: Expense account (subtotal without IVA)
             new_journal_entry = JournalEntry(
-                company_id=invoice.customer_id,
+                company_id=invoice.business_partner_id,
                 account_id=account.id,
                 invoice_id=invoice.id,
                 debit=debit,
                 credit=credit,
-                description=f"Expense - {invoice.customer.name}",
+                description=f"Expense - {invoice.business_partner.name}",
                 created_by=self.current_user.auth_id,
             )
 
@@ -623,7 +627,7 @@ class InvoiceService:
 
             # create iva journal entry
             new_iva_journal_entry = JournalEntry(
-                company_id=invoice.customer_id,
+                company_id=invoice.business_partner_id,
                 account_id=iva_account_id,
                 invoice_id=invoice.id,
                 debit=invoice.details[0].iva,
@@ -643,12 +647,12 @@ class InvoiceService:
                 )
 
             credit_jorunal_entry = JournalEntry(
-                company_id=invoice.customer_id,
+                company_id=invoice.business_partner_id,
                 account_id=credit_account_id,
                 invoice_id=invoice.id,
                 debit=0,
                 credit=invoice.total_amount,
-                description=f"Payable - {invoice.customer.name}",
+                description=f"Payable - {invoice.business_partner.name}",
                 created_by=self.current_user.auth_id,
             )
 
@@ -683,18 +687,6 @@ class InvoiceService:
 
             iva_account_id = self.accont_repo.get_iva_debit_account()
 
-            if invoice.id is None:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="The invoice is not found",
-                )
-
-            if account.id is None:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="The account was selected is not found",
-                )
-
             if debit_account_receivable is None:
                 raise ValueError("Debit account is not configured yet")
 
@@ -707,7 +699,7 @@ class InvoiceService:
                 invoice_id=invoice.id,
                 debit=invoice.total_amount,
                 credit=0,
-                description=f"Sale on Credit - {invoice.customer.name}",
+                description=f"Sale on Credit - {invoice.business_partner.name}",
                 created_by=self.current_user.auth_id,
             )
 
@@ -720,7 +712,7 @@ class InvoiceService:
                 invoice_id=invoice.id,
                 debit=0,
                 credit=invoice.subtotal,
-                description=f"Revenue - {invoice.customer.name}",
+                description=f"Revenue - {invoice.business_partner.name}",
                 created_by=self.current_user.auth_id,
             )
 

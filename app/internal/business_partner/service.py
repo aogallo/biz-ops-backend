@@ -48,7 +48,7 @@ class BusinessPartnerService:
 
         return self.repository.create(customer)
 
-    def list_all_customers(
+    def list_business_partner(
         self, offset: int, limit: int
     ) -> BusinessPartnerListServiceResponse:
         """

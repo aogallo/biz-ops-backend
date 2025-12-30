@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 from uuid import UUID, uuid4
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -33,9 +33,11 @@ class JournalEntry(JournalEntryBase, TimestampMixin, table=True):
     Represents double-entry bookkeeping transactions.
     """
 
-    __tablename__ = "journal_entry"
+    __tablename__: ClassVar[str] = "journal_entry"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
+
+    created_by: str
 
     # Foreign keys
     company_id: UUID = Field(foreign_key="companies.id", index=True)

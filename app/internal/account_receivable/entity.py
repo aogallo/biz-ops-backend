@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 from uuid import UUID, uuid4
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -29,7 +29,7 @@ class AccountReceivable(AccountReceivableBase, TimestampMixin, table=True):
     Represents amounts owed by customers.
     """
 
-    __tablename__ = "accounts_receivable"
+    __tablename__: ClassVar[str] = "accounts_receivable"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 

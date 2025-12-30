@@ -18,7 +18,10 @@ class BusinessPartnerRepositoryImpl(BusinessPartnerRepository):
     """
 
     def __init__(
-        self, session: Session, current_user: User, organization_id: UUID
+        self,
+        session: Session,
+        current_user: User,
+        organization_id: UUID,
     ) -> None:
         self.db = session
         self.current_user = current_user

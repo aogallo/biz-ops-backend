@@ -15,7 +15,10 @@ class AccountRepositoryImpl(AccountRepository):
     """
 
     def __init__(
-        self, session: Session, current_user: User, organization_id: UUID
+        self,
+        session: Session,
+        current_user: User,
+        organization_id: UUID,
     ) -> None:
         self.db = session
         self.current_user = current_user
@@ -59,15 +62,6 @@ class AccountRepositoryImpl(AccountRepository):
         statement = select(Account).where(
             Account.organization_id == self.organization_id,
             Account.name == name,
-        )
-        account: Account | None = self.db.exec(statement).one_or_none()
-        return account
-
-    def get_by_code(self, code: str) -> Account | None:
-        """Get an account by code (scoped to organization)"""
-        statement = select(Account).where(
-            Account.organization_id == self.organization_id,
-            Account.code == code,
         )
         account: Account | None = self.db.exec(statement).one_or_none()
         return account

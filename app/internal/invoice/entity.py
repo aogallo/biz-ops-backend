@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, ClassVar, Literal
 from uuid import UUID, uuid4
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -99,8 +99,6 @@ class InvoiceUpdateAccount(SQLModel):
 class Invoice(InvoiceBase, TimestampMixin, table=True):
     """Invoice entity."""
 
-    __tablename__ = "invoice"
-
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
     # Foreign keys
@@ -111,6 +109,8 @@ class Invoice(InvoiceBase, TimestampMixin, table=True):
     account_id: UUID | None = Field(
         foreign_key="account.id", index=True, default=None
     )
+
+    created_by: str
 
     # Relationships
     company: "Company" = Relationship(back_populates="invoices")
@@ -192,15 +192,17 @@ class InvoiceDetailUpdate(SQLModel):
 class InvoiceDetail(InvoiceDetailBase, TimestampMixin, table=True):
     """Invoice detail entity."""
 
-    __tablename__ = "invoice_detail"
+    __tablename__: ClassVar[str] = "invoice_detail"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
     # Foreign key
-    invoice_id: UUID = Field(foreign_key="invoice.id")
+    invoice_id: UUID | None = Field(default=None, foreign_key="invoice.id")
 
     # Relationship
     invoice: "Invoice" = Relationship(back_populates="details")
+
+    created_by: str
 
     def calculate_totals(self):
         """Calculate subtotal, total taxes, and total"""

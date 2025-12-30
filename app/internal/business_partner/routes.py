@@ -21,7 +21,7 @@ router = APIRouter(
 
 
 @router.get("", response_model=BusinessPartnerListResponse)
-def list_customers(
+def list_business_partner(
     page: int = 1,
     limit: int = 10,
     session: Session = Depends(get_session),
@@ -31,7 +31,7 @@ def list_customers(
     offset = calculate_offset(page=page, page_size=limit)
 
     service = BusinessPartnerService(session, current_user)
-    result = service.list_all_customers(offset=offset, limit=limit)
+    result = service.list_business_partner(offset=offset, limit=limit)
 
     pagination = PaginationResponse(
         total=result.count,

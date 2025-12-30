@@ -27,8 +27,6 @@ class Category(CategoryBase, TimestampMixin, table=True):
     Categories are organization-scoped (shared across companies).
     """
 
-    __tablename__ = "category"
-
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     organization_id: UUID = Field(
         foreign_key="organizations.id",

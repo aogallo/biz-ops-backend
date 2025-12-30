@@ -176,3 +176,16 @@ warn_required_dynamic_aliases = true
 dev = [
     "ruff>=0.14.7",
 ]
+
+
+# ==============================================================================
+# PYRIGHT
+# ==============================================================================
+[tool.pyright]
+
+# SQLAlchemy / SQLModel false positives
+reportIncompatibleVariableOverride = false
+
+# Optional but often useful
+reportMissingTypeStubs = false
+reportUnknownMemberType = false

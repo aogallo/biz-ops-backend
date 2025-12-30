@@ -58,8 +58,6 @@ class Company(CompanyBase, TimestampMixin, table=True):
     All data is scoped to company id for multi-tenancy.
     """
 
-    __tablename__ = "companies"
-
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     organization_id: UUID = Field(
         foreign_key="organizations.id",

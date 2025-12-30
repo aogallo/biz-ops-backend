@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import EmailStr
@@ -39,7 +39,7 @@ class BusinessPartner(BusinessPartnerBase, TimestampMixin, table=True):
     Example: 'Los 3 pollos hermanos' vendor can be used across multiple client companies.
     """
 
-    __tablename__ = "business_partner"
+    __tablename__: ClassVar[str] = "business_partner"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     organization_id: UUID = Field(
@@ -47,6 +47,7 @@ class BusinessPartner(BusinessPartnerBase, TimestampMixin, table=True):
         nullable=False,
         index=True,
     )
+    created_by: str
 
     # Relationships
     organization: "Organization" = Relationship(

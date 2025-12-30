@@ -94,13 +94,13 @@ class JournalEntryRepositoryImpl(JournalEntryRepository):
         self.db.refresh(journal_entry)
         return journal_entry
 
-    def get_by_id(self, id: UUID) -> JournalEntry | None:
+    def get_by_id(self, id: UUID) -> list[JournalEntry] | None:
         """Get a journal entry by id (scoped to company)"""
         statement = select(JournalEntry).where(
             JournalEntry.company_id == self.company_id,
             JournalEntry.id == id,
         )
-        result: JournalEntry | None = self.db.exec(statement).one_or_none()
+        result: list[JournalEntry] | None = self.db.exec(statement)._allrows()
         return result
 
     def get_all(self, offset: int = 0, limit: int = 100) -> list[JournalEntry]:

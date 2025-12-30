@@ -38,8 +38,6 @@ class Account(AccountBase, TimestampMixin, table=True):
     Accounts are organization-scoped (shared across companies).
     """
 
-    __tablename__ = "account"
-
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     organization_id: UUID = Field(
         foreign_key="organizations.id",

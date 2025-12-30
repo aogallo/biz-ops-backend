@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from sqlmodel import Session, select
 
 from app.internal.account.entity import Account, AccountCreate
@@ -9,7 +11,9 @@ class AccountRepositoryImpl(AccountRepository):
     """Implementation of Account Repository"""
 
     def __init__(
-        self, session: Session, current_user: UserAuthenticated
+        self,
+        session: Session,
+        current_user: UserAuthenticated,
     ) -> None:
         self.db = session
         self.current_user = current_user
@@ -40,36 +44,36 @@ class AccountRepositoryImpl(AccountRepository):
         ).one_or_none()
         return account
 
-    def get_by_id(self, id: int) -> Account | None:
+    def get_by_id(self, id: UUID) -> Account | None:
         """Get an account by id"""
         return self.db.get(Account, id)
 
-    def get_iva_credit_account(self) -> int | None:
+    def get_iva_credit_account(self) -> UUID | None:
         """Get IVA account"""
         statement = select(Account.id).where(
             Account.name == "CREDITO IMPUESTOS"
         )
-        account_id: int | None = self.db.exec(statement).one_or_none()
+        account_id: UUID | None = self.db.exec(statement).one_or_none()
         return account_id if account_id else None
 
-    def get_default_payable_account(self) -> int | None:
+    def get_default_payable_account(self) -> UUID | None:
         """Get default account payable"""
         statement = select(Account.id).where(
             Account.name == "CUENTAS POR PAGAR"
         )
-        account_id: int | None = self.db.exec(statement).one_or_none()
+        account_id: UUID | None = self.db.exec(statement).one_or_none()
         return account_id if account_id else None
 
-    def get_default_receivable_account(self) -> int | None:
+    def get_default_receivable_account(self) -> UUID | None:
         """Get default account receivable"""
         statement = select(Account.id).where(Account.name == "CAJA")
 
-        account_id: int | None = self.db.exec(statement).one_or_none()
+        account_id: UUID | None = self.db.exec(statement).one_or_none()
         return account_id if account_id else None
 
-    def get_iva_debit_account(self) -> int | None:
+    def get_iva_debit_account(self) -> UUID | None:
         """Get IVA debit account"""
         statement = select(Account.id).where(Account.name == "CAJA")
 
-        account_id: int | None = self.db.exec(statement).one_or_none()
+        account_id: UUID | None = self.db.exec(statement).one_or_none()
         return account_id if account_id else None
