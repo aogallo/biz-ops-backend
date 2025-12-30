@@ -34,6 +34,7 @@ class Product(ProductBase, TimestampMixin, table=True):
     __tablename__: ClassVar[str] = "product"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
+    created_by: str
     organization_id: UUID = Field(
         foreign_key="organization.id",
         nullable=False,

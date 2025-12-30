@@ -83,6 +83,8 @@ class Organization(
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
+    created_by: str
+
     # Optional: Subscription for billing (can be added later)
     subscription_id: UUID | None = Field(default=None, nullable=True)
 

@@ -12,6 +12,7 @@ class OrganizationRepositoryImpl(OrganizationRepository):
 
     def create(self, organization: Organization) -> Organization:
         """Create a organization"""
+        organization.created_by = self.current_user.auth_id
         self.db.add(organization)
         self.db.commit()
         self.db.refresh(organization)
