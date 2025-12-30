@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, ClassVar, Literal
+from typing import TYPE_CHECKING, ClassVar, Literal, Optional
 from uuid import UUID, uuid4
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from app.internal.account.entity import Account
     from app.internal.business_partner.entity import BusinessPartner
     from app.internal.company.entity import Company
+    from app.internal.journal.entity import JournalEntry
 
 InvoiceState = Literal["draft", "open", "paid", "void"]
 
@@ -114,9 +115,14 @@ class Invoice(InvoiceBase, TimestampMixin, table=True):
 
     # Relationships
     company: "Company" = Relationship(back_populates="invoices")
-    business_partner: "BusinessPartner" = Relationship()
-    account: "Account" = Relationship()
+    business_partner: "BusinessPartner" = Relationship(
+        back_populates="invoices"
+    )
+    account: Optional["Account"] = Relationship(back_populates="invoices")
     details: list["InvoiceDetail"] = Relationship(back_populates="invoice")
+    journal_entries: list["JournalEntry"] = Relationship(
+        back_populates="invoice"
+    )
 
     def calculate_totals(self):
         """Calculate invoice totals from details"""
@@ -200,7 +206,7 @@ class InvoiceDetail(InvoiceDetailBase, TimestampMixin, table=True):
     invoice_id: UUID | None = Field(default=None, foreign_key="invoice.id")
 
     # Relationship
-    invoice: "Invoice" = Relationship(back_populates="details")
+    invoice: Optional["Invoice"] = Relationship(back_populates="details")
 
     created_by: str
 

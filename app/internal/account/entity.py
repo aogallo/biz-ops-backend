@@ -7,6 +7,8 @@ from sqlmodel import Field, Relationship, SQLModel
 from app.internal.shared.entity import TimestampMixin
 
 if TYPE_CHECKING:
+    from app.internal.invoice.entity import Invoice
+    from app.internal.journal.entity import JournalEntry
     from app.internal.organization.entity import Organization
 
 
@@ -47,3 +49,7 @@ class Account(AccountBase, TimestampMixin, table=True):
 
     # Relationships
     organization: "Organization" = Relationship(back_populates="accounts")
+    invoices: list["Invoice"] = Relationship(back_populates="account")
+    journal_entries: list["JournalEntry"] = Relationship(
+        back_populates="account"
+    )

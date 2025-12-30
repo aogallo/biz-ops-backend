@@ -2,14 +2,26 @@
 
 from datetime import datetime
 from unittest.mock import Mock
+from uuid import uuid4
 
 import pytest
 
 from app.internal.report.repository_impl import ReportRepositoryImpl
+from app.internal.user.entity import User
 
 
 class TestReportClassificationAggregation:
     """Test sales ledger report aggregates by classification correctly."""
+
+    @pytest.fixture
+    def mock_user(self):
+        """Create mock user."""
+        mock = Mock(spec=User)
+        mock.auth_id = "auth0|test"
+        mock.auth0_user_id = "auth0|test"
+        mock.organization_id = uuid4()
+        mock.permissions = []
+        return mock
 
     @pytest.fixture
     def mock_session(self):
@@ -17,9 +29,13 @@ class TestReportClassificationAggregation:
         return Mock()
 
     @pytest.fixture
-    def repository(self, mock_session):
+    def repository(self, mock_session, mock_user):
         """Create repository with mocked session."""
-        return ReportRepositoryImpl(session=mock_session)
+        return ReportRepositoryImpl(
+            session=mock_session,
+            current_user=mock_user,
+            company_id=uuid4(),
+        )
 
     def test_aggregation_locally_taxed_goods(self, repository, mock_session):
         """Test invoices classified as local+goods+taxed aggregate correctly."""
@@ -44,7 +60,6 @@ class TestReportClassificationAggregation:
         mock_session.exec.return_value = mock_result
 
         entries = repository.get_sales_ledger_entries(
-            company_id=1,
             start_date=datetime(2024, 1, 1),
             end_date=datetime(2024, 12, 31),
         )
@@ -85,7 +100,6 @@ class TestReportClassificationAggregation:
         mock_session.exec.return_value = mock_result
 
         entries = repository.get_sales_ledger_entries(
-            company_id=1,
             start_date=datetime(2024, 1, 1),
             end_date=datetime(2024, 12, 31),
         )
@@ -127,7 +141,6 @@ class TestReportClassificationAggregation:
         mock_session.exec.return_value = mock_result
 
         entries = repository.get_sales_ledger_entries(
-            company_id=1,
             start_date=datetime(2024, 1, 1),
             end_date=datetime(2024, 12, 31),
         )
@@ -266,7 +279,6 @@ class TestReportClassificationAggregation:
         mock_session.exec.return_value = mock_result
 
         entries = repository.get_sales_ledger_entries(
-            company_id=1,
             start_date=datetime(2024, 1, 1),
             end_date=datetime(2024, 12, 31),
         )
@@ -336,7 +348,6 @@ class TestReportClassificationAggregation:
         mock_session.exec.return_value = mock_result
 
         entries = repository.get_sales_ledger_entries(
-            company_id=1,
             start_date=datetime(2024, 1, 1),
             end_date=datetime(2024, 12, 31),
         )

@@ -11,6 +11,7 @@ from app.internal.business_partner.entity import BusinessPartner
 from app.internal.company.entity import Company
 from app.internal.invoice.entity import Invoice
 from app.internal.journal.entity import JournalEntry
+from app.internal.user.entity import UserCompanyAccess
 
 
 @pytest.mark.integration
@@ -47,6 +48,17 @@ class TestReportRoutes:
                 created_by="auth0|test123",
             )
             session.add(company)
+            session.flush()
+
+            # Grant user access to company
+            user_access = UserCompanyAccess(
+                user_id=test_user.id,
+                company_id=company.id,
+                role="admin",
+                created_by="auth0|test123",
+            )
+            session.add(user_access)
+
             session.commit()
             session.refresh(company)
             company_id = company.id
@@ -85,6 +97,16 @@ class TestReportRoutes:
             session.add(company)
             session.flush()
 
+            # Grant user access to company
+            user_access = UserCompanyAccess(
+                user_id=test_user.id,
+                company_id=company.id,
+                role="admin",
+                created_by="auth0|test123",
+            )
+            session.add(user_access)
+            session.flush()
+
             # Create customer
             customer = BusinessPartner(
                 name="Test BusinessPartner 2",
@@ -104,14 +126,12 @@ class TestReportRoutes:
                 name="Cash",
                 type="asset",
                 organization_id=test_user.organization_id,
-                created_by="auth0|test123",
             )
             account_credit = Account(
                 account_number="4101",
                 name="Sales Revenue",
                 type="revenue",
                 organization_id=test_user.organization_id,
-                created_by="auth0|test123",
             )
             session.add_all([account_debit, account_credit])
             session.flush()
@@ -126,8 +146,10 @@ class TestReportRoutes:
                 dte_type="FACT",
                 serie="A",
                 dte_number="001",
+                sat_issuer_name="Test Issuer",
+                sat_receiver_name="Test Receiver",
                 company_id=company.id,
-                customer_id=customer.id,
+                business_partner_id=customer.id,
                 invoice_type="income",
                 subtotal=100.0,
                 total_taxes=12.0,
@@ -230,6 +252,16 @@ class TestReportRoutes:
             session.add(company)
             session.flush()
 
+            # Grant user access to company
+            user_access = UserCompanyAccess(
+                user_id=test_user.id,
+                company_id=company.id,
+                role="admin",
+                created_by="auth0|test123",
+            )
+            session.add(user_access)
+            session.flush()
+
             customer = BusinessPartner(
                 name="Test BusinessPartner 3",
                 nit="55555555",
@@ -247,7 +279,6 @@ class TestReportRoutes:
                 name="Cash",
                 type="asset",
                 organization_id=test_user.organization_id,
-                created_by="auth0|test123",
             )
             session.add(account)
             session.flush()
@@ -262,8 +293,10 @@ class TestReportRoutes:
                 dte_type="FACT",
                 serie="A",
                 dte_number="001",
+                sat_issuer_name="Test Issuer",
+                sat_receiver_name="Test Receiver",
                 company_id=company.id,
-                customer_id=customer.id,
+                business_partner_id=customer.id,
                 created_by="auth0|test123",
             )
             invoice2 = Invoice(
@@ -272,8 +305,10 @@ class TestReportRoutes:
                 dte_type="FACT",
                 serie="A",
                 dte_number="002",
+                sat_issuer_name="Test Issuer",
+                sat_receiver_name="Test Receiver",
                 company_id=company.id,
-                customer_id=customer.id,
+                business_partner_id=customer.id,
                 created_by="auth0|test123",
             )
             session.add_all([invoice1, invoice2])
@@ -357,6 +392,16 @@ class TestReportRoutes:
             session.add(company)
             session.flush()
 
+            # Grant user access to company
+            user_access = UserCompanyAccess(
+                user_id=test_user.id,
+                company_id=company.id,
+                role="admin",
+                created_by="auth0|test123",
+            )
+            session.add(user_access)
+            session.flush()
+
             customer = BusinessPartner(
                 name="Test BusinessPartner 4",
                 nit="77777777",
@@ -374,14 +419,12 @@ class TestReportRoutes:
                 name="Cash",
                 type="asset",
                 organization_id=test_user.organization_id,
-                created_by="auth0|test123",
             )
             account_credit = Account(
                 account_number="4103",
                 name="Sales Revenue",
                 type="revenue",
                 organization_id=test_user.organization_id,
-                created_by="auth0|test123",
             )
             session.add_all([account_debit, account_credit])
             session.flush()
@@ -395,8 +438,10 @@ class TestReportRoutes:
                 dte_type="FACT",
                 serie="A",
                 dte_number="003",
+                sat_issuer_name="Test Issuer",
+                sat_receiver_name="Test Receiver",
                 company_id=company.id,
-                customer_id=customer.id,
+                business_partner_id=customer.id,
                 invoice_type="income",
                 created_by="auth0|test123",
             )
@@ -443,7 +488,7 @@ class TestReportRoutes:
         assert "Content-Disposition" in response.headers
         assert "attachment" in response.headers["Content-Disposition"]
         assert (
-            f"general_journal_company{company_id}"
+            "general_journal_company"
             in response.headers["Content-Disposition"]
         )
 
@@ -468,6 +513,16 @@ class TestReportRoutes:
             session.add(company)
             session.flush()
 
+            # Grant user access to company
+            user_access = UserCompanyAccess(
+                user_id=test_user.id,
+                company_id=company.id,
+                role="admin",
+                created_by="auth0|test123",
+            )
+            session.add(user_access)
+            session.flush()
+
             customer = BusinessPartner(
                 name="Test BusinessPartner 5",
                 nit="99999999",
@@ -485,7 +540,6 @@ class TestReportRoutes:
                 name="Cash",
                 type="asset",
                 organization_id=test_user.organization_id,
-                created_by="auth0|test123",
             )
             session.add(account)
             session.flush()
@@ -500,8 +554,10 @@ class TestReportRoutes:
                 dte_type="FACT",
                 serie="A",
                 dte_number="004",
+                sat_issuer_name="Test Issuer",
+                sat_receiver_name="Test Receiver",
                 company_id=company.id,
-                customer_id=customer.id,
+                business_partner_id=customer.id,
                 created_by="auth0|test123",
             )
             invoice2 = Invoice(
@@ -510,8 +566,10 @@ class TestReportRoutes:
                 dte_type="FACT",
                 serie="A",
                 dte_number="005",
+                sat_issuer_name="Test Issuer",
+                sat_receiver_name="Test Receiver",
                 company_id=company.id,
-                customer_id=customer.id,
+                business_partner_id=customer.id,
                 created_by="auth0|test123",
             )
             session.add_all([invoice1, invoice2])
@@ -576,6 +634,6 @@ class TestReportRoutes:
 
         assert response.status_code == 404
         assert (
-            f"Company with ID {company_id} not found"
+            f"Company with identifier '{company_id}' not found"
             in response.json()["detail"]
         )

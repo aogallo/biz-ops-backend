@@ -33,12 +33,14 @@ class AccountPayable(AccountPayableBase, TimestampMixin, table=True):
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
-    # Foreign keys - FIXED: was pointing to customer.id, now points to companies.id
-    company_id: UUID = Field(foreign_key="companies.id", index=True)
+    # Foreign keys
+    company_id: UUID = Field(foreign_key="company.id", index=True)
     business_partner_id: UUID = Field(
         foreign_key="business_partner.id", index=True
     )
 
     # Relationships
-    company: "Company" = Relationship()
-    business_partner: "BusinessPartner" = Relationship()
+    company: "Company" = Relationship(back_populates="accounts_payable")
+    business_partner: "BusinessPartner" = Relationship(
+        back_populates="accounts_payable"
+    )

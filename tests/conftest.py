@@ -99,6 +99,9 @@ def test_product_fixture(engine, test_user: User) -> Product:
     """Create a test product in the database."""
     # Use a new session from the same engine to ensure data persists
     with Session(engine) as session:
+        if test_user.organization_id is None:
+            raise ValueError("User is not assigned to organization")
+
         product = Product(
             name="Test Product",
             description="A test product for integration tests",

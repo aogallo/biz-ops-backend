@@ -35,7 +35,13 @@ class TestProductService:
         return Mock()
 
     @pytest.fixture
-    def service(self, mock_session, mock_user, mock_repository, monkeypatch):
+    def service(
+        self,
+        mock_session,
+        mock_user,
+        mock_repository,
+        monkeypatch,
+    ):
         """Create a ProductService with mocked repository."""
         # Service extracts organization_id from mock_user.organization_id
         service = ProductService(
@@ -47,7 +53,12 @@ class TestProductService:
         monkeypatch.setattr(service, "repository", mock_repository)
         return service
 
-    def test_create_product_success(self, service, mock_repository):
+    def test_create_product_success(
+        self,
+        service,
+        mock_user,
+        mock_repository,
+    ):
         """Test successful product creation when name doesn't exist."""
         # Arrange
         product_data = ProductCreate(
@@ -62,7 +73,7 @@ class TestProductService:
             description="A high-performance laptop",
             price=999.99,
             stock=10,
-            organization_id=uuid4(),
+            organization_id=mock_user.organization_id,
             created_by="auth0|test123",
         )
         # Mock repository responses

@@ -1,5 +1,7 @@
 """Integration tests for product routes."""
 
+from uuid import uuid4
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -15,7 +17,7 @@ class TestProductRoutes:
     def test_read_products_unauthorized(self, client: TestClient):
         """Test that reading products without auth token fails."""
         # client fixture has NO auth - should get 403
-        response = client.get(f"{self.API_PREFIX}/products")
+        response = client.get(f"{self.API_PREFIX}/organization/11/products")
 
         print(f"\nUnauthorized test - Status: {response.status_code}")
         print(f"Response: {response.json()}\n")
@@ -33,6 +35,9 @@ class TestProductRoutes:
 
         unique_name = f"Test Laptop {time.time()}"
 
+        # Create organization_id for the test
+        org_id = uuid4()
+
         # Create a product via API
         product_data = {
             "name": unique_name,
@@ -42,7 +47,7 @@ class TestProductRoutes:
         }
 
         response = authenticated_client.post(
-            f"{self.API_PREFIX}/products",
+            f"{self.API_PREFIX}/organization/{org_id}/products",
             json=product_data,
         )
 
@@ -84,7 +89,9 @@ class TestProductRoutes:
             session.refresh(product)
 
         # Now read products via API
-        response = authenticated_client.get(f"{self.API_PREFIX}/products")
+        response = authenticated_client.get(
+            f"{self.API_PREFIX}/organization/{test_user.organization_id}/products"
+        )
 
         print(f"\nAuthenticated test - Status: {response.status_code}")
         print(f"Response: {response.json()}\n")

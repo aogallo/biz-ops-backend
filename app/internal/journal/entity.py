@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Optional
 from uuid import UUID, uuid4
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -51,6 +51,8 @@ class JournalEntry(JournalEntryBase, TimestampMixin, table=True):
 
     # Relationships
     company: "Company" = Relationship(back_populates="journal_entries")
-    account: "Account" = Relationship()
-    invoice: "Invoice" = Relationship()
-    user: "User" = Relationship(back_populates="journal_entries")
+    account: "Account" = Relationship(back_populates="journal_entries")
+    invoice: Optional["Invoice"] = Relationship(
+        back_populates="journal_entries"
+    )
+    user: Optional["User"] = Relationship(back_populates="journal_entries")

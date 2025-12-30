@@ -6,7 +6,6 @@ from sqlmodel import Field, Relationship, SQLModel
 from app.internal.shared.entity import TimestampMixin
 
 if TYPE_CHECKING:
-    from app.internal.category.entity import Category
     from app.internal.organization.entity import Organization
 
 
@@ -44,4 +43,3 @@ class Product(ProductBase, TimestampMixin, table=True):
 
     # Relationships
     organization: "Organization" = Relationship(back_populates="products")
-    category: "Category" = Relationship()

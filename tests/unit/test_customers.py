@@ -66,6 +66,8 @@ class TestBusinessPartnerService:
                 email="a@example.com",
                 organization_id=uuid4(),
                 created_by="user1",
+                is_vendor=False,
+                is_customer=True,
             ),
             BusinessPartner(
                 id=uuid4(),
@@ -74,6 +76,8 @@ class TestBusinessPartnerService:
                 email="b@example.com",
                 organization_id=uuid4(),
                 created_by="user2",
+                is_vendor=False,
+                is_customer=True,
             ),
         ]
         mock_repository.get_all.return_value = expected_customers
@@ -81,7 +85,7 @@ class TestBusinessPartnerService:
 
         # Act
         result: BusinessPartnerListServiceResponse = (
-            service.list_all_customers(offset=0, limit=10)
+            service.list_business_partner(offset=0, limit=10)
         )
 
         # Assert - Pydantic model with attribute access
@@ -102,7 +106,7 @@ class TestBusinessPartnerService:
         mock_repository.get_count.return_value = 0
 
         # Act
-        result = service.list_all_customers(offset=0, limit=10)
+        result = service.list_business_partner(offset=0, limit=10)
 
         # Assert - Pydantic ensures structure
         assert result.count == 0
@@ -115,7 +119,7 @@ class TestBusinessPartnerService:
         mock_repository.get_count.return_value = 0
 
         # Act
-        result = service.list_all_customers(offset=0, limit=10)
+        result = service.list_business_partner(offset=0, limit=10)
 
         # Assert - frozen=True prevents modification
         with pytest.raises(
@@ -132,7 +136,7 @@ class TestBusinessPartnerService:
         mock_repository.get_count.return_value = 0
 
         # Act
-        result = service.list_all_customers(offset=20, limit=5)
+        result = service.list_business_partner(offset=20, limit=5)
 
         # Assert
         assert result.count == 0
