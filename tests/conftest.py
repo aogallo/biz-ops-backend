@@ -19,8 +19,13 @@ from sqlmodel import Session, SQLModel, StaticPool, create_engine
 from app.database import get_session
 
 # Import all entities so SQLModel.metadata knows about all tables
+# ruff: noqa: F401 - imports needed for SQLModel metadata
 from app.internal.account.entity import Account
+from app.internal.account_payable.entity import AccountPayable
+from app.internal.account_receivable.entity import AccountReceivable
+from app.internal.business_partner.entity import BusinessPartner
 from app.internal.category.entity import Category
+from app.internal.company.entity import Company
 from app.internal.invoice.entity import Invoice, InvoiceDetail
 from app.internal.journal.entity import JournalEntry
 from app.internal.organization.entity import Organization
