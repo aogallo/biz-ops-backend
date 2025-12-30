@@ -62,7 +62,7 @@ class InvoiceBase(SQLModel):
 
     # State management
     state: str = "draft"
-    is_cancelled: bool | None = False
+    is_cancelled: bool = False
     cancelled_date: datetime | None = None
 
     # SAT issuer and receiver names
@@ -102,7 +102,7 @@ class Invoice(InvoiceBase, TimestampMixin, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
     # Foreign keys
-    company_id: UUID = Field(foreign_key="companies.id", index=True)
+    company_id: UUID = Field(foreign_key="company.id", index=True)
     business_partner_id: UUID = Field(
         foreign_key="business_partner.id", index=True
     )

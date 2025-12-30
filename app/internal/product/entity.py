@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 from uuid import UUID, uuid4
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -31,11 +31,11 @@ class Product(ProductBase, TimestampMixin, table=True):
     Products are organization-scoped (shared across companies).
     """
 
-    __tablename__ = "product"
+    __tablename__: ClassVar[str] = "product"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     organization_id: UUID = Field(
-        foreign_key="organizations.id",
+        foreign_key="organization.id",
         nullable=False,
         index=True,
     )

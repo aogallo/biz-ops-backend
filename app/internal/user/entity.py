@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 from uuid import UUID, uuid4
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -26,11 +26,11 @@ class UserCompanyAccess(SQLModel, table=True):
     Controls which users have access to which companies and their permissions.
     """
 
-    __tablename__ = "user_company_access"
+    __tablename__: ClassVar[str] = "user_company_access"
 
     # Composite primary key
-    user_id: UUID = Field(foreign_key="users.id", primary_key=True)
-    company_id: UUID = Field(foreign_key="companies.id", primary_key=True)
+    user_id: UUID = Field(foreign_key="user.id", primary_key=True)
+    company_id: UUID = Field(foreign_key="company.id", primary_key=True)
 
     # Role for this user in this company
     role: str = Field(
@@ -52,7 +52,7 @@ class User(TimestampMixin, table=True):
     They can access multiple companies based on user company access.
     """
 
-    __tablename__ = "users"
+    __tablename__: ClassVar[str] = "user"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
@@ -62,7 +62,7 @@ class User(TimestampMixin, table=True):
 
     organization_id: UUID | None = Field(
         default=None,
-        foreign_key="organizations.id",
+        foreign_key="organization.id",
         nullable=True,
         index=True,
     )

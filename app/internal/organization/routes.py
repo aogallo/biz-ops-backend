@@ -30,3 +30,8 @@ def create_organization(
     org = Organization(**organization.model_dump())
 
     return service.create_organization(org)
+
+
+@router.get("")
+def list_organization():
+    return []

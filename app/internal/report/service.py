@@ -24,7 +24,10 @@ class ReportService:
     """Service for managing reports (company-scoped)."""
 
     def __init__(
-        self, session: Session, current_user: User, company_id: UUID
+        self,
+        session: Session,
+        current_user: User,
+        company_id: UUID,
     ) -> None:
         self.session = session
         self.current_user = current_user
@@ -39,7 +42,9 @@ class ReportService:
 
         # Company-scoped repository
         self._report_repo = ReportRepositoryImpl(
-            session, current_user, company_id
+            session,
+            current_user,
+            company_id,
         )
         self._company_repo = CompanyRepositoryImpl(session, current_user)
 
@@ -108,7 +113,8 @@ class ReportService:
 
         # Get report data (reuse existing method)
         report_data = self.get_general_journal_report(
-            start_date=start_date, end_date=end_date
+            start_date=start_date,
+            end_date=end_date,
         )
 
         # Generate PDF

@@ -12,7 +12,6 @@ class ReportRepository(ABC):
     @abstractmethod
     def get_general_journal_entries(
         self,
-        company_id: int,
         start_date: datetime | None = None,
         end_date: datetime | None = None,
     ) -> list[GeneralJournalEntry]:

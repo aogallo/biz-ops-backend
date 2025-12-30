@@ -40,13 +40,13 @@ class JournalEntry(JournalEntryBase, TimestampMixin, table=True):
     created_by: str
 
     # Foreign keys
-    company_id: UUID = Field(foreign_key="companies.id", index=True)
+    company_id: UUID = Field(foreign_key="company.id", index=True)
     account_id: UUID = Field(foreign_key="account.id", index=True)
     invoice_id: UUID | None = Field(
         default=None, foreign_key="invoice.id", index=True
     )
     user_id: UUID | None = Field(
-        default=None, foreign_key="users.id", index=True
+        default=None, foreign_key="user.id", index=True
     )
 
     # Relationships

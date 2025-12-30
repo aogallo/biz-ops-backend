@@ -8,7 +8,6 @@ import pandas as pd
 from fastapi import HTTPException, status
 from sqlmodel import Session
 
-from app.core.exceptions import NotFoundError
 from app.internal.account.entity import Account
 from app.internal.account.respository_impl import AccountRepositoryImpl
 from app.internal.business_partner.entity import BusinessPartner
@@ -53,9 +52,12 @@ class InvoiceService:
         # Get company to extract organization_id for org-scoped repos
         company = session.get(Company, company_id)
         if not company:
-            raise NotFoundError(f"Company {company_id} not found")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Company {company_id} not found",
+            )
 
-        self.organization_id = company.organization_id
+        self.organization_id: UUID = company.organization_id
 
         # Company-scoped repositories
         self.invoice_repo = InvoiceRepositoryImpl(
@@ -70,7 +72,9 @@ class InvoiceService:
             session, current_user, self.organization_id
         )
         self.accont_repo = AccountRepositoryImpl(
-            session, current_user, self.organization_id
+            session=session,
+            current_user=current_user,
+            organization_id=self.organization_id,
         )
 
         # Company repo for lookups (not scoped)
@@ -150,7 +154,6 @@ class InvoiceService:
         self,
         file_bytes: bytes,
         invoice_type: InvoiceType,
-        company_id: UUID,
     ):
         try:
             df = pd.read_excel(BytesIO(file_bytes))
@@ -212,7 +215,6 @@ class InvoiceService:
                     response = self._process_validated_rows(
                         validated_rows,
                         invoice_type,
-                        company_id,
                     )
 
             return response
@@ -270,7 +272,11 @@ class InvoiceService:
 
         return list(customers.values())
 
-    def _create_missing_companies(self, rows: list[InvoiceRowSchema]):
+    def _create_missing_companies(
+        self,
+        rows: list[InvoiceRowSchema],
+        organization_id: UUID,
+    ):
         """Find and create companies that don't exist in the database"""
         # 1. Batch get/create users
         unique_companies = self._get_unique_companies(rows)
@@ -289,6 +295,7 @@ class InvoiceService:
                     nit=company_data["nit"],
                     name=company_data["name"],
                     created_by=self.current_user.auth_id,
+                    organization_id=organization_id,
                 )
                 new_companies.append(new_company)
 
@@ -306,9 +313,9 @@ class InvoiceService:
         """Find and create customers that do not exist in the database"""
         unique_customers = self._get_unique_customers(invoices)
 
-        existing_customers = self.customer_repo.get_customers_by_nit(
-            unique_customers
-        )
+        # Extract NITs from unique_customers list of dicts
+        nits = [c["nit"] for c in unique_customers]
+        existing_customers = self.customer_repo.get_by_nits(nits)
         existing_nits_set = {c.nit for c in existing_customers}
 
         # Create missing customers
@@ -322,6 +329,7 @@ class InvoiceService:
                     created_by=self.current_user.auth_id,
                     is_customer=False,
                     is_vendor=True,
+                    organization_id=self.organization_id,
                 )
                 new_customers.append(new_customer)
 
@@ -338,10 +346,12 @@ class InvoiceService:
         self,
         rows: list[InvoiceRowSchema],
         invoice_type: InvoiceType,
-        company_id: UUID,
     ):
         """Process validated rows: companies, invoices, details."""
-        existing_companies = self._create_missing_companies(rows)
+        existing_companies = self._create_missing_companies(
+            rows,
+            organization_id=self.organization_id,
+        )
         customers = self._create_missing_customers(rows)
 
         # Create NIT-to-ID lookup dictionaries
@@ -362,10 +372,14 @@ class InvoiceService:
         invoices_to_create = []
         for row in rows:
             # Map NITs to IDs
-            company_id = company_nit_to_id.get(row.company_nit)
-            customer_id = customer_nit_to_id.get(row.customer_nit)
+            row_company_id: UUID | None = company_nit_to_id.get(
+                row.company_nit
+            )
+            row_customer_id: UUID | None = customer_nit_to_id.get(
+                row.customer_nit
+            )
 
-            if not company_id or not customer_id:
+            if not row_company_id or not row_customer_id:
                 logger.warning(
                     "Skipping row - missing mapping: "
                     "company_nit=%s, customer_nit=%s",
@@ -394,11 +408,13 @@ class InvoiceService:
             invoice = Invoice(
                 date=invoice_date,
                 authorization_number=row.authorization_number,
+                sat_issuer_name=row.company_name,
+                sat_receiver_name=row.customer_name,
                 dte_type=row.dte_type,
                 serie=row.serie,
                 dte_number=str(row.dte_number),
-                company_id=company_id,
-                customer_id=customer_id,
+                company_id=row_company_id,
+                business_partner_id=row_customer_id,
                 currency=row.money,
                 state=row.state,
                 is_cancelled=row.is_voided,

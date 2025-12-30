@@ -23,6 +23,7 @@ from app.internal.business_partner import routes as business_partner_routes
 from app.internal.category import routes as category_routes
 from app.internal.company import routes as company_routes
 from app.internal.invoice import routes as invoice_routes
+from app.internal.organization import routes as organization_routes
 from app.internal.product import routes as product_routes
 from app.internal.report import routes as report_routes
 from app.schemas.common import HealthResponse
@@ -213,6 +214,7 @@ app.include_router(router=invoice_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=category_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=account_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=report_routes.router, prefix=API_V1_PREFIX)
+app.include_router(router=organization_routes.router, prefix=API_V1_PREFIX)
 
 # Future v2 routers can be added like this:
 # API_V2_PREFIX = "/api/v2"

@@ -5,7 +5,7 @@ from sqlmodel import Session
 
 from app.internal.account.entity import Account, AccountCreate
 from app.internal.account.respository_impl import AccountRepositoryImpl
-from app.internal.user.entity import UserAuthenticated
+from app.internal.user.entity import User
 
 
 class AccountService:
@@ -14,11 +14,11 @@ class AccountService:
     def __init__(
         self,
         session: Session,
-        current_user: UserAuthenticated,
+        current_user: User,
         organization_id: UUID | None = None,
     ) -> None:
         # Use provided organization_id or extract from current_user
-        org_id = organization_id or current_user
+        org_id = organization_id or current_user.organization_id
 
         if not org_id:
             raise HTTPException(
@@ -26,7 +26,11 @@ class AccountService:
                 detail="User must belong to an organization",
             )
 
-        self.account_repo = AccountRepositoryImpl(session, current_user)
+        self.account_repo = AccountRepositoryImpl(
+            organization_id=org_id,
+            session=session,
+            current_user=current_user,
+        )
 
     def list_accounts(self) -> list[Account]:
         """List all accounts"""

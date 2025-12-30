@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 
 from app.internal.account.entity import Account, AccountCreate
 from app.internal.account.repository import AccountRepository
-from app.internal.user.entity import UserAuthenticated
+from app.internal.user.entity import User
 
 
 class AccountRepositoryImpl(AccountRepository):
@@ -12,11 +12,13 @@ class AccountRepositoryImpl(AccountRepository):
 
     def __init__(
         self,
+        organization_id: UUID,
         session: Session,
-        current_user: UserAuthenticated,
+        current_user: User,
     ) -> None:
         self.db = session
         self.current_user = current_user
+        self.organization_id = organization_id
 
     def get_all(self) -> list[Account]:
         statement = select(Account)

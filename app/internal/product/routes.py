@@ -14,7 +14,7 @@ from app.schemas.common import PaginationResponse
 from app.utils.pagination import calculate_offset
 
 router = APIRouter(
-    prefix="/products",
+    prefix="/organization/{organization_id}/products",
     tags=["Products"],
     dependencies=[
         Depends(verify_token),

@@ -119,7 +119,7 @@ async def upload_file(
 
     service = InvoiceService(session, current_user, company_id)
 
-    service.process_file(file_bytes, invoiceType, company_id)
+    service.process_file(file_bytes, invoiceType)
 
     return Response(status_code=200)
 

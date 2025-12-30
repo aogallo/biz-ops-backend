@@ -43,7 +43,7 @@ class BusinessPartner(BusinessPartnerBase, TimestampMixin, table=True):
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     organization_id: UUID = Field(
-        foreign_key="organizations.id",
+        foreign_key="organization.id",
         nullable=False,
         index=True,
     )

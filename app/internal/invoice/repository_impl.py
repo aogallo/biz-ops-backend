@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import Session, func, select
+from sqlmodel import Session, desc, func, select
 
 from app.internal.invoice.entity import Invoice, InvoiceDetail
 from app.internal.invoice.repository import InvoiceRepository
@@ -17,7 +17,10 @@ class InvoiceRepositoryImpl(InvoiceRepository):
     """
 
     def __init__(
-        self, session: Session, current_user: User, company_id: UUID
+        self,
+        session: Session,
+        current_user: User,
+        company_id: UUID,
     ) -> None:
         self.db = session
         self.current_user = current_user
@@ -52,7 +55,8 @@ class InvoiceRepositoryImpl(InvoiceRepository):
     def get_cancelled_invoices(self) -> list[Invoice]:
         """Get all cancelled invoices (scoped to company)"""
         statement = select(Invoice).where(
-            Invoice.company_id == self.company_id, Invoice.is_cancelled
+            Invoice.company_id == self.company_id,
+            Invoice.is_cancelled,
         )
         result: list[Invoice] = self.db.exec(statement)._allrows()
         return result
@@ -98,7 +102,7 @@ class InvoiceRepositoryImpl(InvoiceRepository):
         statement = (
             select(Invoice)
             .where(Invoice.company_id == self.company_id)
-            .order_by(Invoice.date.desc())
+            .order_by(desc(Invoice.date))
             .offset(offset)
             .limit(limit)
         )
@@ -173,3 +177,13 @@ class InvoiceRepositoryImpl(InvoiceRepository):
         )
         count: int = self.db.exec(count_statement).one()
         return count
+
+    def get_invoices_by_customer(
+        self, business_partner_id: UUID
+    ) -> list[Invoice]:
+        """Get all invoices by customer"""
+        statement = select(Invoice).where(
+            Invoice.business_partner_id == business_partner_id
+        )
+        result: list[Invoice] = self.db.exec(statement)._allrows()
+        return result

@@ -79,7 +79,7 @@ class Organization(
 ):
     """Entity for Organization"""
 
-    __tablename__: ClassVar[str] = "organizations"
+    __tablename__: ClassVar[str] = "organization"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 

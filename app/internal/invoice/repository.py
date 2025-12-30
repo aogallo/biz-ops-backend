@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
+from uuid import UUID
 
 from app.internal.invoice.entity import Invoice, InvoiceDetail
 from app.internal.invoice.schema import InvoiceCreate, InvoiceDetailCreate
@@ -21,7 +22,9 @@ class InvoiceRepository(ABC):
         pass
 
     @abstractmethod
-    def get_invoices_by_customer(self, customer_id: int) -> list[Invoice]:
+    def get_invoices_by_customer(
+        self, business_partner_id: UUID
+    ) -> list[Invoice]:
         """Get all invoices by customer"""
         pass
 
@@ -38,7 +41,7 @@ class InvoiceRepository(ABC):
         pass
 
     @abstractmethod
-    def cancel_invoice(self, invoice_id: int, cancelled_by: str) -> bool:
+    def cancel_invoice(self, invoice_id: UUID, cancelled_by: str) -> bool:
         """Cancel an invoice by id"""
         pass
 
@@ -52,7 +55,7 @@ class InvoiceDetailRepository(ABC):
         pass
 
     @abstractmethod
-    def get_details_by_invoice(self, invoice_id: int) -> list[InvoiceDetail]:
+    def get_details_by_invoice(self, invoice_id: UUID) -> list[InvoiceDetail]:
         """Get all details by invoice"""
         pass
 
@@ -63,7 +66,9 @@ class InvoiceDetailRepository(ABC):
 
     @abstractmethod
     def update_detail_taxes(
-        self, detail_id: int, taxes: dict
+        self,
+        detail_id: UUID,
+        taxes: dict,
     ) -> InvoiceDetail:
         """Update tax amounts by detail id"""
         pass

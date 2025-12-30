@@ -1,18 +1,18 @@
+from uuid import UUID
+
 from fastapi import HTTPException, status
 from sqlmodel import Session
 
 from app.internal.company.entity import Company, CompanyCreate
 from app.internal.company.repostiory_impl import CompanyRepositoryImpl
 from app.internal.company.service_schemas import CompanyListServiceResponse
-from app.internal.user.entity import UserAuthenticated
+from app.internal.user.entity import User
 
 
 class CompanyService:
     """Service for managing companies."""
 
-    def __init__(
-        self, session: Session, current_user: UserAuthenticated
-    ) -> None:
+    def __init__(self, session: Session, current_user: User) -> None:
         self.repository = CompanyRepositoryImpl(session, current_user)
 
     def create_company(self, company: CompanyCreate):
@@ -26,7 +26,7 @@ class CompanyService:
 
         return self.repository.create(company=company)
 
-    def update_company(self, company_id: int, company_update: Company):
+    def update_company(self, company_id: UUID, company_update: Company):
         """Update a company by ID."""
         existing_company = self.repository.get_by_id(company_id)
 
@@ -69,7 +69,7 @@ class CompanyService:
 
         return CompanyListServiceResponse(count=count, companies=companies)
 
-    def get_by_id(self, id: int):
+    def get_by_id(self, id: UUID):
         """Get company by id"""
         existing_company = self.repository.get_by_id(id)
         if existing_company is None:
