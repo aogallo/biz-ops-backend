@@ -1,4 +1,4 @@
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from app.internal.organization.entity import Organization
 from app.internal.organization.repository import OrganizationRepository
@@ -41,3 +41,9 @@ class OrganizationRepositoryImpl(OrganizationRepository):
         statement = select(Organization).where(Organization.name == name)
         result: Organization | None = self.db.exec(statement).one_or_none()
         return result
+
+    def get_count(self) -> int:
+        """Get count of organizations"""
+        count_statement = select(func.count()).select_from(Organization)
+        count: int = self.db.exec(count_statement).one()
+        return count

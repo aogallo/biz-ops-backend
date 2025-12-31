@@ -7,8 +7,8 @@ from sqlmodel import Field, Relationship, SQLModel
 from app.internal.shared.entity import TimestampMixin
 
 if TYPE_CHECKING:
-    from app.internal.account_payable.entity import AccountPayable
-    from app.internal.account_receivable.entity import AccountReceivable
+    # from app.internal.account_payable.entity import AccountPayable
+    # from app.internal.account_receivable.entity import AccountReceivable
     from app.internal.invoice.entity import Invoice
     from app.internal.organization.entity import Organization
 
@@ -57,9 +57,9 @@ class BusinessPartner(BusinessPartnerBase, TimestampMixin, table=True):
         back_populates="business_partners"
     )
     invoices: list["Invoice"] = Relationship(back_populates="business_partner")
-    accounts_payable: list["AccountPayable"] = Relationship(
-        back_populates="business_partner"
-    )
-    accounts_receivable: list["AccountReceivable"] = Relationship(
-        back_populates="business_partner"
-    )
+    # accounts_payable: list["AccountPayable"] = Relationship(
+    #     back_populates="business_partner"
+    # )
+    # accounts_receivable: list["AccountReceivable"] = Relationship(
+    #     back_populates="business_partner"
+    # )

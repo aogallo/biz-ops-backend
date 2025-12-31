@@ -16,7 +16,7 @@ class ProductService:
         self,
         session: Session,
         current_user: User,
-        organization_id: UUID | None = None,
+        organization_id: UUID,
     ):
         # Use provided organization_id or extract from current_user
         org_id = organization_id or current_user.organization_id

@@ -5,6 +5,9 @@ from app.internal.organization.entity import Organization
 from app.internal.organization.repository_impl import (
     OrganizationRepositoryImpl,
 )
+from app.internal.organization.schema import (
+    OrganizationList,
+)
 from app.internal.user.entity import User
 
 
@@ -29,3 +32,9 @@ class OrganizationService:
             )
 
         return self.repository.create(organization)
+
+    def get_organizations(self, offset: int, limit: int):
+        count = self.repository.get_count()
+        organizations = self.repository.get_all(offset, limit)
+
+        return OrganizationList(count=count, organizations=organizations)
