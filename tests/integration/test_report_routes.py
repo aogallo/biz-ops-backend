@@ -29,7 +29,7 @@ class TestReportRoutes:
             f"{self.API_PREFIX}/companies/{company_id}/reports/general-journal"
         )
 
-        assert response.status_code == 401
+        assert response.status_code == 403
         assert "Not authenticated" in response.json()["detail"]
 
     def test_get_general_journal_empty(
@@ -371,7 +371,7 @@ class TestReportRoutes:
             f"{self.API_PREFIX}/companies/{company_id}/reports/general-journal/pdf"
         )
 
-        assert response.status_code == 401
+        assert response.status_code == 403
         assert "Not authenticated" in response.json()["detail"]
 
     def test_download_general_journal_pdf_success(

@@ -14,13 +14,13 @@ class TestCompanyRoutes:
 
     def test_read_companies_unauthorized(self, client: TestClient):
         """Test that reading companies without auth token fails."""
-        # client fixture has NO auth - should get 401
+        # client fixture has NO auth - should get 403
         response = client.get(f"{self.API_PREFIX}/companies")
 
         print(f"\nUnauthorized test - Status: {response.status_code}")
         print(f"Response: {response.json()}\n")
 
-        assert response.status_code == 401
+        assert response.status_code == 403
         assert "Not authenticated" in response.json()["detail"]
 
     def test_create_company_success(
