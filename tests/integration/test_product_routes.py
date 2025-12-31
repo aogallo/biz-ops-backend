@@ -16,13 +16,13 @@ class TestProductRoutes:
 
     def test_read_products_unauthorized(self, client: TestClient):
         """Test that reading products without auth token fails."""
-        # client fixture has NO auth - should get 403
+        # client fixture has NO auth - should get 401
         response = client.get(f"{self.API_PREFIX}/organization/11/products")
 
         print(f"\nUnauthorized test - Status: {response.status_code}")
         print(f"Response: {response.json()}\n")
 
-        assert response.status_code == 403
+        assert response.status_code == 401
         assert "Not authenticated" in response.json()["detail"]
 
     def test_create_product_success(
