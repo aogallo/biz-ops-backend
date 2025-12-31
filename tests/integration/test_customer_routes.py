@@ -4,11 +4,11 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from app.internal.customer.entity import Customer
+from app.internal.business_partner.entity import BusinessPartner
 
 
 @pytest.mark.integration
-class TestCustomerRoutes:
+class TestBusinessPartnerRoutes:
     """Integration tests for /customers endpoints."""
 
     API_PREFIX = "/api/v1"
@@ -28,22 +28,29 @@ class TestCustomerRoutes:
         self,
         authenticated_client: TestClient,
         engine,
+        test_user,
     ):
         """Test listing customers with valid authentication."""
-        # Create customers directly in the database
+        # Create customers in the test_user's organization
         with Session(engine) as session:
-            customer1 = Customer(
-                name="Test Customer 1",
+            customer1 = BusinessPartner(
+                name="Test BusinessPartner 1",
                 nit="12345",
                 email="customer1@example.com",
                 address="123 Main St",
+                organization_id=test_user.organization_id,
+                is_vendor=False,
+                is_customer=True,
                 created_by="auth0|test123",
             )
-            customer2 = Customer(
-                name="Test Customer 2",
+            customer2 = BusinessPartner(
+                name="Test BusinessPartner 2",
                 nit="67890",
                 email="customer2@example.com",
                 address="456 Oak Ave",
+                organization_id=test_user.organization_id,
+                is_vendor=False,
+                is_customer=True,
                 created_by="auth0|test123",
             )
             session.add_all([customer1, customer2])
@@ -79,9 +86,9 @@ class TestCustomerRoutes:
         # Verify customer data
         customers = data["customers"]
         assert len(customers) == 2
-        assert customers[0]["name"] == "Test Customer 1"
+        assert customers[0]["name"] == "Test BusinessPartner 1"
         assert customers[0]["email"] == "customer1@example.com"
-        assert customers[1]["name"] == "Test Customer 2"
+        assert customers[1]["name"] == "Test BusinessPartner 2"
 
     def test_list_customers_empty_result(
         self, authenticated_client: TestClient
@@ -101,15 +108,19 @@ class TestCustomerRoutes:
         self,
         authenticated_client: TestClient,
         engine,
+        test_user,
     ):
         """Test customer list pagination."""
-        # Create 15 customers to test pagination
+        # Create 15 customers in the test_user's organization
         with Session(engine) as session:
             customers = [
-                Customer(
-                    name=f"Customer {i}",
+                BusinessPartner(
+                    name=f"BusinessPartner {i}",
                     nit=f"{10000 + i}",
                     email=f"customer{i}@example.com",
+                    organization_id=test_user.organization_id,
+                    is_vendor=False,
+                    is_customer=True,
                     created_by="auth0|test123",
                 )
                 for i in range(15)

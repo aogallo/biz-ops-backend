@@ -1,12 +1,16 @@
-from datetime import UTC, datetime
+from typing import TYPE_CHECKING, ClassVar
+from uuid import UUID, uuid4
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
+
+from app.internal.shared.entity import TimestampMixin
+
+if TYPE_CHECKING:
+    from app.internal.organization.entity import Organization
 
 
 class ProductBase(SQLModel):
-    """
-    Base product
-    """
+    """Base product model."""
 
     name: str
     description: str | None = None
@@ -15,23 +19,27 @@ class ProductBase(SQLModel):
 
 
 class ProductCreate(ProductBase):
-    """
-    Create product
-    """
+    """Create product schema."""
 
     pass
 
 
-class Product(ProductBase, table=True):
+class Product(ProductBase, TimestampMixin, table=True):
     """
-    Product entity
+    Product entity.
+    Products are organization-scoped (shared across companies).
     """
 
-    id: int | None = Field(default=None, primary_key=True)
+    __tablename__: ClassVar[str] = "product"
 
-    category_id: int | None = Field(default=None, foreign_key="category.id")
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    created_by: str
+    organization_id: UUID = Field(
+        foreign_key="organization.id",
+        nullable=False,
+        index=True,
+    )
+    category_id: UUID | None = Field(default=None, foreign_key="category.id")
 
-    created_by: str = Field(index=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_by: str | None = Field(default=None, index=True)
-    updated_at: datetime | None = Field(default=None)
+    # Relationships
+    organization: "Organization" = Relationship(back_populates="products")

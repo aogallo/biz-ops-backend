@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from unittest.mock import Mock
+from uuid import uuid4
 
 import pytest
 from fastapi import HTTPException
@@ -57,8 +58,9 @@ class TestInvoiceEntityClassification:
             dte_type="FACT",
             serie="A",
             dte_number="100",
-            company_id=1,
-            customer_id=1,
+            sat_issuer_name="Test Issuer",
+            sat_receiver_name="Test Receiver",
+            business_partner_id=uuid4(),
         )
         # Should have NULL defaults
         assert invoice_data.origin is None
@@ -73,8 +75,9 @@ class TestInvoiceEntityClassification:
             dte_type="FACT",
             serie="A",
             dte_number="100",
-            company_id=1,
-            customer_id=1,
+            sat_issuer_name="Test Issuer",
+            sat_receiver_name="Test Receiver",
+            business_partner_id=uuid4(),
             origin="imported",
             item_type="services",
             tax_status="exempt",
@@ -91,8 +94,9 @@ class TestInvoiceEntityClassification:
             dte_type="FACT",
             serie="A",
             dte_number="100",
-            company_id=1,
-            customer_id=1,
+            sat_issuer_name="Test Issuer",
+            sat_receiver_name="Test Receiver",
+            business_partner_id=uuid4(),
             origin="local",
             # item_type and tax_status not provided (NULL)
         )
@@ -120,8 +124,9 @@ class TestInvoiceEntityClassification:
                 dte_type="FACT",
                 serie="A",
                 dte_number="100",
-                company_id=1,
-                customer_id=1,
+                sat_issuer_name="Test Issuer",
+                sat_receiver_name="Test Receiver",
+                business_partner_id=uuid4(),
                 origin=origin,
                 item_type=item_type,
                 tax_status=tax_status,
@@ -142,8 +147,9 @@ class TestInvoiceSchemaClassification:
             dte_type="FACT",
             serie="A",
             dte_number="100",
-            company_id=1,
-            customer_id=1,
+            sat_issuer_name="Test Issuer",
+            sat_receiver_name="Test Receiver",
+            business_partner_id=uuid4(),
             # Classification fields not provided
         )
         # Should have None values
@@ -159,8 +165,9 @@ class TestInvoiceSchemaClassification:
             dte_type="FACT",
             serie="A",
             dte_number="100",
-            company_id=1,
-            customer_id=1,
+            sat_issuer_name="Test Issuer",
+            sat_receiver_name="Test Receiver",
+            business_partner_id=uuid4(),
             origin="imported",
             item_type="services",
             tax_status="exempt",
@@ -173,14 +180,16 @@ class TestInvoiceSchemaClassification:
         """Test InvoiceResponse uses camelCase serialization."""
         # Create entity
         invoice = Invoice(
-            id=1,
+            id=uuid4(),
             date=datetime.now(),
             authorization_number="AUTH123",
             dte_type="FACT",
             serie="A",
             dte_number="100",
-            company_id=1,
-            customer_id=1,
+            sat_issuer_name="Test Issuer",
+            sat_receiver_name="Test Receiver",
+            company_id=uuid4(),
+            business_partner_id=uuid4(),
             currency="GTQ",
             subtotal=100.0,
             total_taxes=12.0,
@@ -211,14 +220,16 @@ class TestInvoiceSchemaClassification:
     def test_invoice_response_schema_handles_null_classification(self):
         """Test InvoiceResponse handles NULL classification values."""
         invoice = Invoice(
-            id=1,
+            id=uuid4(),
             date=datetime.now(),
             authorization_number="AUTH123",
             dte_type="FACT",
             serie="A",
             dte_number="100",
-            company_id=1,
-            customer_id=1,
+            sat_issuer_name="Test Issuer",
+            sat_receiver_name="Test Receiver",
+            company_id=uuid4(),
+            business_partner_id=uuid4(),
             currency="GTQ",
             subtotal=100.0,
             total_taxes=0.0,
@@ -256,17 +267,31 @@ class TestInvoiceServiceClassificationValidation:
     @pytest.fixture
     def mock_user(self):
         """Create mock user."""
-        return User(auth_id="auth0|test", permissions=[])
+        mock = Mock(spec=User)
+        mock.auth_id = "auth0|test"
+        mock.auth0_user_id = "auth0|test"
+        mock.organization_id = uuid4()
+        mock.permissions = []
+        return mock
 
     @pytest.fixture
     def mock_session(self):
         """Create mock session."""
-        return Mock()
+        session = Mock()
+        # Mock session.get to return a mock Company when called
+        company = Mock()
+        company.organization_id = uuid4()
+        session.get.return_value = company
+        return session
 
     @pytest.fixture
     def service(self, mock_session, mock_user):
         """Create invoice service."""
-        return InvoiceService(session=mock_session, current_user=mock_user)
+        return InvoiceService(
+            session=mock_session,
+            current_user=mock_user,
+            company_id=uuid4(),
+        )
 
     def test_validate_classification_field_accepts_none(self, service):
         """Test validation accepts None values (no validation when NULL)."""

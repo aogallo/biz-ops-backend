@@ -1,6 +1,7 @@
 """Unit tests for ProductService - testing business logic in isolation."""
 
 from unittest.mock import Mock
+from uuid import uuid4
 
 import pytest
 from fastapi import HTTPException
@@ -16,10 +17,12 @@ class TestProductService:
     @pytest.fixture
     def mock_user(self):
         """Create a mock user for testing."""
-        return User(
-            auth_id="auth0|test123",
-            permissions=["create:product"],
-        )
+        mock = Mock(spec=User)
+        mock.auth_id = "auth0|test123"
+        mock.auth0_user_id = "auth0|test123"
+        mock.organization_id = uuid4()
+        mock.permissions = ["create:product"]
+        return mock
 
     @pytest.fixture
     def mock_session(self):
@@ -32,14 +35,30 @@ class TestProductService:
         return Mock()
 
     @pytest.fixture
-    def service(self, mock_session, mock_user, mock_repository, monkeypatch):
+    def service(
+        self,
+        mock_session,
+        mock_user,
+        mock_repository,
+        monkeypatch,
+    ):
         """Create a ProductService with mocked repository."""
-        service = ProductService(session=mock_session, current_user=mock_user)
+        # Service extracts organization_id from mock_user.organization_id
+        service = ProductService(
+            session=mock_session,
+            current_user=mock_user,
+            organization_id=mock_user.organization_id,
+        )
         # Replace the repository with our mock
         monkeypatch.setattr(service, "repository", mock_repository)
         return service
 
-    def test_create_product_success(self, service, mock_repository):
+    def test_create_product_success(
+        self,
+        service,
+        mock_user,
+        mock_repository,
+    ):
         """Test successful product creation when name doesn't exist."""
         # Arrange
         product_data = ProductCreate(
@@ -49,11 +68,12 @@ class TestProductService:
             stock=10,
         )
         expected_product = Product(
-            id=1,
+            id=uuid4(),
             name="Test Laptop",
             description="A high-performance laptop",
             price=999.99,
             stock=10,
+            organization_id=mock_user.organization_id,
             created_by="auth0|test123",
         )
         # Mock repository responses
@@ -64,7 +84,7 @@ class TestProductService:
         result = service.create_product(product_request=product_data)
 
         # Assert
-        assert result.id == 1
+        assert result == expected_product
         assert result.name == "Test Laptop"
         assert result.description == "A high-performance laptop"
         assert result.price == 999.99
@@ -84,11 +104,12 @@ class TestProductService:
             stock=5,
         )
         existing_product = Product(
-            id=1,
+            id=uuid4(),
             name="Existing Product",
             description="Already exists",
             price=99.99,
             stock=5,
+            organization_id=uuid4(),
             created_by="other_user",
         )
         # Mock: Product with same name already exists
@@ -109,19 +130,21 @@ class TestProductService:
         # Arrange
         expected_products = [
             Product(
-                id=1,
+                id=uuid4(),
                 name="Product A",
                 description="Description A",
                 price=10.00,
                 stock=5,
+                organization_id=uuid4(),
                 created_by="user1",
             ),
             Product(
-                id=2,
+                id=uuid4(),
                 name="Product B",
                 description="Description B",
                 price=20.00,
                 stock=10,
+                organization_id=uuid4(),
                 created_by="user2",
             ),
         ]

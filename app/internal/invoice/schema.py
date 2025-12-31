@@ -4,13 +4,14 @@ import math
 from datetime import datetime
 from enum import Enum
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlmodel import SQLModel
 
 from app.internal.account.entity import Account
+from app.internal.business_partner.schema import BusinessPartnerResponse
 from app.internal.company.schema import CompanyResponse
-from app.internal.customer.schema import CustomerResponse
 from app.schemas.common import PaginationResponse
 
 InvoiceState = Literal["draft", "open", "paid", "void", "Vigente"]
@@ -21,8 +22,8 @@ class InvoiceDetailResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    id: int
-    invoice_id: int = Field(serialization_alias="invoiceId")
+    id: UUID
+    invoice_id: UUID = Field(serialization_alias="invoiceId")
     product_code: str | None = Field(serialization_alias="productCode")
     product_name: str = Field(serialization_alias="productName")
     description: str | None
@@ -74,8 +75,9 @@ class InvoiceCreate(BaseModel):
     dte_type: str = Field(serialization_alias="dteType")
     serie: str
     dte_number: str = Field(serialization_alias="dteNumber")
-    company_id: int = Field(serialization_alias="companyId")
-    customer_id: int = Field(serialization_alias="customerId")
+    sat_issuer_name: str = Field(serialization_alias="satIssuerName")
+    sat_receiver_name: str = Field(serialization_alias="satReceiverName")
+    business_partner_id: UUID = Field(serialization_alias="businessPartnerId")
     currency: str = "GTQ"
     state: InvoiceState = "draft"
 
@@ -120,7 +122,7 @@ class InvoiceResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    id: int
+    id: UUID
     date: datetime
     authorization_number: str = Field(
         serialization_alias="authorizationNumber"
@@ -151,7 +153,7 @@ class InvoiceResponse(BaseModel):
 
     company: CompanyResponse | None = None
 
-    customer: CustomerResponse | None = None
+    customer: BusinessPartnerResponse | None = None
 
     account: Account | None = None
 
@@ -228,7 +230,7 @@ class InvoiceRowSchema(SQLModel):
         return str(value)
 
 
-class UniqueCustomers(BaseModel):
+class UniqueBusinessPartners(BaseModel):
     """Schema for unique customers."""
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)

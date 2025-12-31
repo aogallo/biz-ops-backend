@@ -7,10 +7,11 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app.internal.account.entity import Account
+from app.internal.business_partner.entity import BusinessPartner
 from app.internal.company.entity import Company
-from app.internal.customer.entity import Customer
 from app.internal.invoice.entity import Invoice
 from app.internal.journal.entity import JournalEntry
+from app.internal.user.entity import UserCompanyAccess
 
 
 @pytest.mark.integration
@@ -21,8 +22,11 @@ class TestReportRoutes:
 
     def test_get_general_journal_unauthorized(self, client: TestClient):
         """Test that getting general journal without auth fails."""
+        from uuid import uuid4
+
+        company_id = uuid4()
         response = client.get(
-            f"{self.API_PREFIX}/reports/general-journal?company_id=1"
+            f"{self.API_PREFIX}/companies/{company_id}/reports/general-journal"
         )
 
         assert response.status_code == 403
@@ -32,6 +36,7 @@ class TestReportRoutes:
         self,
         authenticated_client: TestClient,
         engine,
+        test_user,
     ):
         """Test getting general journal with no data."""
         # Create a company first
@@ -39,15 +44,27 @@ class TestReportRoutes:
             company = Company(
                 name="Test Company",
                 nit="12345678",
+                organization_id=test_user.organization_id,
                 created_by="auth0|test123",
             )
             session.add(company)
+            session.flush()
+
+            # Grant user access to company
+            user_access = UserCompanyAccess(
+                user_id=test_user.id,
+                company_id=company.id,
+                role="admin",
+                created_by="auth0|test123",
+            )
+            session.add(user_access)
+
             session.commit()
             session.refresh(company)
             company_id = company.id
 
         response = authenticated_client.get(
-            f"{self.API_PREFIX}/reports/general-journal?company_id={company_id}"
+            f"{self.API_PREFIX}/companies/{company_id}/reports/general-journal"
         )
 
         assert response.status_code == 200
@@ -65,6 +82,7 @@ class TestReportRoutes:
         self,
         authenticated_client: TestClient,
         engine,
+        test_user,
     ):
         """Test getting general journal with sample data."""
         # Create test data
@@ -73,17 +91,31 @@ class TestReportRoutes:
             company = Company(
                 name="Test Company 2",
                 nit="22222222",
+                organization_id=test_user.organization_id,
                 created_by="auth0|test123",
             )
             session.add(company)
             session.flush()
 
+            # Grant user access to company
+            user_access = UserCompanyAccess(
+                user_id=test_user.id,
+                company_id=company.id,
+                role="admin",
+                created_by="auth0|test123",
+            )
+            session.add(user_access)
+            session.flush()
+
             # Create customer
-            customer = Customer(
-                name="Test Customer 2",
+            customer = BusinessPartner(
+                name="Test BusinessPartner 2",
                 nit="33333333",
                 email="test2@example.com",
+                organization_id=test_user.organization_id,
                 created_by="auth0|test123",
+                is_customer=True,
+                is_vendor=False,
             )
             session.add(customer)
             session.flush()
@@ -93,13 +125,13 @@ class TestReportRoutes:
                 account_number="1101",
                 name="Cash",
                 type="asset",
-                created_by="auth0|test123",
+                organization_id=test_user.organization_id,
             )
             account_credit = Account(
                 account_number="4101",
                 name="Sales Revenue",
                 type="revenue",
-                created_by="auth0|test123",
+                organization_id=test_user.organization_id,
             )
             session.add_all([account_debit, account_credit])
             session.flush()
@@ -114,8 +146,10 @@ class TestReportRoutes:
                 dte_type="FACT",
                 serie="A",
                 dte_number="001",
+                sat_issuer_name="Test Issuer",
+                sat_receiver_name="Test Receiver",
                 company_id=company.id,
-                customer_id=customer.id,
+                business_partner_id=customer.id,
                 invoice_type="income",
                 subtotal=100.0,
                 total_taxes=12.0,
@@ -158,7 +192,7 @@ class TestReportRoutes:
 
         # Request report
         response = authenticated_client.get(
-            f"{self.API_PREFIX}/reports/general-journal?company_id={company_id}"
+            f"{self.API_PREFIX}/companies/{company_id}/reports/general-journal"
         )
 
         assert response.status_code == 200
@@ -202,6 +236,7 @@ class TestReportRoutes:
         self,
         authenticated_client: TestClient,
         engine,
+        test_user,
     ):
         """Test getting general journal with date filters."""
         # Create test data with different dates
@@ -211,16 +246,30 @@ class TestReportRoutes:
             company = Company(
                 name="Test Company 3",
                 nit="44444444",
+                organization_id=test_user.organization_id,
                 created_by="auth0|test123",
             )
             session.add(company)
             session.flush()
 
-            customer = Customer(
-                name="Test Customer 3",
+            # Grant user access to company
+            user_access = UserCompanyAccess(
+                user_id=test_user.id,
+                company_id=company.id,
+                role="admin",
+                created_by="auth0|test123",
+            )
+            session.add(user_access)
+            session.flush()
+
+            customer = BusinessPartner(
+                name="Test BusinessPartner 3",
                 nit="55555555",
                 email="test3@example.com",
+                organization_id=test_user.organization_id,
                 created_by="auth0|test123",
+                is_customer=True,
+                is_vendor=False,
             )
             session.add(customer)
             session.flush()
@@ -229,7 +278,7 @@ class TestReportRoutes:
                 account_number="1102",
                 name="Cash",
                 type="asset",
-                created_by="auth0|test123",
+                organization_id=test_user.organization_id,
             )
             session.add(account)
             session.flush()
@@ -244,8 +293,10 @@ class TestReportRoutes:
                 dte_type="FACT",
                 serie="A",
                 dte_number="001",
+                sat_issuer_name="Test Issuer",
+                sat_receiver_name="Test Receiver",
                 company_id=company.id,
-                customer_id=customer.id,
+                business_partner_id=customer.id,
                 created_by="auth0|test123",
             )
             invoice2 = Invoice(
@@ -254,8 +305,10 @@ class TestReportRoutes:
                 dte_type="FACT",
                 serie="A",
                 dte_number="002",
+                sat_issuer_name="Test Issuer",
+                sat_receiver_name="Test Receiver",
                 company_id=company.id,
-                customer_id=customer.id,
+                business_partner_id=customer.id,
                 created_by="auth0|test123",
             )
             session.add_all([invoice1, invoice2])
@@ -294,9 +347,8 @@ class TestReportRoutes:
 
         # Request report with date filter (only January)
         response = authenticated_client.get(
-            f"{self.API_PREFIX}/reports/general-journal"
-            f"?company_id={company_id}"
-            f"&start_date=2024-01-01T00:00:00"
+            f"{self.API_PREFIX}/companies/{company_id}/reports/general-journal"
+            f"?start_date=2024-01-01T00:00:00"
             f"&end_date=2024-01-31T23:59:59"
         )
 
@@ -312,8 +364,11 @@ class TestReportRoutes:
         self, client: TestClient
     ):
         """Test that getting general journal PDF without auth fails."""
+        from uuid import uuid4
+
+        company_id = uuid4()
         response = client.get(
-            f"{self.API_PREFIX}/reports/general-journal/pdf?company_id=1"
+            f"{self.API_PREFIX}/companies/{company_id}/reports/general-journal/pdf"
         )
 
         assert response.status_code == 403
@@ -323,6 +378,7 @@ class TestReportRoutes:
         self,
         authenticated_client: TestClient,
         engine,
+        test_user,
     ):
         """Test downloading general journal PDF with data."""
         # Create test data
@@ -330,16 +386,30 @@ class TestReportRoutes:
             company = Company(
                 name="Test Company 4",
                 nit="66666666",
+                organization_id=test_user.organization_id,
                 created_by="auth0|test123",
             )
             session.add(company)
             session.flush()
 
-            customer = Customer(
-                name="Test Customer 4",
+            # Grant user access to company
+            user_access = UserCompanyAccess(
+                user_id=test_user.id,
+                company_id=company.id,
+                role="admin",
+                created_by="auth0|test123",
+            )
+            session.add(user_access)
+            session.flush()
+
+            customer = BusinessPartner(
+                name="Test BusinessPartner 4",
                 nit="77777777",
                 email="test4@example.com",
+                organization_id=test_user.organization_id,
                 created_by="auth0|test123",
+                is_customer=True,
+                is_vendor=False,
             )
             session.add(customer)
             session.flush()
@@ -348,13 +418,13 @@ class TestReportRoutes:
                 account_number="1103",
                 name="Cash",
                 type="asset",
-                created_by="auth0|test123",
+                organization_id=test_user.organization_id,
             )
             account_credit = Account(
                 account_number="4103",
                 name="Sales Revenue",
                 type="revenue",
-                created_by="auth0|test123",
+                organization_id=test_user.organization_id,
             )
             session.add_all([account_debit, account_credit])
             session.flush()
@@ -368,8 +438,10 @@ class TestReportRoutes:
                 dte_type="FACT",
                 serie="A",
                 dte_number="003",
+                sat_issuer_name="Test Issuer",
+                sat_receiver_name="Test Receiver",
                 company_id=company.id,
-                customer_id=customer.id,
+                business_partner_id=customer.id,
                 invoice_type="income",
                 created_by="auth0|test123",
             )
@@ -408,7 +480,7 @@ class TestReportRoutes:
 
         # Request PDF
         response = authenticated_client.get(
-            f"{self.API_PREFIX}/reports/general-journal/pdf?company_id={company_id}"
+            f"{self.API_PREFIX}/companies/{company_id}/reports/general-journal/pdf"
         )
 
         assert response.status_code == 200
@@ -416,7 +488,7 @@ class TestReportRoutes:
         assert "Content-Disposition" in response.headers
         assert "attachment" in response.headers["Content-Disposition"]
         assert (
-            f"general_journal_company{company_id}"
+            "general_journal_company"
             in response.headers["Content-Disposition"]
         )
 
@@ -427,6 +499,7 @@ class TestReportRoutes:
         self,
         authenticated_client: TestClient,
         engine,
+        test_user,
     ):
         """Test downloading PDF with date filters."""
         # Create test data with different dates
@@ -434,16 +507,30 @@ class TestReportRoutes:
             company = Company(
                 name="Test Company 5",
                 nit="88888888",
+                organization_id=test_user.organization_id,
                 created_by="auth0|test123",
             )
             session.add(company)
             session.flush()
 
-            customer = Customer(
-                name="Test Customer 5",
+            # Grant user access to company
+            user_access = UserCompanyAccess(
+                user_id=test_user.id,
+                company_id=company.id,
+                role="admin",
+                created_by="auth0|test123",
+            )
+            session.add(user_access)
+            session.flush()
+
+            customer = BusinessPartner(
+                name="Test BusinessPartner 5",
                 nit="99999999",
                 email="test5@example.com",
+                organization_id=test_user.organization_id,
                 created_by="auth0|test123",
+                is_customer=True,
+                is_vendor=False,
             )
             session.add(customer)
             session.flush()
@@ -452,7 +539,7 @@ class TestReportRoutes:
                 account_number="1104",
                 name="Cash",
                 type="asset",
-                created_by="auth0|test123",
+                organization_id=test_user.organization_id,
             )
             session.add(account)
             session.flush()
@@ -467,8 +554,10 @@ class TestReportRoutes:
                 dte_type="FACT",
                 serie="A",
                 dte_number="004",
+                sat_issuer_name="Test Issuer",
+                sat_receiver_name="Test Receiver",
                 company_id=company.id,
-                customer_id=customer.id,
+                business_partner_id=customer.id,
                 created_by="auth0|test123",
             )
             invoice2 = Invoice(
@@ -477,8 +566,10 @@ class TestReportRoutes:
                 dte_type="FACT",
                 serie="A",
                 dte_number="005",
+                sat_issuer_name="Test Issuer",
+                sat_receiver_name="Test Receiver",
                 company_id=company.id,
-                customer_id=customer.id,
+                business_partner_id=customer.id,
                 created_by="auth0|test123",
             )
             session.add_all([invoice1, invoice2])
@@ -517,9 +608,8 @@ class TestReportRoutes:
 
         # Request PDF with date filter (only March)
         response = authenticated_client.get(
-            f"{self.API_PREFIX}/reports/general-journal/pdf"
-            f"?company_id={company_id}"
-            f"&start_date=2024-03-01T00:00:00"
+            f"{self.API_PREFIX}/companies/{company_id}/reports/general-journal/pdf"
+            f"?start_date=2024-03-01T00:00:00"
             f"&end_date=2024-03-31T23:59:59"
         )
 
@@ -535,9 +625,15 @@ class TestReportRoutes:
         authenticated_client: TestClient,
     ):
         """Test PDF download with non-existent company."""
+        from uuid import uuid4
+
+        company_id = uuid4()
         response = authenticated_client.get(
-            f"{self.API_PREFIX}/reports/general-journal/pdf?company_id=999999"
+            f"{self.API_PREFIX}/companies/{company_id}/reports/general-journal/pdf"
         )
 
         assert response.status_code == 404
-        assert "Company with ID 999999 not found" in response.json()["detail"]
+        assert (
+            f"Company with identifier '{company_id}' not found"
+            in response.json()["detail"]
+        )

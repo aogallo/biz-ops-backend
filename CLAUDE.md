@@ -231,6 +231,180 @@ async def create_resource(
 - Sessions auto-commit/rollback in dependency
 - Connection pooling configured (pool_size=10, max_overflow=20)
 
+### Multi-Tenancy Architecture
+
+The application implements **hierarchical multi-tenancy** with organization and company scoping. See [Multi-Tenancy Documentation](./docs/MULTI_TENANCY.md) for complete details.
+
+**Key Concepts:**
+- **Organization**: Top-level tenant (accounting firm)
+- **Company**: Client managed by organization
+- **Organization-scoped**: Data shared across companies (BusinessPartner, Account, Product, Category)
+- **Company-scoped**: Data isolated per company (Invoice, JournalEntry, Report)
+- **All IDs are UUID** (not int) for security and distributed systems
+
+**Tenant Hierarchy:**
+```
+Organization
+  ├── Company 1 (Client)
+  │   ├── Invoices (company-scoped)
+  │   └── Journal Entries (company-scoped)
+  ├── Company 2 (Client)
+  └── Shared Resources (organization-scoped)
+      ├── Business Partners (vendors/customers)
+      ├── Chart of Accounts
+      ├── Products
+      └── Categories
+```
+
+**Why BusinessPartner is organization-scoped:**
+- Same vendor can sell to multiple clients (e.g., "Los 3 pollos hermanos" supplies Company A, B, and C)
+- Avoids duplicate vendor entries across companies
+- Simplifies cross-company reporting
+
+**Repository Scoping:**
+
+Company-scoped repositories require `company_id`:
+```python
+class InvoiceRepositoryImpl:
+    def __init__(self, session: Session, current_user: User, company_id: UUID):
+        self.db = session
+        self.company_id = company_id  # Injected from route
+
+    def get_all(self) -> list[Invoice]:
+        # Automatically filtered by company
+        return self.db.query(Invoice).filter_by(
+            company_id=self.company_id
+        ).all()
+```
+
+Organization-scoped repositories require `organization_id`:
+```python
+class BusinessPartnerRepositoryImpl:
+    def __init__(self, session: Session, current_user: User, organization_id: UUID):
+        self.db = session
+        self.organization_id = organization_id
+
+    def get_all(self) -> list[BusinessPartner]:
+        # Automatically filtered by organization
+        return self.db.query(BusinessPartner).filter_by(
+            organization_id=self.organization_id
+        ).all()
+```
+
+**Service Layer Pattern:**
+
+Services for company-scoped entities extract `organization_id` from company:
+```python
+class InvoiceService:
+    def __init__(self, session: Session, current_user: User, company_id: UUID):
+        # Get company to extract organization_id
+        company = session.get(Company, company_id)
+        if not company:
+            raise NotFoundError("Company", company_id)
+
+        self.organization_id = company.organization_id
+
+        # Company-scoped repositories
+        self.invoice_repo = InvoiceRepositoryImpl(session, current_user, company_id)
+
+        # Organization-scoped repositories (shared resources)
+        self.bp_repo = BusinessPartnerRepositoryImpl(
+            session, current_user, self.organization_id
+        )
+```
+
+Services for organization-scoped entities extract `organization_id` from user:
+```python
+class BusinessPartnerService:
+    def __init__(
+        self, session: Session, current_user: User, organization_id: UUID | None = None
+    ):
+        # Use provided organization_id or extract from current_user
+        org_id = organization_id or current_user.organization_id
+        if not org_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User must belong to an organization"
+            )
+
+        self.repository = BusinessPartnerRepositoryImpl(session, current_user, org_id)
+```
+
+**Route Patterns:**
+
+Company-scoped routes include `company_id` in URL path:
+```python
+@router.get("/companies/{company_id}/invoices")
+def list_invoices(
+    company_id: UUID,  # From URL path
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+    _: None = Depends(verify_company_access),  # Access control
+):
+    service = InvoiceService(session, current_user, company_id)
+    return service.list_all_invoices()
+```
+
+Organization-scoped routes derive organization from user:
+```python
+@router.get("/customers")
+def list_customers(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+    # No explicit org_id - extracted from current_user
+):
+    service = BusinessPartnerService(session, current_user)
+    # Service uses current_user.organization_id internally
+    return service.list_all_customers()
+```
+
+**Access Control Dependencies:**
+
+```python
+# Verifies user has access to company (checks UserCompanyAccess table)
+verify_company_access(company_id: UUID, current_user: User) -> None
+
+# Verifies user belongs to organization
+verify_organization_access(organization_id: UUID, current_user: User) -> None
+```
+
+**SAT Invoice Upload:**
+
+The `company_id` in the URL path is **always** the tenant company (the client whose books we're managing). The emisor/receptor from the SAT file become business partners:
+
+```python
+@router.post("/companies/{company_id}/invoices/upload")
+def upload_file(
+    company_id: UUID,  # Tenant from URL
+    file: UploadFile,
+    invoice_type: str,  # "incomes" or "expenses"
+    ...
+):
+    # company_id = tenant company (the client)
+    # emisor/receptor = business partners (org-scoped)
+
+    if invoice_type == "expenses":
+        # Tenant is buying from vendor
+        partner = get_or_create_bp(emisor_nit, is_vendor=True)
+    else:
+        # Tenant is selling to customer
+        partner = get_or_create_bp(receptor_nit, is_customer=True)
+
+    create_invoice(
+        company_id=company_id,  # Tenant
+        business_partner_id=partner.id  # Vendor or customer
+    )
+```
+
+**Important Rules:**
+
+1. **Always use UUID for IDs** (not int)
+2. **Always add explicit `__tablename__`** to entities
+3. **Company-scoped routes must include `company_id` in path** (not query param)
+4. **Organization-scoped routes derive org from user** (no org_id in URL)
+5. **Services must initialize repos with correct scoping** (company_id or organization_id)
+6. **Never trust client-provided tenant IDs** (verify via middleware)
+
 ### Exception Handling
 
 Global exception handlers defined in `app/main.py`:

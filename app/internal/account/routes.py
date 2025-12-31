@@ -8,7 +8,7 @@ from app.internal.account.schema import AccountCreate, AccountResponse
 from app.internal.account.service import AccountService
 
 router = APIRouter(
-    prefix="/accounts",
+    prefix="/organization/{organization_id}/accounts",
     tags=["accounts"],
     dependencies=[Depends(verify_token)],
 )

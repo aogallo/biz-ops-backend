@@ -1,38 +1,46 @@
-from datetime import UTC, datetime
+from typing import TYPE_CHECKING, ClassVar
+from uuid import UUID, uuid4
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.internal.customer.entity import Customer
+from app.internal.shared.entity import TimestampMixin
+
+if TYPE_CHECKING:
+    from app.internal.business_partner.entity import BusinessPartner
+    from app.internal.company.entity import Company
 
 
 class AccountPayableBase(SQLModel):
-    """
-    Base account payable
-    """
+    """Base account payable model."""
 
-    company_id: int = Field(foreign_key="customer.id")
     amount: float
-
-    company: Customer = Relationship(back_populates="customer")
+    description: str | None = None
 
 
 class AccountPayableCreate(AccountPayableBase):
-    """
-    Create account payable
-    """
+    """Create account payable schema."""
 
-    pass
+    business_partner_id: UUID
 
 
-# cuenta por pagar
-class AccountPayable(AccountPayableBase, table=True):
+class AccountPayable(AccountPayableBase, TimestampMixin, table=True):
     """
-    Account payable
+    Account Payable entity (Cuentas por Pagar).
+    Represents amounts owed to vendors/suppliers.
     """
 
-    id: int | None = Field(default=None, primary_key=True)
+    __tablename__: ClassVar[str] = "accounts_payable"
 
-    created_by: str = Field(index=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_by: str | None = Field(default=None, index=True)
-    updated_at: datetime | None = Field(default=None)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+
+    # Foreign keys
+    company_id: UUID = Field(foreign_key="company.id", index=True)
+    business_partner_id: UUID = Field(
+        foreign_key="business_partner.id", index=True
+    )
+
+    # Relationships
+    company: "Company" = Relationship(back_populates="accounts_payable")
+    business_partner: "BusinessPartner" = Relationship(
+        back_populates="accounts_payable"
+    )

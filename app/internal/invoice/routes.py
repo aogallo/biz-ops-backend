@@ -1,4 +1,5 @@
 import logging
+from uuid import UUID
 
 from fastapi import (
     APIRouter,
@@ -12,7 +13,11 @@ from fastapi import (
 from sqlmodel import Session
 
 from app.database import get_session
-from app.dependencies import get_current_user, verify_token
+from app.dependencies import (
+    get_current_user,
+    verify_company_access,
+    verify_token,
+)
 from app.internal.invoice.entity import InvoiceUpdate as InvoiceUpdateEntity
 from app.internal.invoice.entity import (
     InvoiceUpdateAccount as InvoiceUpdateAccountEntity,
@@ -33,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 router = APIRouter(
-    prefix="/invoices",
+    prefix="/companies/{company_id}/invoices",
     tags=["Invoices"],
     dependencies=[
         Depends(verify_token),
@@ -43,15 +48,17 @@ router = APIRouter(
 
 @router.get("", response_model=InvoiceListResponse)
 def list_invoices(
+    company_id: UUID,
     page: int = 1,
     limit: int = 10,
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
+    _: None = Depends(verify_company_access),
 ):
-    """List all invoices with pagination."""
+    """List all invoices for a company with pagination."""
     offset = calculate_offset(page=page, page_size=limit)
 
-    service = InvoiceService(session, current_user)
+    service = InvoiceService(session, current_user, company_id)
     result = service.list_all_invoices(offset, limit)
 
     pagination = PaginationResponse(
@@ -73,38 +80,44 @@ def list_invoices(
 
 @router.get("/{id}/details", response_model=list[InvoiceDetailResponse])
 def get_invoice_details(
-    id: int,
+    company_id: UUID,
+    id: UUID,
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
+    _: None = Depends(verify_company_access),
 ):
     """List invoice details."""
-    service = InvoiceService(session, current_user)
+    service = InvoiceService(session, current_user, company_id)
     invoice_details = service.get_invoice_deatils(id)
     return invoice_details
 
 
 @router.get("/{id}", response_model=InvoiceResponse)
 def get_invoice(
-    id: int,
+    company_id: UUID,
+    id: UUID,
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
+    _: None = Depends(verify_company_access),
 ):
     """List an invoice by id."""
-    service = InvoiceService(session, current_user)
+    service = InvoiceService(session, current_user, company_id)
     invoice = service.get_invoice_by_id(id)
     return invoice
 
 
 @router.post("/upload")
 async def upload_file(
+    company_id: UUID,
     file: UploadFile,
     invoiceType: InvoiceType = Form(...),
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
+    _: None = Depends(verify_company_access),
 ):
     file_bytes = await file.read()
 
-    service = InvoiceService(session, current_user)
+    service = InvoiceService(session, current_user, company_id)
 
     service.process_file(file_bytes, invoiceType)
 
@@ -113,10 +126,12 @@ async def upload_file(
 
 @router.patch("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def update_invoice(
-    id: int,
+    company_id: UUID,
+    id: UUID,
     invoice: InvoiceUpdate,
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
+    _: None = Depends(verify_company_access),
 ):
     """
     Update an invoice.
@@ -124,7 +139,7 @@ def update_invoice(
     Returns the updated invoice.
     """
     try:
-        service = InvoiceService(session, current_user)
+        service = InvoiceService(session, current_user, company_id)
         invoice_entity = InvoiceUpdateEntity(
             **invoice.model_dump(exclude_unset=True)
         )
@@ -137,16 +152,18 @@ def update_invoice(
 
 @router.put("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def update_invoice_account(
-    id: int,
+    company_id: UUID,
+    id: UUID,
     invoice: InvoiceUpdateAccount,
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
+    _: None = Depends(verify_company_access),
 ):
     """
     Update invoice account.
     """
     try:
-        service = InvoiceService(session, current_user)
+        service = InvoiceService(session, current_user, company_id)
         invoice_entity = InvoiceUpdateAccountEntity(
             **invoice.model_dump(exclude_unset=True)
         )

@@ -1,58 +1,58 @@
-from datetime import UTC, datetime
+from typing import TYPE_CHECKING, ClassVar, Optional
+from uuid import UUID, uuid4
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.internal.account.entity import Account
-from app.internal.company.entity import Company
-from app.internal.invoice.entity import Invoice
+from app.internal.shared.entity import TimestampMixin
+
+if TYPE_CHECKING:
+    from app.internal.account.entity import Account
+    from app.internal.company.entity import Company
+    from app.internal.invoice.entity import Invoice
+    from app.internal.user.entity import User
 
 
 class JournalEntryBase(SQLModel):
-    """
-    Base journal entry
-    """
-
-    company_id: int
-    invoice_id: int
-    account_id: int
+    """Base journal entry model."""
 
     debit: float = Field(default=0)
     credit: float = Field(default=0)
-
     description: str
 
 
 class JournalEntryCreate(JournalEntryBase):
+    """Create journal entry schema."""
+
+    account_id: UUID
+    invoice_id: UUID | None = None
+
+
+class JournalEntry(JournalEntryBase, TimestampMixin, table=True):
     """
-    Create journal entry
+    Journal entry entity.
+    Represents double-entry bookkeeping transactions.
     """
 
-    pass
+    __tablename__: ClassVar[str] = "journal_entry"
 
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
 
-class JournalEntry(JournalEntryBase, table=True):
-    """
-    Journal entry entity
-    """
+    created_by: str
 
-    id: int | None = Field(default=None, primary_key=True)
-
-    account_id: int = Field(foreign_key="account.id")
-    account: Account = Relationship(
-        sa_relationship_kwargs={"foreign_keys": "[JournalEntry.account_id]"}
+    # Foreign keys
+    company_id: UUID = Field(foreign_key="company.id", index=True)
+    account_id: UUID = Field(foreign_key="account.id", index=True)
+    invoice_id: UUID | None = Field(
+        default=None, foreign_key="invoice.id", index=True
+    )
+    user_id: UUID | None = Field(
+        default=None, foreign_key="user.id", index=True
     )
 
-    company_id: int = Field(foreign_key="company.id")
-    company: Company = Relationship(
-        sa_relationship_kwargs={"foreign_keys": "[JournalEntry.company_id]"}
+    # Relationships
+    company: "Company" = Relationship(back_populates="journal_entries")
+    account: "Account" = Relationship(back_populates="journal_entries")
+    invoice: Optional["Invoice"] = Relationship(
+        back_populates="journal_entries"
     )
-
-    invoice_id: int = Field(foreign_key="invoice.id")
-    invoice: Invoice = Relationship(
-        sa_relationship_kwargs={"foreign_keys": "[JournalEntry.invoice_id]"}
-    )
-
-    created_by: str = Field(index=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_by: str | None = Field(default=None, index=True)
-    updated_at: datetime | None = Field(default=None)
+    user: Optional["User"] = Relationship(back_populates="journal_entries")

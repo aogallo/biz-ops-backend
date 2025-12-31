@@ -1,13 +1,14 @@
-"""Customer API schemas for requests and responses."""
+"""BusinessPartner API schemas for requests and responses."""
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.schemas.common import PaginationResponse
 
 
-class CustomerCreate(BaseModel):
+class BusinessPartnerCreate(BaseModel):
     """Schema for creating a new customer."""
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
@@ -24,7 +25,7 @@ class CustomerCreate(BaseModel):
     address: str | None = None
 
 
-class CustomerUpdate(BaseModel):
+class BusinessPartnerUpdate(BaseModel):
     """Schema for updating a customer."""
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
@@ -41,12 +42,12 @@ class CustomerUpdate(BaseModel):
     address: str | None = None
 
 
-class CustomerResponse(BaseModel):
+class BusinessPartnerResponse(BaseModel):
     """Schema for customer response."""
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    id: int
+    id: UUID
     name: str
     nit: str
     date_birth: str | None = Field(serialization_alias="dateBirth")
@@ -59,10 +60,10 @@ class CustomerResponse(BaseModel):
     updated_at: datetime | None = Field(serialization_alias="updatedAt")
 
 
-class CustomerListResponse(BaseModel):
+class BusinessPartnerListResponse(BaseModel):
     """Schema for list of customers response."""
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    customers: list[CustomerResponse]
+    customers: list[BusinessPartnerResponse]
     pagination: PaginationResponse

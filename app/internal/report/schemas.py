@@ -1,6 +1,7 @@
 """Schemas for report responses."""
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -16,7 +17,7 @@ class GeneralJournalEntry(BaseModel):
     transaction_concept: str = Field(serialization_alias="transactionConcept")
     debit: float
     credit: float
-    folio_number: int = Field(serialization_alias="folioNumber")
+    folio_number: UUID = Field(serialization_alias="folioNumber")
 
 
 class GeneralJournalReport(BaseModel):

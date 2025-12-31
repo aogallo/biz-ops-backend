@@ -1,0 +1,5 @@
+UUID should be apply to all entities
+BusinessPartner should be at organization level because Los 3 pollos hermanos can be use accross tree clients of the accountant
+Added the __table_name__ = according to the table because I saw tables like accountspayable
+Remember the users are manage by auth0 create a plan how should I manage them when creating a new organization
+I'll have two application admin where I create organization, give access, create plan and subscriptions

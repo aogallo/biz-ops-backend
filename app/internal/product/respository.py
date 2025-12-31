@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from uuid import UUID
 
 from app.internal.product.entity import Product, ProductCreate
 
@@ -17,12 +18,12 @@ class ProductRepository(ABC):
         pass
 
     @abstractmethod
-    def get_by_id(self, product_id: int) -> Product | None:
+    def get_by_id(self, product_id: UUID) -> Product | None:
         """Get a product by id"""
         pass
 
     @abstractmethod
-    def delete(self, product_id: int) -> bool:
+    def delete(self, product_id: UUID) -> bool:
         """Delete a product by id"""
         pass
 

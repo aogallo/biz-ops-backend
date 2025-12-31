@@ -3,22 +3,25 @@ from sqlmodel import Session
 
 from app.database import get_session
 from app.dependencies import get_current_user, verify_token
-from app.internal.customer.schema import CustomerListResponse, CustomerResponse
-from app.internal.customer.service import CustomerService
+from app.internal.business_partner.schema import (
+    BusinessPartnerListResponse,
+    BusinessPartnerResponse,
+)
+from app.internal.business_partner.service import BusinessPartnerService
 from app.schemas.common import PaginationResponse
 from app.utils.pagination import calculate_offset
 
 router = APIRouter(
     prefix="/customers",
-    tags=["Customers"],
+    tags=["BusinessPartners"],
     dependencies=[
         Depends(verify_token),
     ],
 )
 
 
-@router.get("", response_model=CustomerListResponse)
-def list_customers(
+@router.get("", response_model=BusinessPartnerListResponse)
+def list_business_partner(
     page: int = 1,
     limit: int = 10,
     session: Session = Depends(get_session),
@@ -27,8 +30,8 @@ def list_customers(
     """List all customers with pagination."""
     offset = calculate_offset(page=page, page_size=limit)
 
-    service = CustomerService(session, current_user)
-    result = service.list_all_customers(offset=offset, limit=limit)
+    service = BusinessPartnerService(session, current_user)
+    result = service.list_business_partner(offset=offset, limit=limit)
 
     pagination = PaginationResponse(
         total=result.count,
@@ -38,10 +41,10 @@ def list_customers(
 
     # Convert entities to response schemas
     customers_response = [
-        CustomerResponse.model_validate(customer)
+        BusinessPartnerResponse.model_validate(customer)
         for customer in result.customers
     ]
 
-    return CustomerListResponse(
+    return BusinessPartnerListResponse(
         customers=customers_response, pagination=pagination
     )

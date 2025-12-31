@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from uuid import UUID
 
 from app.internal.company.entity import Company, CompanyCreate
 
@@ -16,7 +17,7 @@ class CompanyRepository(ABC):
         pass
 
     @abstractmethod
-    def get_by_id(self, id: int) -> Company | None:
+    def get_by_id(self, id: UUID) -> Company | None:
         """
         Get a company by id
         """

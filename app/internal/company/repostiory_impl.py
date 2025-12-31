@@ -1,4 +1,5 @@
 from typing import Any
+from uuid import UUID
 
 from sqlmodel import Session, col, func, or_, select
 
@@ -16,13 +17,15 @@ class CompanyRepositoryImpl(CompanyRepository):
 
     def create(self, company: CompanyCreate) -> Company:
         """Create a new company"""
-        company_created: Company = Company.model_validate(company)
+        company_created: Company = Company.model_validate(
+            company, update={"created_by": self.current_user.auth0_user_id}
+        )
         self.db.add(company_created)
         self.db.commit()
         self.db.refresh(company_created)
         return company_created
 
-    def get_by_id(self, id: int) -> Company | None:
+    def get_by_id(self, id: UUID) -> Company | None:
         """Get company by ID"""
         company: Company | None = self.db.get(Company, id)
         return company
@@ -39,7 +42,7 @@ class CompanyRepositoryImpl(CompanyRepository):
         result: list[Company] = list(self.db.exec(statement))
         return list(result)
 
-    def update(self, id: int, model: Company) -> Company:
+    def update(self, id: UUID, model: Company) -> Company:
         """Update a company by id"""
         db_company: Company | None = self.db.get(Company, id)
         if db_company is None:
@@ -55,7 +58,7 @@ class CompanyRepositoryImpl(CompanyRepository):
         self.db.refresh(db_company)
         return db_company
 
-    def delete(self, id: int) -> bool:
+    def delete(self, id: UUID) -> bool:
         """Delete a company by id"""
         company: Company | None = self.db.get(Company, id)
         if company is None:
@@ -66,7 +69,7 @@ class CompanyRepositoryImpl(CompanyRepository):
         self.db.refresh(company)
         return True
 
-    def exists(self, id: int) -> bool:
+    def exists(self, id: UUID) -> bool:
         """Check if company exists by id"""
         company: Company | None = self.db.get(Company, id)
         return company is not None

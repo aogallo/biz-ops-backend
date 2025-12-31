@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from enum import Enum
 from io import BytesIO
+from uuid import UUID
 
 import pandas as pd
 from fastapi import HTTPException, status
@@ -9,10 +10,12 @@ from sqlmodel import Session
 
 from app.internal.account.entity import Account
 from app.internal.account.respository_impl import AccountRepositoryImpl
+from app.internal.business_partner.entity import BusinessPartner
+from app.internal.business_partner.repository_impl import (
+    BusinessPartnerRepositoryImpl,
+)
 from app.internal.company.entity import Company
 from app.internal.company.repostiory_impl import CompanyRepositoryImpl
-from app.internal.customer.entity import Customer
-from app.internal.customer.repository_impl import CustomerRepositoryImpl
 from app.internal.invoice.entity import (
     Invoice,
     InvoiceDetail,
@@ -34,20 +37,50 @@ logger = logging.getLogger(__name__)
 
 
 class InvoiceService:
-    """Service for managing invoices."""
+    """Service for managing invoices (company-scoped)."""
 
-    def __init__(self, session: Session, current_user: User) -> None:
-        self.customer_repo = CustomerRepositoryImpl(session, current_user)
-        self.company_repo = CompanyRepositoryImpl(session, current_user)
-        self.invoice_repo = InvoiceRepositoryImpl(session)
-        self.accont_repo = AccountRepositoryImpl(
-            session=session, current_user=current_user
+    def __init__(
+        self,
+        session: Session,
+        current_user: User,
+        company_id: UUID,
+    ) -> None:
+        self.session = session
+        self.current_user = current_user
+        self.company_id = company_id
+
+        # Get company to extract organization_id for org-scoped repos
+        company = session.get(Company, company_id)
+        if not company:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Company {company_id} not found",
+            )
+
+        self.organization_id: UUID = company.organization_id
+
+        # Company-scoped repositories
+        self.invoice_repo = InvoiceRepositoryImpl(
+            session, current_user, company_id
         )
         self.journal_entry_repo = JournalEntryRepositoryImpl(
-            session, current_user
+            session, current_user, company_id
         )
+
+        # Organization-scoped repositories (shared across companies)
+        self.customer_repo = BusinessPartnerRepositoryImpl(
+            session, current_user, self.organization_id
+        )
+        self.accont_repo = AccountRepositoryImpl(
+            session=session,
+            current_user=current_user,
+            organization_id=self.organization_id,
+        )
+
+        # Company repo for lookups (not scoped)
+        self.company_repo = CompanyRepositoryImpl(session, current_user)
+
         self.errors: list[dict] = []
-        self.current_user = current_user
 
     def _validate_classification_field(
         self, field_name: str, value: str | None, enum_class: type[Enum]
@@ -117,7 +150,11 @@ class InvoiceService:
         invoices = self.invoice_repo.get_all(offset, limit)
         return InvoiceListServiceResponse(count=count, invoices=invoices)
 
-    def process_file(self, file_bytes: bytes, invoice_type: InvoiceType):
+    def process_file(
+        self,
+        file_bytes: bytes,
+        invoice_type: InvoiceType,
+    ):
         try:
             df = pd.read_excel(BytesIO(file_bytes))
             df.rename(
@@ -176,7 +213,8 @@ class InvoiceService:
 
                 if validated_rows:
                     response = self._process_validated_rows(
-                        validated_rows, invoice_type
+                        validated_rows,
+                        invoice_type,
                     )
 
             return response
@@ -234,7 +272,11 @@ class InvoiceService:
 
         return list(customers.values())
 
-    def _create_missing_companies(self, rows: list[InvoiceRowSchema]):
+    def _create_missing_companies(
+        self,
+        rows: list[InvoiceRowSchema],
+        organization_id: UUID,
+    ):
         """Find and create companies that don't exist in the database"""
         # 1. Batch get/create users
         unique_companies = self._get_unique_companies(rows)
@@ -253,6 +295,7 @@ class InvoiceService:
                     nit=company_data["nit"],
                     name=company_data["name"],
                     created_by=self.current_user.auth_id,
+                    organization_id=organization_id,
                 )
                 new_companies.append(new_company)
 
@@ -270,20 +313,23 @@ class InvoiceService:
         """Find and create customers that do not exist in the database"""
         unique_customers = self._get_unique_customers(invoices)
 
-        existing_customers = self.customer_repo.get_customers_by_nit(
-            unique_customers
-        )
+        # Extract NITs from unique_customers list of dicts
+        nits = [c["nit"] for c in unique_customers]
+        existing_customers = self.customer_repo.get_by_nits(nits)
         existing_nits_set = {c.nit for c in existing_customers}
 
         # Create missing customers
         new_customers = []
         for customer_data in unique_customers:
             if customer_data["nit"] not in existing_nits_set:
-                new_customer = Customer(
+                new_customer = BusinessPartner(
                     nit=customer_data["nit"],
                     name=customer_data["name"],
                     email=None,
                     created_by=self.current_user.auth_id,
+                    is_customer=False,
+                    is_vendor=True,
+                    organization_id=self.organization_id,
                 )
                 new_customers.append(new_customer)
 
@@ -302,7 +348,10 @@ class InvoiceService:
         invoice_type: InvoiceType,
     ):
         """Process validated rows: companies, invoices, details."""
-        existing_companies = self._create_missing_companies(rows)
+        existing_companies = self._create_missing_companies(
+            rows,
+            organization_id=self.organization_id,
+        )
         customers = self._create_missing_customers(rows)
 
         # Create NIT-to-ID lookup dictionaries
@@ -323,10 +372,14 @@ class InvoiceService:
         invoices_to_create = []
         for row in rows:
             # Map NITs to IDs
-            company_id = company_nit_to_id.get(row.company_nit)
-            customer_id = customer_nit_to_id.get(row.customer_nit)
+            row_company_id: UUID | None = company_nit_to_id.get(
+                row.company_nit
+            )
+            row_customer_id: UUID | None = customer_nit_to_id.get(
+                row.customer_nit
+            )
 
-            if not company_id or not customer_id:
+            if not row_company_id or not row_customer_id:
                 logger.warning(
                     "Skipping row - missing mapping: "
                     "company_nit=%s, customer_nit=%s",
@@ -355,11 +408,13 @@ class InvoiceService:
             invoice = Invoice(
                 date=invoice_date,
                 authorization_number=row.authorization_number,
+                sat_issuer_name=row.company_name,
+                sat_receiver_name=row.customer_name,
                 dte_type=row.dte_type,
                 serie=row.serie,
                 dte_number=str(row.dte_number),
-                company_id=company_id,
-                customer_id=customer_id,
+                company_id=row_company_id,
+                business_partner_id=row_customer_id,
                 currency=row.money,
                 state=row.state,
                 is_cancelled=row.is_voided,
@@ -420,7 +475,7 @@ class InvoiceService:
         self.invoice_repo.add_bulk(invoices)
         logger.info("Invoices created successfully: %d", len(invoices))
 
-    def get_invoice_by_id(self, id: int):
+    def get_invoice_by_id(self, id: UUID):
         invoice = self.invoice_repo.get_invoice_by_id(id)
 
         if invoice is None:
@@ -431,12 +486,12 @@ class InvoiceService:
 
         return invoice
 
-    def get_invoice_deatils(self, id: int):
+    def get_invoice_deatils(self, id: UUID):
         details = self.invoice_repo.get_invoice_details(id)
 
         return details
 
-    def update_invoice_by_id(self, id: int, invoice: InvoiceUpdate):
+    def update_invoice_by_id(self, id: UUID, invoice: InvoiceUpdate):
         db_invoice = self.invoice_repo.get_invoice_by_id(id)
 
         if db_invoice is None:
@@ -450,7 +505,7 @@ class InvoiceService:
 
         return self.invoice_repo.update_by_id(db_invoice)
 
-    def update_account_invoice(self, id: int, invoice: InvoiceUpdateAccount):
+    def update_account_invoice(self, id: UUID, invoice: InvoiceUpdateAccount):
         """
         Update the account of an invoice
 
@@ -481,7 +536,7 @@ class InvoiceService:
             db_journal_entry = self.journal_entry_repo.get_by_id(db_invoice.id)
 
             if db_invoice.invoice_type == "expenses":
-                if len(db_journal_entry) == 0:
+                if db_journal_entry is None:
                     self._create_expenses_journal_entry(
                         invoice=db_invoice,
                         account=db_account,
@@ -493,7 +548,7 @@ class InvoiceService:
                         debit=db_invoice.subtotal,
                     )
             else:
-                if len(db_journal_entry) == 0:
+                if db_journal_entry is None:
                     self._create_income_journal_entry(
                         invoice=db_invoice,
                         account=db_account,
@@ -519,7 +574,7 @@ class InvoiceService:
             ) from e
 
     def _update_expense_journal_account(
-        self, invoice_id: int, account_id: int, debit: float
+        self, invoice_id: UUID, account_id: UUID, debit: float
     ):
         """Updating the account for the expense journal entry"""
         logger.info(
@@ -529,7 +584,7 @@ class InvoiceService:
         )
 
         db_journal_entry = self.journal_entry_repo.get_by_debit_invoice_id(
-            id=invoice_id, debit=debit
+            invoice_id=invoice_id, debit=debit
         )
 
         db_journal_entry.sqlmodel_update({"account_id": account_id})
@@ -537,11 +592,12 @@ class InvoiceService:
         self.journal_entry_repo.update_by_id(db_journal_entry)
 
     def _update_income_journal_account(
-        self, invoice_id: int, account_id: int, credit: float
+        self, invoice_id: UUID, account_id: UUID, credit: float
     ):
         """Updating the account for the income journal entry"""
         db_journal_entry = self.journal_entry_repo.get_by_credit_invoice_id(
-            id=invoice_id, credit=credit
+            invoice_id=invoice_id,
+            credit=credit,
         )
 
         db_journal_entry.sqlmodel_update({"account_id": account_id})
@@ -563,24 +619,14 @@ class InvoiceService:
             debit = invoice.subtotal
             credit = 0
 
-            if invoice.id is None:
-                raise ValueError(
-                    "Invoice must be exist before creating journal entry"
-                )
-
-            if account.id is None:
-                raise ValueError(
-                    "Account must be saved exist before creating journal entry"
-                )
-
             # 1. DEBIT: Expense account (subtotal without IVA)
             new_journal_entry = JournalEntry(
-                company_id=invoice.customer_id,
+                company_id=invoice.business_partner_id,
                 account_id=account.id,
                 invoice_id=invoice.id,
                 debit=debit,
                 credit=credit,
-                description=f"Expense - {invoice.customer.name}",
+                description=f"Expense - {invoice.business_partner.name}",
                 created_by=self.current_user.auth_id,
             )
 
@@ -597,7 +643,7 @@ class InvoiceService:
 
             # create iva journal entry
             new_iva_journal_entry = JournalEntry(
-                company_id=invoice.customer_id,
+                company_id=invoice.business_partner_id,
                 account_id=iva_account_id,
                 invoice_id=invoice.id,
                 debit=invoice.details[0].iva,
@@ -617,12 +663,12 @@ class InvoiceService:
                 )
 
             credit_jorunal_entry = JournalEntry(
-                company_id=invoice.customer_id,
+                company_id=invoice.business_partner_id,
                 account_id=credit_account_id,
                 invoice_id=invoice.id,
                 debit=0,
                 credit=invoice.total_amount,
-                description=f"Payable - {invoice.customer.name}",
+                description=f"Payable - {invoice.business_partner.name}",
                 created_by=self.current_user.auth_id,
             )
 
@@ -657,18 +703,6 @@ class InvoiceService:
 
             iva_account_id = self.accont_repo.get_iva_debit_account()
 
-            if invoice.id is None:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="The invoice is not found",
-                )
-
-            if account.id is None:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="The account was selected is not found",
-                )
-
             if debit_account_receivable is None:
                 raise ValueError("Debit account is not configured yet")
 
@@ -681,7 +715,7 @@ class InvoiceService:
                 invoice_id=invoice.id,
                 debit=invoice.total_amount,
                 credit=0,
-                description=f"Sale on Credit - {invoice.customer.name}",
+                description=f"Sale on Credit - {invoice.business_partner.name}",
                 created_by=self.current_user.auth_id,
             )
 
@@ -694,7 +728,7 @@ class InvoiceService:
                 invoice_id=invoice.id,
                 debit=0,
                 credit=invoice.subtotal,
-                description=f"Revenue - {invoice.customer.name}",
+                description=f"Revenue - {invoice.business_partner.name}",
                 created_by=self.current_user.auth_id,
             )
 

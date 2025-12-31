@@ -19,10 +19,11 @@ from app.core.exceptions import (
 from app.core.logging_config import setup_logging
 from app.database import create_db_and_tables, engine
 from app.internal.account import routes as account_routes
+from app.internal.business_partner import routes as business_partner_routes
 from app.internal.category import routes as category_routes
 from app.internal.company import routes as company_routes
-from app.internal.customer import routes as customer_routes
 from app.internal.invoice import routes as invoice_routes
+from app.internal.organization import routes as organization_routes
 from app.internal.product import routes as product_routes
 from app.internal.report import routes as report_routes
 from app.schemas.common import HealthResponse
@@ -208,11 +209,12 @@ API_V1_PREFIX = "/api/v1"
 # Include v1 routers
 app.include_router(router=product_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=company_routes.router, prefix=API_V1_PREFIX)
-app.include_router(router=customer_routes.router, prefix=API_V1_PREFIX)
+app.include_router(router=business_partner_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=invoice_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=category_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=account_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=report_routes.router, prefix=API_V1_PREFIX)
+app.include_router(router=organization_routes.router, prefix=API_V1_PREFIX)
 
 # Future v2 routers can be added like this:
 # API_V2_PREFIX = "/api/v2"

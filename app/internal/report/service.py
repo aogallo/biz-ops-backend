@@ -1,10 +1,13 @@
 """Service for generating reports."""
 
 from datetime import datetime
+from uuid import UUID
 
 from fastapi import HTTPException
 from sqlmodel import Session
 
+from app.core.exceptions import NotFoundError
+from app.internal.company.entity import Company
 from app.internal.company.repostiory_impl import CompanyRepositoryImpl
 from app.internal.report.general_journal_pdf_generator import (
     GeneralJournalPDFGenerator,
@@ -18,15 +21,35 @@ from app.internal.user.entity import User
 
 
 class ReportService:
-    """Service for managing reports."""
+    """Service for managing reports (company-scoped)."""
 
-    def __init__(self, session: Session, current_user: User) -> None:
-        self._report_repo = ReportRepositoryImpl(session)
+    def __init__(
+        self,
+        session: Session,
+        current_user: User,
+        company_id: UUID,
+    ) -> None:
+        self.session = session
+        self.current_user = current_user
+        self.company_id = company_id
+
+        # Get company to extract organization_id
+        company = session.get(Company, company_id)
+        if not company:
+            raise NotFoundError("Company", company_id)
+
+        self.organization_id = company.organization_id
+
+        # Company-scoped repository
+        self._report_repo = ReportRepositoryImpl(
+            session,
+            current_user,
+            company_id,
+        )
         self._company_repo = CompanyRepositoryImpl(session, current_user)
 
     def get_general_journal_report(
         self,
-        company_id: int,
         start_date: datetime | None = None,
         end_date: datetime | None = None,
     ) -> GeneralJournalReport:
@@ -34,7 +57,6 @@ class ReportService:
         Generate a general journal report for a company.
 
         Args:
-            company_id: The company ID to generate the report for
             start_date: Optional start date filter
             end_date: Optional end date filter
 
@@ -42,7 +64,7 @@ class ReportService:
             GeneralJournalReport with entries and totals
         """
         entries = self._report_repo.get_general_journal_entries(
-            company_id=company_id, start_date=start_date, end_date=end_date
+            start_date=start_date, end_date=end_date
         )
 
         # Calculate totals
@@ -58,7 +80,6 @@ class ReportService:
 
     def generate_general_journal_pdf(
         self,
-        company_id: int,
         start_date: datetime | None = None,
         end_date: datetime | None = None,
     ) -> bytes:
@@ -66,7 +87,6 @@ class ReportService:
         Generate PDF for general journal report.
 
         Args:
-            company_id: The company ID to generate the report for
             start_date: Optional start date filter
             end_date: Optional end date filter
 
@@ -84,16 +104,17 @@ class ReportService:
             )
 
         # Get company info
-        company = self._company_repo.get_by_id(company_id)
+        company = self._company_repo.get_by_id(self.company_id)
         if not company:
             raise HTTPException(
                 status_code=404,
-                detail=f"Company with ID {company_id} not found",
+                detail=f"Company with ID {self.company_id} not found",
             )
 
         # Get report data (reuse existing method)
         report_data = self.get_general_journal_report(
-            company_id=company_id, start_date=start_date, end_date=end_date
+            start_date=start_date,
+            end_date=end_date,
         )
 
         # Generate PDF
@@ -110,7 +131,6 @@ class ReportService:
 
     def get_sales_ledger_report(
         self,
-        company_id: int,
         start_date: datetime | None = None,
         end_date: datetime | None = None,
     ) -> SalesLedgerReport:
@@ -118,7 +138,6 @@ class ReportService:
         Generate a sales ledger report for a company.
 
         Args:
-            company_id: The company ID to generate the report for
             start_date: Optional start date filter
             end_date: Optional end date filter
 
@@ -126,7 +145,6 @@ class ReportService:
             SalesLedgerReport with entries and count
         """
         entries = self._report_repo.get_sales_ledger_entries(
-            company_id=company_id,
             start_date=start_date,
             end_date=end_date,
         )
@@ -135,15 +153,13 @@ class ReportService:
 
     def generate_sales_ledger_pdf(
         self,
-        company_id: int,
         start_date: datetime | None = None,
         end_date: datetime | None = None,
     ) -> bytes:
         """
-        Generate PDF for general journal report.
+        Generate PDF for sales ledger report.
 
         Args:
-            company_id: The company ID to generate the report for
             start_date: Optional start date filter
             end_date: Optional end date filter
 
@@ -153,7 +169,6 @@ class ReportService:
         Raises:
             HTTPException: If company not found or date range is invalid
         """
-        print("dates.......", start_date, end_date)
         # Validate date range
         if start_date and end_date and start_date > end_date:
             raise HTTPException(
@@ -162,16 +177,16 @@ class ReportService:
             )
 
         # Get company info
-        company = self._company_repo.get_by_id(company_id)
+        company = self._company_repo.get_by_id(self.company_id)
         if not company:
             raise HTTPException(
                 status_code=404,
-                detail=f"Company with ID {company_id} not found",
+                detail=f"Company with ID {self.company_id} not found",
             )
 
         # Get report data (reuse existing method)
         report_data = self.get_sales_ledger_report(
-            company_id=company_id, start_date=start_date, end_date=end_date
+            start_date=start_date, end_date=end_date
         )
 
         # Generate PDF

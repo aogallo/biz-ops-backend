@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 
@@ -14,7 +16,7 @@ from app.schemas.common import PaginationResponse
 from app.utils.pagination import calculate_offset
 
 router = APIRouter(
-    prefix="/products",
+    prefix="/organization/{organization_id}/products",
     tags=["Products"],
     dependencies=[
         Depends(verify_token),
@@ -28,6 +30,7 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
 )
 def create_product(
+    organization_id: UUID,
     product: ProductCreate,
     session: Session = Depends(get_session),
     current_user=Depends(get_current_user),
@@ -38,7 +41,7 @@ def create_product(
     Returns the created product.
     """
     try:
-        service = ProductService(session, current_user)
+        service = ProductService(session, current_user, organization_id)
         # Convert schema to entity
         product_entity = ProductCreateEntity(**product.model_dump())
         created_product = service.create_product(product_entity)
@@ -52,6 +55,7 @@ def create_product(
 
 @router.get("", response_model=ProductListResponse)
 def list_products(
+    organization_id: UUID,
     page: int = 1,
     limit: int = 10,
     session: Session = Depends(get_session),
@@ -60,7 +64,7 @@ def list_products(
     """List all products with pagination."""
     offset = calculate_offset(page=page, page_size=limit)
 
-    service = ProductService(session, current_user)
+    service = ProductService(session, current_user, organization_id)
     result = service.list_all_products(offset=offset, limit=limit)
 
     pagination = PaginationResponse(
