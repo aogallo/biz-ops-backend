@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import TYPE_CHECKING, ClassVar
 from uuid import UUID, uuid4
 
@@ -97,3 +98,33 @@ class Organization(
     accounts: list["Account"] = Relationship(back_populates="organization")
     products: list["Product"] = Relationship(back_populates="organization")
     categories: list["Category"] = Relationship(back_populates="organization")
+    modules: list["OrganizationModule"] = Relationship(
+        back_populates="organization"
+    )
+
+
+class OrganizationModule(SQLModel, table=True):
+    """
+    Organization-level module subscriptions for billing.
+
+    Modules: inventory, accounting, sat (SAT file processing), crm
+    Each module unlocks specific permissions for the organization.
+    """
+
+    __tablename__: ClassVar[str] = "organization_module"
+
+    # Composite primary key
+    organization_id: UUID = Field(
+        foreign_key="organization.id", primary_key=True, index=True
+    )
+    module_name: str = Field(
+        primary_key=True, max_length=50
+    )  # "inventory", "accounting", "sat", "crm"
+
+    # Subscription status
+    is_active: bool = Field(default=True, index=True)
+    subscribed_at: datetime = Field(default_factory=datetime.utcnow)
+    expires_at: datetime | None = None  # Null = no expiration
+
+    # Relationships
+    organization: Organization = Relationship(back_populates="modules")

@@ -21,11 +21,25 @@ from app.internal.account_receivable.entity import (  # noqa: F401
 from app.internal.business_partner.entity import BusinessPartner  # noqa: F401
 from app.internal.category.entity import Category  # noqa: F401
 from app.internal.company.entity import Company  # noqa: F401
+from app.internal.invitation.entity import Invitation  # noqa: F401
 from app.internal.invoice.entity import Invoice, InvoiceDetail  # noqa: F401
 from app.internal.journal.entity import JournalEntry  # noqa: F401
-from app.internal.organization.entity import Organization  # noqa: F401
+from app.internal.organization.entity import (  # noqa: F401
+    Organization,
+    OrganizationModule,
+)
+from app.internal.permission.entity import (  # noqa: F401
+    Permission,
+    Role,
+    RolePermission,
+    UserPermission,
+)
 from app.internal.product.entity import Product  # noqa: F401
-from app.internal.user.entity import User, UserCompanyAccess  # noqa: F401
+from app.internal.user.entity import (  # noqa: F401
+    OAuthAccount,
+    User,
+    UserCompanyAccess,
+)
 
 # Alembic Config object
 config = context.config

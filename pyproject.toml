@@ -144,8 +144,14 @@ module = [
     "sqlalchemy.*",
     "sqlmodel.*",
     "pylint.*",
+    "alembic.*",
 ]
 ignore_missing_imports = true
+
+# Ignore alembic migration files (auto-generated)
+[[tool.mypy.overrides]]
+module = "alembic.versions.*"
+ignore_errors = true
 
 # Ignore issues in infrastructure repositories
 [[tool.mypy.overrides]]
