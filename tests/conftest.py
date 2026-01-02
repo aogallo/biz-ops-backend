@@ -63,10 +63,9 @@ def session_fixture(engine) -> Generator[Session, None, None]:
         yield session
 
 
-@pytest.fixture(name="test_user")
-def test_user_fixture(engine) -> User:
-    """Create a test user with an organization (persisted to database)."""
-    from uuid import uuid4
+@pytest.fixture(name="test_organization")
+def test_organization_feature(engine) -> Organization:
+    """Create a test organization (persisted to database)."""
 
     # Create organization and user in database
     with Session(engine) as session:
@@ -80,6 +79,16 @@ def test_user_fixture(engine) -> User:
         session.commit()
         session.refresh(org)
 
+        return org
+
+
+@pytest.fixture(name="test_user")
+def test_user_fixture(engine, test_organization: Organization) -> User:
+    """Create a test user with an organization (persisted to database)."""
+    from uuid import uuid4
+
+    # Create organization and user in database
+    with Session(engine) as session:
         # Create user with organization
         user = User(
             id=uuid4(),
@@ -90,7 +99,7 @@ def test_user_fixture(engine) -> User:
             is_email_verified=True,
             first_name="Test",
             last_name="User",
-            organization_id=org.id,
+            organization_id=test_organization.id,
         )
         session.add(user)
         session.commit()

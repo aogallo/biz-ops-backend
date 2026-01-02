@@ -71,3 +71,21 @@ def list_organization(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
         ) from e
+
+
+@router.patch("/{organization_id}")
+def update_organization(
+    organization_id: int,
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+):
+    try:
+        service = OrganizationService(
+            session=session,
+            current_user=current_user,
+        )
+    except HTTPException as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
