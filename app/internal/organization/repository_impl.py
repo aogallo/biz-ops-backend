@@ -47,3 +47,12 @@ class OrganizationRepositoryImpl(OrganizationRepository):
         count_statement = select(func.count()).select_from(Organization)
         count: int = self.db.exec(count_statement).one()
         return count
+
+    def update(self, organization: Organization) -> Organization:
+        """Update an organization"""
+
+        self.db.add(organization)
+        self.db.commit()
+        self.db.refresh(organization)
+
+        return organization

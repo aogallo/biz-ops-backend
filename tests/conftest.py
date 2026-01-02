@@ -64,7 +64,7 @@ def session_fixture(engine) -> Generator[Session, None, None]:
 
 
 @pytest.fixture(name="test_organization")
-def test_organization_feature(engine) -> Organization:
+def test_organization_fixture(engine) -> Organization:
     """Create a test organization (persisted to database)."""
 
     # Create organization and user in database

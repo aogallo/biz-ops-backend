@@ -38,3 +38,17 @@ class OrganizationService:
         organizations = self.repository.get_all(offset, limit)
 
         return OrganizationList(count=count, organizations=organizations)
+
+    def update_organization_by_id(self, id: int, organization):
+        db_org = self.repository.get_by_id(id)
+
+        if not db_org:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Organization not found",
+            )
+
+        org_data = Organization(**organization.model_dump(exclude_unset=True))
+        db_org.sqlmodel_update(org_data)
+
+        return self.repository.update(db_org)

@@ -58,3 +58,35 @@ class OrganizationList(BaseModel):
     organizations: list[Organization] = Field(
         ..., description="List of organizations entities"
     )
+
+
+class OrganizationUpdate(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    name: str | None = None
+    slug: str | None = None
+    contact_name: str | None = Field(
+        default=None, serialization_alias="contactName"
+    )
+    contact_email: str | None = Field(
+        default=None, serialization_alias="contactEmail"
+    )
+    contact_phone: str | None = Field(
+        default=None, serialization_alias="contactPhone"
+    )
+    address_line_1: str | None = Field(
+        default=None, serialization_alias="addressLine1"
+    )
+    address_line_2: str | None = Field(
+        default=None, serialization_alias="addressLine2"
+    )
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = Field(
+        serialization_alias="postalCode", default=None
+    )
+    settings: dict | None = None
+    is_active: bool | None = Field(
+        default=None, serialization_alias="isActive"
+    )
