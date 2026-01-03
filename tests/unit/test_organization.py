@@ -114,9 +114,7 @@ class TestOrganizationService:
     ):
         """Test update organization"""
 
-        organization = OrganizationUpdate(is_active=True)
-
-        expected_organization = Organization(
+        existing_org = Organization(
             id=uuid4(),
             name="organization ake",
             slug="org-fa",
@@ -124,11 +122,14 @@ class TestOrganizationService:
             created_by="userid",
         )
 
-        mock_repository.get_by_id.return_value = expected_organization
+        updated_payload = OrganizationUpdate(is_active=True, slug="open-door")
+
+        mock_repository.get_by_id.return_value = existing_org
+        mock_repository.update.return_value = existing_org
 
         result = service.update_organization_by_id(
             id="44444d",
-            organization=organization,
+            organization=updated_payload,
         )
 
-        assert result.is_active
+        assert result.slug == "open-door"

@@ -61,6 +61,11 @@ class OrganizationList(BaseModel):
 
 
 class OrganizationUpdate(BaseModel):
+    """
+    Schema for updating a organization.
+    All fields optional to allow partial updates.
+    """
+
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     name: str | None = None

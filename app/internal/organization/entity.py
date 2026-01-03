@@ -27,29 +27,24 @@ class OrganizationBase(SQLModel):
     contact_name: str | None = Field(
         default=None,
         max_length=255,
-        alias="contactName",
     )
     contact_email: str | None = Field(
         default=None,
         max_length=255,
-        alias="contactEmail",
     )
     contact_phone: str | None = Field(
         default=None,
         max_length=50,
-        alias="contactPhone",
     )
 
     # Address
     address_line_1: str | None = Field(
         default=None,
         max_length=255,
-        alias="addressLine1",
     )
     address_line_2: str | None = Field(
         default=None,
         max_length=255,
-        alias="addressLine2",
     )
     city: str | None = Field(default=None, max_length=100)
     state: str | None = Field(default=None, max_length=100)
@@ -57,7 +52,6 @@ class OrganizationBase(SQLModel):
     postal_code: str | None = Field(
         default=None,
         max_length=20,
-        alias="postalCode",
     )
 
     # Settings
@@ -67,7 +61,6 @@ class OrganizationBase(SQLModel):
     is_active: bool = Field(
         default=True,
         index=True,
-        alias="isActive",
     )
 
 
