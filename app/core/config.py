@@ -48,6 +48,7 @@ class Settings(BaseSettings):
 
     # Frontend URL (for email links and OAuth callbacks)
     FRONTEND_URL: str = "http://localhost:5173"
+    BACKEND_URL: str = "http://localhost:8000"
 
     # Database Configuration
     DATABASE_URI: str = "sqlite:///./bizops_dev.db"

@@ -21,6 +21,7 @@ from app.core.exceptions import (
 from app.core.logging_config import setup_logging
 from app.database import create_db_and_tables, engine
 from app.internal.account import routes as account_routes
+from app.internal.auth import routes as auth_routes
 from app.internal.business_partner import routes as business_partner_routes
 from app.internal.category import routes as category_routes
 from app.internal.company import routes as company_routes
@@ -233,6 +234,7 @@ app.include_router(
 )
 
 # Include v1 routers
+app.include_router(router=auth_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=product_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=company_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=business_partner_routes.router, prefix=API_V1_PREFIX)
