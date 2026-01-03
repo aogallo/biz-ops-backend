@@ -9,6 +9,8 @@ from fastapi.routing import APIRoute
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.core.auth.backend import auth_backend
+from app.core.auth.config import fastapi_users
 from app.core.config import settings
 from app.core.exceptions import (
     AppException,
@@ -16,14 +18,13 @@ from app.core.exceptions import (
     AuthorizationError,
     NotFoundError,
 )
-from app.core.auth.backend import auth_backend
-from app.core.auth.config import fastapi_users
 from app.core.logging_config import setup_logging
 from app.database import create_db_and_tables, engine
 from app.internal.account import routes as account_routes
 from app.internal.business_partner import routes as business_partner_routes
 from app.internal.category import routes as category_routes
 from app.internal.company import routes as company_routes
+from app.internal.invitation import routes as invitation_routes
 from app.internal.invoice import routes as invoice_routes
 from app.internal.organization import routes as organization_routes
 from app.internal.permission import routes as permission_routes
@@ -241,6 +242,7 @@ app.include_router(router=account_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=report_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=organization_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=permission_routes.router, prefix=API_V1_PREFIX)
+app.include_router(router=invitation_routes.router, prefix=API_V1_PREFIX)
 
 # Future v2 routers can be added like this:
 # API_V2_PREFIX = "/api/v2"
