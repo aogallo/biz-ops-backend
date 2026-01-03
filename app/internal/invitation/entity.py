@@ -1,10 +1,11 @@
 """Invitation entity for user onboarding system."""
+
 from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, ClassVar
 from uuid import UUID, uuid4
 
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, Relationship
 
 from app.internal.shared.entity import TimestampMixin
 
@@ -69,6 +70,6 @@ class Invitation(TimestampMixin, table=True):
     inviter: "User" = Relationship(
         sa_relationship_kwargs={"foreign_keys": "[Invitation.invited_by]"}
     )
-    acceptor: "User | None" = Relationship(
+    acceptor: "User" = Relationship(
         sa_relationship_kwargs={"foreign_keys": "[Invitation.accepted_by]"}
     )

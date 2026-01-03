@@ -1,4 +1,5 @@
 """Permission and Role entities for RBAC system."""
+
 from typing import TYPE_CHECKING, ClassVar
 from uuid import UUID, uuid4
 

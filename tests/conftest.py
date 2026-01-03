@@ -26,11 +26,18 @@ from app.internal.account_receivable.entity import AccountReceivable
 from app.internal.business_partner.entity import BusinessPartner
 from app.internal.category.entity import Category
 from app.internal.company.entity import Company
+from app.internal.invitation.entity import Invitation
 from app.internal.invoice.entity import Invoice, InvoiceDetail
 from app.internal.journal.entity import JournalEntry
-from app.internal.organization.entity import Organization
+from app.internal.organization.entity import Organization, OrganizationModule
+from app.internal.permission.entity import (
+    Permission,
+    Role,
+    RolePermission,
+    UserPermission,
+)
 from app.internal.product.entity import Product
-from app.internal.user.entity import User, UserCompanyAccess
+from app.internal.user.entity import OAuthAccount, User, UserCompanyAccess
 from app.main import app
 
 

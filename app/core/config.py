@@ -22,6 +22,33 @@ class Settings(BaseSettings):
     AUTH0_ISSUER: str = ""
     ALGORITHMS: str = "RS256"
 
+    # Feature Flags (for migration from Auth0 to self-hosted)
+    ENABLE_AUTH0: bool = True
+    ENABLE_SELF_HOSTED_AUTH: bool = True
+
+    # JWT Configuration (self-hosted authentication)
+    JWT_SECRET: str = ""  # Generate with: secrets.token_urlsafe(32)
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    # Email Configuration (SMTP)
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = ""
+    SMTP_FROM_NAME: str = "Business Ops"
+
+    # OAuth Configuration
+    GOOGLE_OAUTH_CLIENT_ID: str = ""
+    GOOGLE_OAUTH_CLIENT_SECRET: str = ""
+    GITHUB_OAUTH_CLIENT_ID: str = ""
+    GITHUB_OAUTH_CLIENT_SECRET: str = ""
+
+    # Frontend URL (for email links and OAuth callbacks)
+    FRONTEND_URL: str = "http://localhost:5173"
+
     # Database Configuration
     DATABASE_URI: str = "sqlite:///./bizops_dev.db"
 

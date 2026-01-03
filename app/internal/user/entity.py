@@ -36,7 +36,9 @@ class OAuthAccount(SQLModel, table=True):
     oauth_name: str = Field(max_length=100)  # "google", "github"
     access_token: str  # OAuth access token (should be encrypted in production)
     expires_at: int | None = None  # Token expiration timestamp
-    refresh_token: str | None = None  # OAuth refresh token (should be encrypted)
+    refresh_token: str | None = (
+        None  # OAuth refresh token (should be encrypted)
+    )
     account_id: str = Field(max_length=255)  # Provider's user ID
     account_email: str = Field(max_length=255)  # Email from provider
 
@@ -70,7 +72,7 @@ class UserCompanyAccess(SQLModel, table=True):
     # Relationships
     user: "User" = Relationship(back_populates="company_accesses")
     company: "Company" = Relationship(back_populates="user_accesses")
-    role_ref: "Role | None" = Relationship()
+    role_ref: "Role" = Relationship()
 
 
 class User(TimestampMixin, table=True):
