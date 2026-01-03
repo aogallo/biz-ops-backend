@@ -216,21 +216,21 @@ API_V1_PREFIX = "/api/v1"
 app.include_router(
     fastapi_users.get_auth_router(auth_backend),
     prefix="/auth/jwt",
-    tags=["auth"],
+    tags=["Auth"],
 )
 
 # User registration routes (will be disabled later for invitation-only)
 app.include_router(
     fastapi_users.get_register_router(UserRead, UserCreate),
     prefix="/auth",
-    tags=["auth"],
+    tags=["Auth"],
 )
 
 # User management routes
 app.include_router(
     fastapi_users.get_users_router(UserRead, UserUpdate),
     prefix="/users",
-    tags=["users"],
+    tags=["Users"],
 )
 
 # Include v1 routers

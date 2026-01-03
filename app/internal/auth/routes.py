@@ -1,19 +1,16 @@
 """OAuth authentication routes for Google and GitHub."""
 
-import secrets
 from typing import Annotated
-from uuid import UUID
 
 from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
     Request,
-    Response,
     status,
 )
 from fastapi.responses import RedirectResponse
-from httpx_oauth.errors import GetIdEmailError
+from httpx_oauth.exceptions import GetIdEmailError
 from sqlmodel import Session, select
 
 from app.core.auth.oauth import (
@@ -23,7 +20,6 @@ from app.core.auth.oauth import (
     get_github_oauth_client,
     get_google_oauth_client,
     get_oauth_redirect_uri,
-    validate_oauth_state,
 )
 from app.core.config import settings
 from app.core.security import create_access_token, create_refresh_token

@@ -20,7 +20,7 @@ from app.internal.report.service import ReportService
 
 router = APIRouter(
     prefix="/companies/{company_id}/reports",
-    tags=["reports"],
+    tags=["Reports"],
     dependencies=[Depends(verify_token)],
 )
 

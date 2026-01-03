@@ -8,7 +8,7 @@ from app.internal.category.service import CategoryService
 
 router = APIRouter(
     prefix="/category",
-    tags=["category"],
+    tags=["Category"],
     dependencies=[Depends(verify_token)],
 )
 

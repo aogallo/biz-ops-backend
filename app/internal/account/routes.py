@@ -9,7 +9,7 @@ from app.internal.account.service import AccountService
 
 router = APIRouter(
     prefix="/organization/{organization_id}/accounts",
-    tags=["accounts"],
+    tags=["Accounts"],
     dependencies=[Depends(verify_token)],
 )
 
