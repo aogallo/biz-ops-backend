@@ -18,7 +18,7 @@ class PermissionCreate(BaseModel):
     code: str
     description: str | None = None
     module_name: str | None = Field(
-        default=None, serialization_alias="moduleName"
+        default=None, alias="moduleName", serialization_alias="moduleName"
     )
 
 
@@ -29,7 +29,7 @@ class PermissionUpdate(BaseModel):
 
     description: str | None = None
     module_name: str | None = Field(
-        default=None, serialization_alias="moduleName"
+        default=None, alias="moduleName", serialization_alias="moduleName"
     )
 
 
@@ -41,7 +41,9 @@ class PermissionResponse(BaseModel):
     id: UUID
     code: str
     description: str | None
-    module_name: str | None = Field(serialization_alias="moduleName")
+    module_name: str | None = Field(
+        alias="moduleName", serialization_alias="moduleName"
+    )
 
 
 # ===================================================================
@@ -146,3 +148,68 @@ class CheckPermissionResponse(BaseModel):
 
     has_permission: bool = Field(serialization_alias="hasPermission")
     permission_code: str = Field(serialization_alias="permissionCode")
+
+
+# ===================================================================
+# List Response Schemas
+# ===================================================================
+
+
+class PermissionListResponse(BaseModel):
+    """Schema for list of permissions response."""
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    permissions: list[PermissionResponse]
+    total: int
+
+
+class RoleListResponse(BaseModel):
+    """Schema for list of roles response."""
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    roles: list[RoleResponse]
+    total: int
+
+
+class RolePermissionListResponse(BaseModel):
+    """Schema for list of permissions for a role."""
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    permissions: list[PermissionResponse]
+    total: int
+
+
+# ===================================================================
+# Assignment Response Schemas
+# ===================================================================
+
+
+class RolePermissionAssignmentResponse(BaseModel):
+    """Schema for role-permission assignment response."""
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    role_id: UUID = Field(serialization_alias="roleId")
+    permission_id: UUID = Field(serialization_alias="permissionId")
+
+
+class UserPermissionAssignmentRequest(BaseModel):
+    """Schema for user permission assignment request (grant or revoke)."""
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    permission_id: UUID = Field(serialization_alias="permissionId")
+    granted: bool  # True = grant, False = revoke
+
+
+class UserPermissionAssignmentResponse(BaseModel):
+    """Schema for user permission assignment response."""
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    user_id: UUID = Field(serialization_alias="userId")
+    permission_id: UUID = Field(serialization_alias="permissionId")
+    granted: bool

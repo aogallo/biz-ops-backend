@@ -29,16 +29,12 @@ class PermissionService:
 
     def create_permission(
         self,
-        code: str,
-        description: str | None = None,
-        module_name: str | None = None,
+        permission_data,  # PermissionCreate schema
     ) -> Permission:
         """Create a new permission.
 
         Args:
-            code: Permission code (e.g., "product:create")
-            description: Optional description
-            module_name: Optional module name (e.g., "inventory")
+            permission_data: PermissionCreate schema with permission details
 
         Returns:
             Created permission
@@ -47,17 +43,17 @@ class PermissionService:
             HTTPException: 409 if permission code already exists
         """
         # Check if permission code already exists
-        existing = self.repository.get_by_code(code=code)
+        existing = self.repository.get_by_code(code=permission_data.code)
         if existing:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Permission with code '{code}' already exists",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Permission with code '{permission_data.code}' already exists",
             )
 
         return self.repository.create_permission(
-            code=code,
-            description=description,
-            module_name=module_name,
+            code=permission_data.code,
+            description=permission_data.description,
+            module_name=permission_data.module_name,
         )
 
     def list_all_permissions(
@@ -94,22 +90,38 @@ class PermissionService:
             )
         return permission
 
+    def get_permission_by_id(self, permission_id: UUID) -> Permission:
+        """Get permission by ID.
+
+        Args:
+            permission_id: Permission ID
+
+        Returns:
+            Permission
+
+        Raises:
+            HTTPException: 404 if permission not found
+        """
+        permission = self.repository.get_by_id(permission_id=permission_id)
+        if not permission:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Permission with ID '{permission_id}' not found",
+            )
+        return permission
+
     # ===================================================================
     # Role Methods
     # ===================================================================
 
     def create_role(
         self,
-        name: str,
-        description: str | None = None,
-        is_system: bool = False,
+        role_data,  # RoleCreate schema
     ) -> Role:
         """Create a new role.
 
         Args:
-            name: Role name (unique)
-            description: Optional description
-            is_system: Whether this is a system role (cannot be deleted)
+            role_data: RoleCreate schema with role details
 
         Returns:
             Created role
@@ -118,17 +130,17 @@ class PermissionService:
             HTTPException: 409 if role name already exists
         """
         # Check if role name already exists
-        existing = self.repository.get_role_by_name(name=name)
+        existing = self.repository.get_role_by_name(name=role_data.name)
         if existing:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Role with name '{name}' already exists",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Role with name '{role_data.name}' already exists",
             )
 
         return self.repository.create_role(
-            name=name,
-            description=description,
-            is_system=is_system,
+            name=role_data.name,
+            description=role_data.description,
+            is_system=role_data.is_system,
         )
 
     def update_role(
@@ -192,6 +204,26 @@ class PermissionService:
         """
         return self.repository.get_all_roles()
 
+    def get_role_by_id(self, role_id: UUID) -> Role:
+        """Get role by ID.
+
+        Args:
+            role_id: Role ID
+
+        Returns:
+            Role
+
+        Raises:
+            HTTPException: 404 if role not found
+        """
+        role = self.repository.get_role_by_id(role_id=role_id)
+        if not role:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Role with ID '{role_id}' not found",
+            )
+        return role
+
     # ===================================================================
     # Role-Permission Assignment Methods
     # ===================================================================
@@ -233,7 +265,7 @@ class PermissionService:
             role_id=role_id, permission_id=permission_id
         ):
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
+                status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Permission already assigned to role",
             )
 
@@ -437,3 +469,105 @@ class PermissionService:
             user_id=user_id,
             permission_code=permission_code,
         )
+
+    def assign_direct_permission_to_user(
+        self,
+        user_id: UUID,
+        permission_id: UUID,
+        granted: bool,
+    ):
+        """Assign a direct permission to a user (grant or revoke).
+
+        Args:
+            user_id: User ID
+            permission_id: Permission ID
+            granted: True to grant, False to revoke
+
+        Returns:
+            UserPermission assignment
+
+        Raises:
+            HTTPException: 404 if user or permission not found
+        """
+        from app.internal.permission.schema import (
+            UserPermissionAssignmentResponse,
+        )
+
+        # Verify permission exists
+        permission = self.repository.get_by_id(permission_id=permission_id)
+        if not permission:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Permission with ID '{permission_id}' not found",
+            )
+
+        # Check if existing assignment
+        existing = self.repository.get_user_permission(
+            user_id=user_id,
+            permission_id=permission_id,
+        )
+
+        if existing:
+            # Update existing permission
+            self.repository.update_user_permission(
+                user_id=user_id,
+                permission_id=permission_id,
+                granted=granted,
+            )
+        else:
+            # Create new permission assignment
+            self.repository.grant_user_permission(
+                user_id=user_id,
+                permission_id=permission_id,
+                granted=granted,
+            )
+
+        return UserPermissionAssignmentResponse(
+            user_id=user_id,
+            permission_id=permission_id,
+            granted=granted,
+        )
+
+    def get_user_effective_permissions(
+        self, user_id: UUID
+    ) -> list[Permission]:
+        """Get user's effective permissions (from roles + direct permissions).
+
+        Returns the resolved set of permissions considering:
+        1. Direct user permissions (grants and revokes)
+        2. Role-based permissions via UserCompanyAccess
+
+        Args:
+            user_id: User ID
+
+        Returns:
+            List of effective permissions
+        """
+        # Get all permissions from user's roles
+        role_permissions = self.repository.get_user_permissions_via_roles(
+            user_id=user_id
+        )
+
+        # Get direct user permissions
+        direct_permissions = self.repository.get_user_direct_permissions(
+            user_id=user_id
+        )
+
+        # Build a set of permission IDs from roles
+        effective_perm_ids = {perm.id for perm in role_permissions}
+
+        # Apply direct permission grants and revokes
+        for user_perm in direct_permissions:
+            if user_perm.granted:
+                # Grant adds permission to the set
+                effective_perm_ids.add(user_perm.permission_id)
+            else:
+                # Revoke removes permission from the set
+                effective_perm_ids.discard(user_perm.permission_id)
+
+        # Return list of permission objects
+        return [
+            perm
+            for perm in self.repository.get_all_permissions()
+            if perm.id in effective_perm_ids
+        ]

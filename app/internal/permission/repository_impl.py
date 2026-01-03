@@ -255,3 +255,28 @@ class PermissionRepositoryImpl(PermissionRepository):
             )
         )
         return self.db.exec(statement).first() is not None
+
+    def get_user_permissions_via_roles(
+        self,
+        user_id: UUID,
+    ) -> list[Permission]:
+        """Get all permissions user has through role assignments."""
+        statement = (
+            select(Permission)
+            .join(RolePermission)
+            .join(Role)
+            .join(UserCompanyAccess, UserCompanyAccess.role_id == Role.id)  # type: ignore[arg-type]
+            .where(UserCompanyAccess.user_id == user_id)
+            .distinct()
+        )
+        return list(self.db.exec(statement).all())
+
+    def get_user_direct_permissions(
+        self,
+        user_id: UUID,
+    ) -> list[UserPermission]:
+        """Get all direct user permission assignments (grants and revokes)."""
+        statement = select(UserPermission).where(
+            UserPermission.user_id == user_id
+        )
+        return list(self.db.exec(statement).all())

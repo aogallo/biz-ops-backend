@@ -16,6 +16,8 @@ from app.core.exceptions import (
     AuthorizationError,
     NotFoundError,
 )
+from app.core.auth.backend import auth_backend
+from app.core.auth.config import fastapi_users
 from app.core.logging_config import setup_logging
 from app.database import create_db_and_tables, engine
 from app.internal.account import routes as account_routes
@@ -24,8 +26,10 @@ from app.internal.category import routes as category_routes
 from app.internal.company import routes as company_routes
 from app.internal.invoice import routes as invoice_routes
 from app.internal.organization import routes as organization_routes
+from app.internal.permission import routes as permission_routes
 from app.internal.product import routes as product_routes
 from app.internal.report import routes as report_routes
+from app.internal.user.schema import UserCreate, UserRead, UserUpdate
 from app.schemas.common import HealthResponse
 
 # Setup logging
@@ -206,6 +210,27 @@ async def detailed_health_check():
 # API Version prefix
 API_V1_PREFIX = "/api/v1"
 
+# FastAPI Users authentication routes
+app.include_router(
+    fastapi_users.get_auth_router(auth_backend),
+    prefix="/auth/jwt",
+    tags=["auth"],
+)
+
+# User registration routes (will be disabled later for invitation-only)
+app.include_router(
+    fastapi_users.get_register_router(UserRead, UserCreate),
+    prefix="/auth",
+    tags=["auth"],
+)
+
+# User management routes
+app.include_router(
+    fastapi_users.get_users_router(UserRead, UserUpdate),
+    prefix="/users",
+    tags=["users"],
+)
+
 # Include v1 routers
 app.include_router(router=product_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=company_routes.router, prefix=API_V1_PREFIX)
@@ -215,6 +240,7 @@ app.include_router(router=category_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=account_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=report_routes.router, prefix=API_V1_PREFIX)
 app.include_router(router=organization_routes.router, prefix=API_V1_PREFIX)
+app.include_router(router=permission_routes.router, prefix=API_V1_PREFIX)
 
 # Future v2 routers can be added like this:
 # API_V2_PREFIX = "/api/v2"

@@ -159,6 +159,22 @@ class PermissionRepository(ABC):
         pass
 
     @abstractmethod
+    def get_user_permissions_via_roles(
+        self,
+        user_id: UUID,
+    ) -> list["Permission"]:
+        """Get all permissions user has through role assignments."""
+        pass
+
+    @abstractmethod
+    def get_user_direct_permissions(
+        self,
+        user_id: UUID,
+    ) -> list["UserPermission"]:
+        """Get all direct user permission assignments (grants and revokes)."""
+        pass
+
+    @abstractmethod
     def check_user_has_permission_via_role(
         self,
         user_id: UUID,
