@@ -31,8 +31,14 @@ class InvitationRepositoryImpl(InvitationRepository):
         invited_by: UUID,
         expires_at: datetime,
         default_role: str | None = None,
+        company_ids: list[UUID] | None = None,
     ) -> Invitation:
         """Create a new invitation."""
+        # Convert UUIDs to strings for JSON storage
+        company_ids_str = (
+            [str(cid) for cid in company_ids] if company_ids else None
+        )
+
         invitation = Invitation(
             email=email,
             organization_id=organization_id,
@@ -40,6 +46,7 @@ class InvitationRepositoryImpl(InvitationRepository):
             invited_by=invited_by,
             expires_at=expires_at,
             default_role=default_role,
+            company_ids=company_ids_str,
             status=InvitationStatus.PENDING,
         )
         self.db.add(invitation)

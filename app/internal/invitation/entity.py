@@ -5,6 +5,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, ClassVar
 from uuid import UUID, uuid4
 
+from sqlalchemy import Column, JSON
 from sqlmodel import Field, Relationship
 
 from app.internal.shared.entity import TimestampMixin
@@ -64,6 +65,11 @@ class Invitation(TimestampMixin, table=True):
     default_role: str | None = Field(
         default="viewer", max_length=50
     )  # Role to assign on acceptance
+
+    # Optional: Pre-assign company access (list of company UUIDs as JSON)
+    company_ids: list[str] | None = Field(
+        default=None, sa_column=Column(JSON)
+    )  # Company IDs to grant access on acceptance
 
     # Relationships
     organization: "Organization" = Relationship()

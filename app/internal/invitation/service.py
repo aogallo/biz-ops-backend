@@ -1,15 +1,23 @@
 """Business logic for invitation management."""
 
+import asyncio
 import secrets
 from datetime import datetime, timedelta, timezone
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
-from sqlmodel import Session
+from sqlmodel import Session, select
 
+from app.core.email import send_welcome_email
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    hash_password,
+    validate_password,
+)
 from app.internal.invitation.entity import Invitation, InvitationStatus
 from app.internal.invitation.repository_impl import InvitationRepositoryImpl
-from app.internal.user.entity import User
+from app.internal.user.entity import User, UserCompanyAccess
 
 
 class InvitationService:
@@ -63,6 +71,7 @@ class InvitationService:
             invited_by=self.current_user.id,
             expires_at=expires_at,
             default_role=default_role,
+            company_ids=company_ids,
         )
 
     def list_invitations(
@@ -181,18 +190,112 @@ class InvitationService:
                 detail="Invitation not found",
             )
 
-        # TODO: Phase 3 implementation
-        # 1. Create User account (email/password or OAuth)
-        # 2. Link to organization
-        # 3. Create UserCompanyAccess entries
-        # 4. Mark invitation as accepted
-        # 5. Generate access token
-        # 6. Return token + user data
+        # Get database session from repository
+        session = self.repository.db
 
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Invitation acceptance not yet implemented (Phase 3)",
+        # Check if user already exists with this email
+        statement = select(User).where(User.email == invitation.email)
+        existing_user = session.exec(statement).first()
+
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"User with email '{invitation.email}' already exists",
+            )
+
+        # Validate authentication method
+        if not password and not (oauth_provider and oauth_code):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Either password or OAuth credentials must be provided",
+            )
+
+        # Create user account
+        user_id = uuid4()
+        hashed_pwd = None
+
+        if password:
+            # Email/password authentication
+            is_valid, error_message = validate_password(password)
+            if not is_valid:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=error_message,
+                )
+            hashed_pwd = hash_password(password)
+
+        # Create user
+        user = User(
+            id=user_id,
+            email=invitation.email,
+            hashed_password=hashed_pwd,
+            organization_id=invitation.organization_id,
+            is_active=True,
+            is_verified=True,  # Auto-verify invited users
+            is_superuser=False,
+            # Temporary Auth0 fields (will be removed in Phase 7)
+            auth_id=f"local|{user_id}",
+            auth0_user_id=f"invitation|{user_id}",
         )
+
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+
+        # Create UserCompanyAccess entries if company_ids provided
+        if invitation.company_ids:
+            from datetime import datetime
+
+            for company_id_str in invitation.company_ids:
+                company_id = UUID(company_id_str)
+                access = UserCompanyAccess(
+                    user_id=user.id,
+                    company_id=company_id,
+                    role=invitation.default_role or "viewer",
+                    created_by=str(self.current_user.id),
+                    created_at=datetime.utcnow(),
+                )
+                session.add(access)
+
+            session.commit()
+
+        # Mark invitation as accepted
+        invitation.status = InvitationStatus.ACCEPTED
+        invitation.accepted_at = datetime.now(timezone.utc)
+        invitation.accepted_by = user.id
+        session.add(invitation)
+        session.commit()
+
+        # Generate access and refresh tokens
+        token_data = {"sub": str(user.id)}
+        access_token = create_access_token(token_data)
+        refresh_token = create_refresh_token(token_data)
+
+        # Send welcome email (async, don't wait)
+        asyncio.create_task(
+            send_welcome_email(
+                to_email=user.email,
+                first_name=user.first_name,
+            )
+        )
+
+        # Return token and user data
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "user": {
+                "id": str(user.id),
+                "email": user.email,
+                "firstName": user.first_name,
+                "lastName": user.last_name,
+                "organizationId": str(user.organization_id)
+                if user.organization_id
+                else None,
+                "isActive": user.is_active,
+                "isVerified": user.is_verified,
+                "isSuperuser": user.is_superuser,
+            },
+        }
 
     def delete_invitation(self, invitation_id: UUID) -> None:
         """Delete an invitation.
